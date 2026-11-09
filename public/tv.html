@@ -40,16 +40,16 @@
   .joinrow .qr{width:6.5rem;height:6.5rem}
   /* game menu: cream playing cards dealt onto the felt, one accent colour each */
   .modes.deal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.6rem 1.4rem;max-width:100rem;width:100%;margin:1.4rem 0 1.4rem}
-  .deal .mode{width:auto;background:#fffaf0;color:#231a08;border-radius:1.2rem;padding:1.1rem 1.2rem 1.2rem;rotate:var(--tilt);border-top:.55rem solid var(--acc);box-shadow:0 .45rem 0 #0006;transition:transform .2s,rotate .2s}
+  .deal .mode{width:auto;background:#ffffff;color:#1b1e22;border-radius:1.2rem;padding:1.1rem 1.2rem 1.2rem;rotate:var(--tilt);border-top:.55rem solid var(--acc);box-shadow:0 .45rem 0 #0006;transition:transform .2s,rotate .2s}
   .deal .mode:hover,.deal .mode:focus-visible{rotate:0deg;transform:translateY(-.5rem)}
   .deal .art{width:3.8rem;height:3.8rem;border-radius:50%;background:var(--acc);font-size:2.1rem;margin-bottom:.7rem;box-shadow:inset 0 -.25rem 0 #0002}
   .deal .body{padding:0;flex:1;display:flex;flex-direction:column}
-  .deal h3{font-size:1.6rem} .deal p{color:#5d5648;flex:1}
-  .deal .chip{background:#231a080f;color:#3d3526;white-space:nowrap;font-weight:600}
+  .deal h3{font-size:1.6rem} .deal p{color:#5c6670;flex:1}
+  .deal .chip{background:#1b1e220f;color:#3a424b;white-space:nowrap;font-weight:600}
   .deal .chips{display:flex;flex-wrap:wrap;gap:.4rem} .deal .chips .chip{margin:0}
-  .deal .mode{position:relative;box-shadow:inset 0 0 0 .45rem #fffaf0,inset 0 0 0 .55rem #231a0812,0 .45rem 0 #0006,0 1.2rem 1.6rem #0005}
+  .deal .mode{position:relative;box-shadow:inset 0 0 0 .45rem #ffffff,inset 0 0 0 .55rem #1b1e2214,0 .45rem 0 #0006,0 1.2rem 1.6rem #0005}
   .deal .pip{position:absolute;right:.9rem;bottom:.7rem;font-size:1.3rem;rotate:180deg;opacity:.55}
-  .deal .mode:hover,.deal .mode:focus-visible{box-shadow:inset 0 0 0 .45rem #fffaf0,inset 0 0 0 .55rem #231a0812,0 .8rem 0 #0006,0 2rem 2.4rem #0006}
+  .deal .mode:hover,.deal .mode:focus-visible{box-shadow:inset 0 0 0 .45rem #ffffff,inset 0 0 0 .55rem #1b1e2214,0 .8rem 0 #0006,0 2rem 2.4rem #0006}
   /* the TV is the table: wooden rail round the edge, felt darkening toward it */
   body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;box-shadow:inset 0 0 0 .8rem #5a3820,inset 0 0 0 1.05rem #8a5a35,inset 0 0 0 1.2rem #2e1c10,inset 0 0 10rem 3rem #000a}
   @media (max-width:1100px){.modes.deal{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -119,15 +119,15 @@
   .ccard .in{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,1.4,.5,1)}
   .ccard.down .in{transform:rotateY(180deg)}
   .ccard .face,.ccard .back{position:absolute;inset:0;backface-visibility:hidden;border-radius:1rem;display:grid;place-items:center;box-shadow:0 .4rem 0 #0006}
-  .ccard .face{background:#fffaf0;color:#231a08;font:700 2.2rem/1.1 'Segoe Print','Bradley Hand','Comic Sans MS',cursive;padding:.5rem;overflow-wrap:anywhere}
-  .ccard .face small{position:absolute;bottom:.4rem;font:500 .85rem system-ui;color:#6f6656}
+  .ccard .face{background:#ffffff;color:#1b1e22;font:700 2.2rem/1.1 'Segoe Print','Bradley Hand','Comic Sans MS',cursive;padding:.5rem;overflow-wrap:anywhere}
+  .ccard .face small{position:absolute;bottom:.4rem;font:500 .85rem system-ui;color:#5c6670}
   .ccard .back{transform:rotateY(180deg);background:repeating-linear-gradient(45deg,var(--card2) 0 .7rem,var(--card) .7rem 1.4rem);font-size:2.6rem}
   .ccard.flip .in{animation:flip-up .7s cubic-bezier(.3,1.4,.5,1) both}
   @keyframes flip-up{from{transform:rotateY(180deg)}}
   .ccard.flipdown .in{animation:flip-down .7s cubic-bezier(.3,1.4,.5,1) both}
   @keyframes flip-down{from{transform:rotateY(0)}}
-  .ccard.wait .face{font:600 1.1rem/1.3 system-ui;color:#6f6656;align-content:center} .ccard.wait .av{font-size:1.1rem;margin:0 auto .2rem}
-  .ccard.x .back{color:var(--coral)} .ccard.x .face{color:#a8a08e;text-decoration:line-through var(--coral) .2rem}
+  .ccard.wait .face{font:600 1.1rem/1.3 system-ui;color:#5c6670;align-content:center} .ccard.wait .av{font-size:1.1rem;margin:0 auto .2rem}
+  .ccard.x .back{color:var(--coral)} .ccard.x .face{color:#9aa3ab;text-decoration:line-through var(--coral) .2rem}
   .pairs{display:flex;flex-wrap:wrap;justify-content:center;gap:1rem 2.4rem}
   .pair{display:flex;align-items:center;gap:.6rem;font-size:2rem;color:var(--coral)}
   .spot{display:flex;flex-direction:column;align-items:center;gap:.3rem;font-size:1.6rem;font-weight:700}
