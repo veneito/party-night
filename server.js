@@ -150,7 +150,6 @@ function gameAct(g, a) {
     }
     case 'gamevote': // "Let players vote" from the menu (or anywhere): every phone picks the next game
       if (!Object.keys(g.players).length) return 'Nobody has joined yet';
-      if (g.settings.home === 'menu') return 'Player voting is turned off';
       if (g.phase !== 'gamevote') startGameVote(g);
       break;
     case 'gvote': // a player's pick in the "what's next?" vote

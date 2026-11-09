@@ -266,7 +266,7 @@ function hostPanel(s, me) {
   const open = el.querySelector('details')?.open, G = s.games.find(x => x.id === s.game), n = s.players.length, nb = s.players.filter(p => p.bot).length;
   const b = (label, js, cls = '') => `<button class="btn ${cls}" onclick="${js}">${label}</button>`;
   let h = `<div class="kicker">👑 You're the host</div>`;
-  if (s.phase === 'menu') h += `${s.settings.home === 'menu' ? '' : `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}</div>`}<label>Pick a game</label>${s.games.map((g, i) => gameOpt(g, i, `send('pick',{game:'${g.id}'})`)).join('')}`;
+  if (s.phase === 'menu') h += `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}</div><label>Pick a game</label>${s.games.map((g, i) => gameOpt(g, i, `send('pick',{game:'${g.id}'})`)).join('')}`;
   else if (s.phase === 'lobby') h += G.settings.map(def => `<label>${esc(def.label)}</label><div class="seg">${def.options.map(([v, l]) =>
       `<button class="${s.settings[def.key] === v ? 'on' : ''}" onclick='send("set",{key:"${def.key}",value:${JSON.stringify(v)}})'>${esc(l)}</button>`).join('')}</div>`).join('')
     + `<div class="row">${n + s.pendingBots >= G.min ? b('▶ Start game', "send('start')") : `<p>Need ${G.min - n} more player${G.min - n === 1 ? '' : 's'}</p>`}</div>`;
