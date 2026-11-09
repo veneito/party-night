@@ -3,3 +3,4 @@ dist/
 .impeccable/
 src-tauri/target/
 src-tauri/gen/
+src-tauri/espeak/

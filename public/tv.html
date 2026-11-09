@@ -213,13 +213,25 @@ let voice;
 const pickVoice = () => { const vs = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
   voice = vs.find(v => /natural|online/i.test(v.name)) || vs.find(v => /google/i.test(v.name)) || vs[0]; };
 if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+// Linux has no built-in voices, so the desktop app reads lines out with its own eSpeak (one short WAV per line)
+let espeak = false, spoken = [], playing = null;
+if (window.partyApp) fetch('/tts').then(r => espeak = r.status === 204).catch(() => {});
 function say(...lines) {
+  if (espeak && !voice) { const idle = !playing && !spoken.length; spoken.push(...lines); if (idle) nextLine(); return; }
   if (!window.speechSynthesis) return;
   for (const t of lines) { const u = new SpeechSynthesisUtterance(t); if (voice) u.voice = voice; u.rate = 1.05; u.volume = voiceVol; speechSynthesis.speak(u); }
 }
+function nextLine() {
+  const t = spoken.shift();
+  if (!t) return playing = null;
+  const a = playing = new Audio('/tts?text=' + encodeURIComponent(t));
+  a.volume = voiceVol;
+  a.onended = a.onerror = () => { if (playing === a) nextLine(); };
+  a.play().catch(a.onerror);
+}
+function hush() { window.speechSynthesis?.cancel(); spoken = []; playing?.pause(); playing = null; }
 function narrate(s) {
-  if (!window.speechSynthesis) return;
-  speechSynthesis.cancel();
+  hush();
   if (s.settings.voice === 'off') return;
   const top = [...s.players].sort((a, b) => b.score - a.score)[0];
   const lines = {
@@ -512,7 +524,7 @@ function render(s, force) {
   // scan-to-join stays up during games too; late joiners get in when the round ends
   if (roomEl.dataset.k !== s.code + url) roomEl.dataset.k = s.code + url, roomEl.innerHTML = `<img class="qr mini" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}"><span class="where"><small>Scan or join at</small>${esc(url.replace('http://', ''))}</span><b>${s.code}</b>`;
   voiceOn.checked = s.settings.voice !== 'off';
-  if (s.settings.voice === 'off' && prev && prev.settings.voice !== 'off') speechSynthesis?.cancel();
+  if (s.settings.voice === 'off' && prev && prev.settings.voice !== 'off') hush();
   // bots can be added or removed at any time; mid-round additions wait for the next round
   const nb = s.players.filter(p => p.bot).length;
   document.getElementById('bots').innerHTML = `<span>🤖 Bots <b>${nb}</b>${s.pendingBots ? ` <small>(+${s.pendingBots} next round)</small>` : ''}</span>

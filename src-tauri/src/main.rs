@@ -50,6 +50,8 @@ fn main() {
         .setup(|app| {
             let _ = APP.set(app.handle().clone());
             let _ = server::APP_CMD.set(app_cmd);
+            // the Linux build carries its own eSpeak for voice-over
+            if let Some(dir) = app.path().resource_dir().ok().map(|d| d.join("espeak")).filter(|d| d.exists()) { let _ = server::ESPEAK.set(dir); }
             let (port, listener) = tauri::async_runtime::block_on(server::bind(port_env()))
                 .map_err(|e| format!("Couldn't start the game server: {e}"))?;
             tauri::async_runtime::spawn(server::run(listener));
