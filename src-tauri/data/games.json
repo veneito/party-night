@@ -1,0 +1,1056 @@
+{
+ "caption": {
+  "meta": {
+   "id": "caption",
+   "name": "Caption This",
+   "desc": "The TV shows a silly emoji scene. Write the best caption, then vote.",
+   "min": 3,
+   "tag": "Quick · 4 min",
+   "art": "🖼️",
+   "settings": [
+    {
+     "key": "points",
+     "label": "Points per vote",
+     "options": [
+      [
+       100,
+       "100"
+      ],
+      [
+       250,
+       "250"
+      ],
+      [
+       500,
+       "500"
+      ]
+     ]
+    }
+   ]
+  },
+  "data": {
+   "SCENES": [
+    "🦖☕🎩",
+    "🐸👑🚽",
+    "👵🏍️🔥",
+    "🐧🏖️🍹",
+    "🤖💔🍕",
+    "🐄🛸😱",
+    "🧛‍♂️🦷🪥",
+    "🐌🏁🏆",
+    "👨‍🍳🐙🍝",
+    "🦆🔪🍞",
+    "🐻🛁🦆",
+    "👻📸😐",
+    "🐢💨🚓",
+    "🧙‍♂️📱❌",
+    "🐔🎤🌟",
+    "🦒🛗😬",
+    "🐱💻📉",
+    "🧟‍♂️🛒🥦",
+    "🐝💍🌸",
+    "🐶🎓📜",
+    "🦀💼📈",
+    "🐼🎂🕯️",
+    "🐷💅✨",
+    "🦉📚😴",
+    "🐊🦷🧑‍⚕️",
+    "👽🍔🤤",
+    "🐑✂️😳",
+    "🦄🚬😎",
+    "🐙🎸🔥",
+    "🐭🧀🔒",
+    "🎅🏝️🍹",
+    "🐐🎻🌙",
+    "🦕🚗💨",
+    "🐒🍌💍",
+    "🐟🚲❓",
+    "🦇🏦💰",
+    "🐧🧥❄️🥵",
+    "🤠🐂🪩",
+    "🐿️🥜🏋️",
+    "🦩🥂💃",
+    "🐞🚀🌕",
+    "🧜‍♀️🛁🧽"
+   ]
+  }
+ },
+ "draw": {
+  "meta": {
+   "id": "draw",
+   "name": "Draw & Guess",
+   "desc": "One player draws a secret word on their phone. Everyone else races to guess it.",
+   "min": 2,
+   "tag": "Drawing · 5 min",
+   "art": "🎨",
+   "settings": []
+  },
+  "data": {
+   "WORDS": [
+    "pizza",
+    "rocket",
+    "snowman",
+    "spider",
+    "castle",
+    "banana",
+    "robot",
+    "volcano",
+    "guitar",
+    "dragon",
+    "umbrella",
+    "pirate",
+    "rainbow",
+    "octopus",
+    "cactus",
+    "ghost",
+    "hamburger",
+    "bicycle",
+    "mermaid",
+    "tornado",
+    "giraffe",
+    "lighthouse",
+    "skeleton",
+    "cupcake",
+    "unicorn",
+    "airplane",
+    "sandwich",
+    "penguin",
+    "treasure",
+    "dinosaur",
+    "tent",
+    "snail",
+    "crown",
+    "island",
+    "alien",
+    "popcorn",
+    "butterfly",
+    "toilet",
+    "campfire",
+    "whale",
+    "wizard",
+    "ladder",
+    "sunglasses",
+    "kite",
+    "zombie",
+    "hot dog",
+    "mushroom",
+    "shark"
+   ]
+  }
+ },
+ "elemix": {
+  "meta": {
+   "id": "elemix",
+   "name": "Elemix",
+   "desc": "Match the element or the number, play tricks on your friends, and be the first to empty your hand.",
+   "min": 2,
+   "tag": "Cards · 10 min",
+   "art": "🃏",
+   "settings": []
+  },
+  "data": {}
+ },
+ "fakeout": {
+  "meta": {
+   "id": "fakeout",
+   "name": "Fake Out",
+   "desc": "A weird real fact with a blank. Write a fake answer, then spot the truth and fool your friends.",
+   "min": 3,
+   "tag": "Bluffing · 6 min",
+   "art": "🕵️",
+   "settings": []
+  },
+  "data": {
+   "FACTS": [
+    [
+     "In Japan, there is an island overrun by friendly ___.",
+     "rabbits"
+    ],
+    [
+     "The national animal of Scotland is the ___.",
+     "unicorn"
+    ],
+    [
+     "Before toilet paper, many Americans used ___.",
+     "corn cobs"
+    ],
+    [
+     "A group of flamingos is called a ___.",
+     "flamboyance"
+    ],
+    [
+     "Wombats are the only animals that poop in the shape of ___.",
+     "cubes"
+    ],
+    [
+     "In 1932, Australia went to war against ___ and lost.",
+     "emus"
+    ],
+    [
+     "The inventor of the Pringles can was buried in ___.",
+     "a Pringles can"
+    ],
+    [
+     "Octopuses have ___ hearts.",
+     "three"
+    ],
+    [
+     "In Switzerland it is illegal to own just one ___.",
+     "guinea pig"
+    ],
+    [
+     "The first thing ever sold on eBay was a broken ___.",
+     "laser pointer"
+    ],
+    [
+     "Ketchup was sold in the 1830s as a ___.",
+     "medicine"
+    ],
+    [
+     "A bolt of lightning is about five times hotter than ___.",
+     "the sun's surface"
+    ],
+    [
+     "Sea otters hold hands while they ___.",
+     "sleep"
+    ],
+    [
+     "The dot over a lowercase \"i\" is called a ___.",
+     "tittle"
+    ],
+    [
+     "Bananas are slightly ___.",
+     "radioactive"
+    ],
+    [
+     "Cows have best friends and get ___ when separated.",
+     "stressed"
+    ],
+    [
+     "Honey found in ancient Egyptian tombs was still ___.",
+     "edible"
+    ],
+    [
+     "A snail can sleep for up to ___.",
+     "three years"
+    ],
+    [
+     "The longest English word you can type with only the top keyboard row is ___.",
+     "typewriter"
+    ],
+    [
+     "Scientists once gave ___ LSD to see how it affected their webs.",
+     "spiders"
+    ],
+    [
+     "The world's oldest known piece of chewing gum is ___ years old.",
+     "9,000"
+    ],
+    [
+     "In Iceland, there's an app to check you're not dating your ___.",
+     "cousin"
+    ],
+    [
+     "A day on Venus is longer than a year on ___.",
+     "Venus"
+    ],
+    [
+     "The tiny pocket in jeans was first made to hold ___.",
+     "pocket watches"
+    ],
+    [
+     "Butterflies taste with their ___.",
+     "feet"
+    ],
+    [
+     "A shrimp's heart is in its ___.",
+     "head"
+    ],
+    [
+     "The inventor of the frisbee was turned into a frisbee after he ___.",
+     "died"
+    ],
+    [
+     "Peanuts are not nuts, they are ___.",
+     "legumes"
+    ],
+    [
+     "The first oranges weren't orange, they were ___.",
+     "green"
+    ],
+    [
+     "A group of crows is called a ___.",
+     "murder"
+    ],
+    [
+     "Hot water can freeze faster than cold water. This is called the ___ effect.",
+     "Mpemba"
+    ],
+    [
+     "Koalas have fingerprints so similar to humans' they could confuse ___.",
+     "crime scene investigators"
+    ],
+    [
+     "The Eiffel Tower can be about 15 cm taller in the ___.",
+     "summer"
+    ],
+    [
+     "The first video ever uploaded to YouTube was filmed at a ___.",
+     "zoo"
+    ]
+   ]
+  }
+ },
+ "hottake": {
+  "meta": {
+   "id": "hottake",
+   "name": "Hot Take",
+   "desc": "Agree or disagree, then guess how much of the room agreed with you. No typing.",
+   "min": 2,
+   "tag": "Quick · 3 min",
+   "art": "🌶️",
+   "settings": []
+  },
+  "data": {
+   "TAKES": [
+    "Cereal is a soup.",
+    "A hot dog is a sandwich.",
+    "Pineapple belongs on pizza.",
+    "Socks with sandals is fine.",
+    "Breakfast for dinner beats dinner.",
+    "Cats are better than dogs.",
+    "Water is wet.",
+    "It's fine to recline your seat on a plane.",
+    "Movies were better before phones.",
+    "Ghosting is OK after one date.",
+    "The toilet paper goes over, not under.",
+    "Mondays aren't that bad.",
+    "Texting \"k\" is rude.",
+    "Pluto is a planet.",
+    "You should shower at night, not in the morning.",
+    "Birthdays after 30 don't matter.",
+    "Sharing a dessert is a crime.",
+    "Gifts should come with receipts.",
+    "Ketchup is a smoothie.",
+    "Singing in the car alone counts as a concert.",
+    "Board games ruin friendships.",
+    "Leftover pizza is better cold.",
+    "Every movie is too long now.",
+    "Sleeping in socks is fine.",
+    "Kids should be allowed to swear at home.",
+    "Snow days should exist for adults too.",
+    "The middle seat gets both armrests.",
+    "Voice notes are rude.",
+    "Bananas are better green.",
+    "It's OK to read the last page of a book first.",
+    "Camping is just being homeless on purpose.",
+    "You should tip at self-checkout.",
+    "Halloween is the best holiday.",
+    "Talking to plants actually works.",
+    "Chocolate ice cream beats vanilla."
+   ]
+  }
+ },
+ "loneclue": {
+  "meta": {
+   "id": "loneclue",
+   "name": "Lone Clue",
+   "desc": "Give a one-word clue to help one player guess the secret word. Matching clues cancel out!",
+   "min": 3,
+   "tag": "Co-op words · 5 min",
+   "art": "🔍",
+   "settings": []
+  },
+  "data": {
+   "WORDS": [
+    "pizza",
+    "rocket",
+    "snowman",
+    "castle",
+    "banana",
+    "robot",
+    "volcano",
+    "guitar",
+    "dragon",
+    "umbrella",
+    "pirate",
+    "rainbow",
+    "octopus",
+    "cactus",
+    "ghost",
+    "bicycle",
+    "mermaid",
+    "tornado",
+    "giraffe",
+    "lighthouse",
+    "cupcake",
+    "unicorn",
+    "penguin",
+    "treasure",
+    "dinosaur",
+    "island",
+    "popcorn",
+    "butterfly",
+    "campfire",
+    "wizard",
+    "zombie",
+    "shark",
+    "chocolate",
+    "library",
+    "wedding",
+    "circus",
+    "jungle",
+    "football",
+    "hospital",
+    "airport",
+    "museum",
+    "kitchen",
+    "vampire",
+    "moon",
+    "piano",
+    "coffee",
+    "birthday",
+    "beach",
+    "ninja",
+    "cowboy",
+    "honey",
+    "pumpkin",
+    "diamond",
+    "tiger",
+    "spider",
+    "magnet",
+    "parachute",
+    "igloo",
+    "compass",
+    "lemon"
+   ]
+  }
+ },
+ "oddone": {
+  "meta": {
+   "id": "oddone",
+   "name": "Odd One Out",
+   "desc": "Everyone gets the same secret word but one. Give a clue, then find who's faking it.",
+   "min": 3,
+   "tag": "Deduction · 5 min",
+   "art": "🎭",
+   "settings": []
+  },
+  "data": {
+   "PAIRS": [
+    [
+     "pizza",
+     "burger"
+    ],
+    [
+     "beach",
+     "pool"
+    ],
+    [
+     "cat",
+     "dog"
+    ],
+    [
+     "coffee",
+     "tea"
+    ],
+    [
+     "wedding",
+     "funeral"
+    ],
+    [
+     "guitar",
+     "violin"
+    ],
+    [
+     "airport",
+     "train station"
+    ],
+    [
+     "vampire",
+     "zombie"
+    ],
+    [
+     "snow",
+     "rain"
+    ],
+    [
+     "doctor",
+     "dentist"
+    ],
+    [
+     "pirate",
+     "ninja"
+    ],
+    [
+     "moon",
+     "sun"
+    ],
+    [
+     "bank",
+     "casino"
+    ],
+    [
+     "soccer",
+     "basketball"
+    ],
+    [
+     "lion",
+     "tiger"
+    ],
+    [
+     "hotel",
+     "hospital"
+    ],
+    [
+     "ice cream",
+     "yogurt"
+    ],
+    [
+     "library",
+     "museum"
+    ],
+    [
+     "camping",
+     "picnic"
+    ],
+    [
+     "chess",
+     "poker"
+    ],
+    [
+     "birthday",
+     "christmas"
+    ],
+    [
+     "spider",
+     "snake"
+    ],
+    [
+     "jeans",
+     "pajamas"
+    ],
+    [
+     "zoo",
+     "farm"
+    ],
+    [
+     "shark",
+     "dolphin"
+    ],
+    [
+     "taco",
+     "burrito"
+    ],
+    [
+     "knight",
+     "samurai"
+    ],
+    [
+     "volcano",
+     "earthquake"
+    ],
+    [
+     "candle",
+     "flashlight"
+    ],
+    [
+     "cowboy",
+     "pirate"
+    ],
+    [
+     "umbrella",
+     "raincoat"
+    ],
+    [
+     "bakery",
+     "pizzeria"
+    ],
+    [
+     "wizard",
+     "witch"
+    ],
+    [
+     "tennis",
+     "badminton"
+    ],
+    [
+     "ghost",
+     "skeleton"
+    ],
+    [
+     "subway",
+     "bus"
+    ],
+    [
+     "honey",
+     "syrup"
+    ],
+    [
+     "owl",
+     "bat"
+    ],
+    [
+     "desert",
+     "jungle"
+    ]
+   ]
+  }
+ },
+ "punchline": {
+  "meta": {
+   "id": "punchline",
+   "name": "Punchline Club",
+   "desc": "Give words, build jokes from your friends' words, then battle it out joke vs joke.",
+   "min": 3,
+   "tag": "Comedy · 15 min",
+   "art": "🎤",
+   "settings": [
+    {
+     "key": "pack",
+     "label": "Prompts",
+     "options": [
+      [
+       "spicy",
+       "Spicy 18+"
+      ],
+      [
+       "family",
+       "Family"
+      ]
+     ]
+    },
+    {
+     "key": "jokes",
+     "label": "Jokes each",
+     "options": [
+      [
+       2,
+       "2"
+      ],
+      [
+       1,
+       "1 (quicker)"
+      ],
+      [
+       3,
+       "3"
+      ]
+     ]
+    }
+   ]
+  },
+  "data": {
+   "PACKS": {
+    "family": {
+     "a person you know (like \"my dentist\")": {
+      "bot": [
+       "my dentist",
+       "Grandma",
+       "my gym teacher",
+       "the mailman",
+       "my little brother"
+      ],
+      "setups": [
+       "{w} has a secret YouTube channel, and it's all",
+       "{w} is banned from the bowling alley because",
+       "Nobody sits next to {w} at lunch since",
+       "{w} just won a talent show by",
+       "The scariest thing {w} ever said to me:",
+       "{w} entered the science fair with",
+       "The principal called home because {w}"
+      ]
+     },
+     "a famous person (like \"Shrek\")": {
+      "bot": [
+       "Shrek",
+       "Elmo",
+       "Gordon Ramsay",
+       "Abraham Lincoln",
+       "Darth Vader"
+      ],
+      "setups": [
+       "{w} showed up to my birthday party and",
+       "{w} just released a cookbook called",
+       "Breaking news: {w} has been spotted",
+       "{w} tried online dating. Their bio says",
+       "I beat {w} at Mario Kart and they",
+       "{w} got a star on the Walk of Fame for",
+       "My teacher looks exactly like {w}, especially when"
+      ]
+     },
+     "an animal (like \"a raccoon\")": {
+      "bot": [
+       "a raccoon",
+       "a goose",
+       "my neighbour's cat",
+       "a llama",
+       "a very large pigeon"
+      ],
+      "setups": [
+       "I let {w} babysit my kids and",
+       "You know {w} is plotting something when",
+       "{w} got into the school play, playing",
+       "If {w} could talk, the first thing it would say is",
+       "I trained {w} to fetch, and now it brings me",
+       "{w} ate my homework and left a note:",
+       "The zoo had to close because {w}"
+      ]
+     },
+     "a place (like \"the DMV\")": {
+      "bot": [
+       "the DMV",
+       "Olive Garden",
+       "a Costco",
+       "the moon",
+       "a haunted car wash"
+      ],
+      "setups": [
+       "{w} has a new tourism slogan:",
+       "I got lost in {w} for three days and survived by",
+       "The worst part of a school trip to {w} is",
+       "Never go to {w} on a Monday, because",
+       "{w} just got its first one-star review:",
+       "{w} is the only place where you can",
+       "Our family vacation to {w} ended with"
+      ]
+     },
+     "an object (like \"a garden hose\")": {
+      "bot": [
+       "a garden hose",
+       "a rubber duck",
+       "a haunted lamp",
+       "a leaf blower",
+       "a broken trampoline"
+      ],
+      "setups": [
+       "Grandma left me {w} in her will, with a note that said",
+       "The instruction manual for {w} just says",
+       "I brought {w} to show-and-tell and",
+       "Airport security pulled {w} out of my bag and",
+       "The worst thing to get stuck in an elevator with is {w}, because",
+       "Dad tried to fix the car with {w} and",
+       "The museum put {w} on display, labelled"
+      ]
+     },
+     "a hobby (like \"competitive yodeling\")": {
+      "bot": [
+       "competitive yodeling",
+       "knitting",
+       "bird watching",
+       "speed walking",
+       "ventriloquism"
+      ],
+      "setups": [
+       "I took up {w} to relax. Now",
+       "You can always spot someone into {w} because",
+       "My kid wants to go pro at {w}. I told them",
+       "The Olympics just added {w}, and the first gold medal went to",
+       "Nobody warned me that {w} would",
+       "My grandpa still holds the world record in {w} for",
+       "Our school added {w} to gym class, and now"
+      ]
+     }
+    },
+    "spicy": {
+     "someone you know (like \"my landlord\")": {
+      "bot": [
+       "my landlord",
+       "Aunt Karen",
+       "my ex",
+       "my boss",
+       "the guy from accounting"
+      ],
+      "setups": [
+       "{w} has a secret second family, and honestly",
+       "{w} isn't invited to Thanksgiving anymore because",
+       "I walked in on {w} and",
+       "{w} just got arrested. The charge?",
+       "At the reading of the will, {w} finally admitted",
+       "{w} was the last person I expected to see at the strip club, but",
+       "My therapist and {w} both agree that"
+      ]
+     },
+     "a celebrity (like \"Shrek\")": {
+      "bot": [
+       "Shrek",
+       "Gordon Ramsay",
+       "the Pope",
+       "Danny DeVito",
+       "Santa Claus"
+      ],
+      "setups": [
+       "{w} slid into my DMs with just",
+       "{w}'s OnlyFans is mostly",
+       "{w} just got cancelled for",
+       "I'm pretty sure {w} is the reason my parents got divorced. They",
+       "Leaked texts show {w} is into",
+       "{w} officiated our wedding and kept saying",
+       "{w} has a podcast, and every episode is about"
+      ]
+     },
+     "an object (like \"a spatula\")": {
+      "bot": [
+       "a spatula",
+       "a garden hose",
+       "a scented candle",
+       "a leaf blower",
+       "a fanny pack"
+      ],
+      "setups": [
+       "Our safe word is {w}, ever since",
+       "Grandma left me {w} in her will, with a note that said",
+       "Airport security pulled {w} out of my bag and",
+       "I'm not saying {w} saved my marriage, but",
+       "The cops found {w} at the crime scene, and",
+       "The hotel minibar now includes {w}, because",
+       "I tried to return {w} to IKEA and"
+      ]
+     },
+     "a place (like \"Olive Garden\")": {
+      "bot": [
+       "Olive Garden",
+       "the DMV",
+       "a Chuck E. Cheese",
+       "church camp",
+       "my parents' basement"
+      ],
+      "setups": [
+       "Our first date was at {w}. By dessert,",
+       "I got banned from {w} for",
+       "What happens at {w} stays at {w}, except",
+       "I lost my dignity at {w} when",
+       "Proposing at {w} was a mistake because",
+       "The office retreat at {w} ended with HR",
+       "My Tinder bio says \"find me at {w}\", and"
+      ]
+     },
+     "a bad habit (like \"drunk texting\")": {
+      "bot": [
+       "drunk texting",
+       "eating cheese in bed",
+       "online gambling",
+       "replying \"k\"",
+       "stalking my ex"
+      ],
+      "setups": [
+       "My therapist says {w} is why I",
+       "I gave up {w} for Lent and lasted",
+       "The family intervention was about {w}, but nobody mentioned",
+       "My dating profile proudly lists {w} under",
+       "{w} has cost me two jobs, one marriage and",
+       "I listed {w} as a skill on my résumé, and the interviewer",
+       "My last relationship ended because of {w} and"
+      ]
+     },
+     "a food (like \"a gas station hot dog\")": {
+      "bot": [
+       "a gas station hot dog",
+       "expired yogurt",
+       "a whole rotisserie chicken",
+       "airplane sushi",
+       "Grandma's meatloaf"
+      ],
+      "setups": [
+       "Nothing says romance like {w} and",
+       "I ate {w} at 3am and woke up",
+       "The wedding caterer only served {w}, so naturally",
+       "My doctor said I have to stop eating {w}, or else",
+       "I brought {w} to the orgy and",
+       "The first date went great until {w} came out and",
+       "Nothing ruins a hookup like {w}, especially"
+      ]
+     },
+     "an animal (like \"a raccoon\")": {
+      "bot": [
+       "a raccoon",
+       "a goose",
+       "a horny pigeon",
+       "my roommate's python",
+       "a possum"
+      ],
+      "setups": [
+       "I let {w} plan my bachelor party and",
+       "My ex left me for {w}, and honestly",
+       "The vet says {w} has been",
+       "I came home to find {w} in my bed, and",
+       "{w} is my emotional support animal, mostly because",
+       "{w} got into the hot tub and",
+       "The neighbours think {w} is our child because"
+      ]
+     }
+    }
+   },
+   "BOT_PUNCH": [
+    "my mom still brings it up at Christmas",
+    "now we're legally married",
+    "the fire department got involved",
+    "I still have the receipt",
+    "nobody clapped",
+    "it was the best night of my life",
+    "the HOA sent a strongly worded letter",
+    "it's on the news",
+    "I'm not allowed back in Ohio",
+    "we don't talk about it",
+    "that's how I met your mother",
+    "I had to change my name"
+   ]
+  }
+ },
+ "quickwit": {
+  "meta": {
+   "id": "quickwit",
+   "name": "Quick Wit",
+   "desc": "One prompt, everyone answers, everyone votes. Fast and simple.",
+   "min": 2,
+   "tag": "Quick · 3 min",
+   "art": "⚡",
+   "settings": [
+    {
+     "key": "pack",
+     "label": "Prompts",
+     "options": [
+      [
+       "spicy",
+       "Spicy 18+"
+      ],
+      [
+       "family",
+       "Family"
+      ]
+     ]
+    },
+    {
+     "key": "points",
+     "label": "Points per vote",
+     "options": [
+      [
+       100,
+       "100"
+      ],
+      [
+       250,
+       "250"
+      ],
+      [
+       500,
+       "500"
+      ]
+     ]
+    }
+   ]
+  },
+  "data": {
+   "PROMPTS": {
+    "family": [
+     "Your pilot comes on the speaker and says, very calmly:",
+     "The real reason the dinosaurs went extinct",
+     "You open a fortune cookie. It just says:",
+     "Your dog finally learns to talk. Its first sentence:",
+     "The name of the worst theme park in the world",
+     "The thing your teacher actually does all weekend",
+     "A superhero whose only power is extremely mild",
+     "The new flavor of ice cream that got the company sued",
+     "You find a note in your lunchbox from your mom. It says:",
+     "What the cat is writing in its diary about you",
+     "The worst thing to hear from the person cutting your hair",
+     "A terrible name for a boat",
+     "The fourth Little Pig built his house out of",
+     "Grandma's secret recipe has one weird ingredient:",
+     "The rule the lifeguard made up just for you",
+     "A theme for a birthday party that made every kid cry",
+     "What aliens write in their review of Earth",
+     "The worst mascot for a sports team",
+     "The real reason Santa only works one night a year",
+     "The museum's newest exhibit, which nobody understands",
+     "You're the new GPS voice. What do you say when someone misses the exit?",
+     "Your houseplant left you a note before it died. It says:",
+     "The school just banned this from lunch, and kids are furious:",
+     "The worst thing to find in your cereal box",
+     "Your robot vacuum has started leaving notes. Today's says:",
+     "The real reason the Easter Bunny hides the eggs",
+     "A terrible name for a hamster",
+     "The worst prize at the fair",
+     "What the snowman is thinking right before he melts",
+     "Your teacher's secret talent, revealed at the school assembly",
+     "A board game that ended a family friendship",
+     "The weirdest thing a squirrel could steal from you",
+     "The first rule of the treehouse club",
+     "What your sneakers would say if they could talk",
+     "A new holiday nobody asked for",
+     "The tooth fairy's side hustle",
+     "Things you should never say to a pirate"
+    ],
+    "spicy": [
+     "Your date leans in close and whispers... \"I have to tell you something.\"",
+     "The text you accidentally sent to your boss instead of your crush",
+     "What Grandpa's \"special\" brownies are actually made of",
+     "The one line in your dating profile that gets zero matches",
+     "Your mom finds your browser history. The first thing she sees:",
+     "The real reason you got dumped, according to your ex's group chat",
+     "A terrible safe word",
+     "What the priest is sweating about this Sunday",
+     "Your therapist's private notes about you just say:",
+     "The worst thing to yell at the exact wrong moment",
+     "A condom flavor that should never have left the lab",
+     "The 11th commandment, cut for being \"too specific\"",
+     "What actually happened at the office Christmas party",
+     "Your roommate heard this through the wall. Now they won't look at you.",
+     "The most cursed thing to say when meeting your partner's parents",
+     "The strip club with the worst name in town",
+     "The tattoo you got in Vegas and can't explain",
+     "Your Uber driver turns around and says:",
+     "What your search history would say about you at your funeral",
+     "A sex position named after an IKEA product",
+     "The walk of shame, but make it worse. You're carrying:",
+     "The divorce lawyer's slogan",
+     "What's REALLY in the hot tub",
+     "The worst bachelor party activity, planned by your weird cousin",
+     "The noise your bed makes that ended the relationship",
+     "Your Tinder date shows up with:",
+     "The reason the neighbours called the cops (again)",
+     "The worst thing to say during a job interview, and you said it",
+     "Your new tattoo artist was clearly drunk. Your tattoo now says:",
+     "The real reason the wedding was called off",
+     "What your Uber rating says about you",
+     "The last thing you want to hear from the next bathroom stall",
+     "The note your one-night stand left on the pillow",
+     "Your bachelor party ended at the hospital. The doctor's report says:",
+     "What your Spotify Wrapped revealed to the whole office",
+     "A terrible thing to whisper to a horse",
+     "The worst name for a sex toy company",
+     "Your houseguest found the drawer. Which drawer?",
+     "What's really in Grandma's 'medicine' cabinet",
+     "The new HR policy, written because of you specifically",
+     "The worst thing to accidentally post on the family group chat",
+     "Your landlord's most unhinged text"
+    ]
+   }
+  }
+ },
+ "telephone": {
+  "meta": {
+   "id": "telephone",
+   "name": "Telephone Sketch",
+   "desc": "Write something, draw what you read, describe what you see. Watch it all fall apart on the TV.",
+   "min": 3,
+   "tag": "Drawing · 10 min",
+   "art": "📞",
+   "settings": []
+  },
+  "data": {
+   "STARTERS": [
+    "a cat running for president",
+    "grandma on a skateboard",
+    "a sad pizza",
+    "the moon eating a sandwich",
+    "a dog doing taxes",
+    "a haunted toaster",
+    "a shark at the dentist",
+    "a cowboy riding a snail",
+    "a robot falling in love",
+    "a very angry cloud"
+   ]
+  }
+ }
+}

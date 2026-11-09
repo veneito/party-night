@@ -161,6 +161,8 @@
   #upd{border-top:1px solid var(--line);margin-top:1.2rem;padding-top:1.2rem}
   .toast{position:fixed;right:1.5rem;bottom:1.5rem;z-index:50;display:grid;gap:.4rem;width:24rem;animation:pop .35s}
   .toast b{font-size:1.3rem} .toast span{color:var(--mute)} .toast .row{margin:.6rem 0 0;justify-content:flex-end}
+  .pad :focus{outline:.3rem solid var(--gold);outline-offset:.25rem}
+  .panel .done{display:flex;gap:.6rem;justify-content:flex-end}
 </style></head><body><div class="stage"></div>
 <header><div class="brand">🎉 Party <i>Night</i></div><div id="room"></div><div class="botctl" id="bots"></div><button class="mute" id="home" onclick="send('menu')" aria-label="Home" title="Home" hidden>🏠</button><button class="mute" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="timer" id="timer" hidden><b></b></div></header>
 <main id="app"><h2>Connecting…</h2></main>
@@ -171,7 +173,7 @@
   <label class="row">Players vote for next game <input type="checkbox" id="voteOn" onchange='send("set",{key:"home",value:this.checked ? "vote" : "menu"})'></label>
   <label class="row">Voice volume <input type="range" min="0" max="100" id="voiceVol" oninput="setVoiceVol(this.value / 100)"></label>
   <div id="upd" hidden><h3>Updates</h3><div class="row"><span id="updVer"></span><button class="btn ghost" onclick="checkUpdate()">Check for updates</button></div><p id="updMsg"></p></div>
-  <button class="btn" onclick="settings.close()">Done</button>
+  <div class="done"><button class="btn ghost" id="quitBtn" onclick="partyApp.quit()" hidden>Quit Party Night</button><button class="btn" onclick="settings.close()">Done</button></div>
 </dialog>
 <div id="updPop" class="panel toast" role="alert" hidden><b>Update available</b><span id="updPopMsg"></span>
   <div class="row"><button class="btn ghost" onclick="updPop.hidden = true">Dismiss</button><button class="btn" id="updGo" onclick="startUpdate()">Update</button></div></div>
@@ -190,7 +192,7 @@ const sfxVolEl = document.getElementById('sfxVol'), voiceVolEl = document.getEle
 // Updates only exist in the desktop app, which hands this page a small `partyApp` bridge
 const updMsg = document.getElementById('updMsg'), updPopMsg = document.getElementById('updPopMsg');
 if (window.partyApp) {
-  upd.hidden = false;
+  upd.hidden = quitBtn.hidden = false;
   partyApp.version().then(v => updVer.textContent = `Version ${v}`);
   partyApp.onUpdate(u => {
     if (u.state === 'available') { updPopMsg.textContent = `Party Night ${u.version} is ready to install.`; updGo.disabled = false; updPop.hidden = false; updMsg.textContent = `Version ${u.version} is available.`; }
@@ -543,4 +545,69 @@ function fit() {
 }
 addEventListener('resize', fit); document.fonts?.ready.then(fit);
 connect();
+
+// Controller and arrow keys (Steam Deck game mode, TV remotes): D-pad or stick moves between buttons,
+// A / Enter presses, B closes the open panel, Start / Menu opens settings.
+let padRect = null;
+function targets() {
+  const scope = document.querySelector('dialog[open]') || document;
+  return [...scope.querySelectorAll('button,input,[tabindex]:not([tabindex="-1"])')].filter(el => !el.disabled && el.offsetParent && !(scope === document && el.closest('dialog')));
+}
+function move(dx, dy) {
+  document.documentElement.classList.add('pad');
+  const cur = document.activeElement;
+  // sliders take left/right themselves
+  if (cur?.type === 'range' && dx) { cur.value = +cur.value + dx * 5; cur.dispatchEvent(new Event('input')); cur.dispatchEvent(new Event('change')); return; }
+  const all = targets();
+  if (!all.length) return;
+  // nothing focused (first press, or the screen just redrew): pick up nearest to where focus last was
+  const lost = !all.includes(cur);
+  if (lost && !padRect) return focusOn(all.find(el => app.contains(el)) || all[0]);
+  // a panel is a simple list: up/down walks it in order
+  if (document.querySelector('dialog[open]') && dy) return focusOn(all[lost ? 0 : (all.indexOf(cur) + dy + all.length) % all.length]);
+  const from = lost ? padRect : cur.getBoundingClientRect();
+  const cx = from.left + from.width / 2, cy = from.top + from.height / 2;
+  let best = null, bestScore = Infinity;
+  for (const el of all) {
+    if (el === cur) continue;
+    const r = el.getBoundingClientRect(), x = r.left + r.width / 2 - cx, y = r.top + r.height / 2 - cy;
+    const along = x * dx + y * dy, across = Math.abs(x * dy) + Math.abs(y * dx);
+    if (!lost && (along <= 0 || across > along * 2)) continue; // only things roughly in the pressed direction
+    const score = lost ? Math.hypot(x, y) : along + across * 2.5;
+    if (score < bestScore) { bestScore = score; best = el; }
+  }
+  if (best) focusOn(best);
+}
+function focusOn(el) { el.focus(); el.scrollIntoView({ block: 'nearest' }); padRect = el.getBoundingClientRect(); }
+function press() {
+  const el = document.activeElement;
+  if (el && el !== document.body) { el.click(); padRect = el.getBoundingClientRect(); } else move(0, 1);
+}
+function back() { const d = document.querySelector('dialog[open]'); if (d) d.close(); else if (!updPop.hidden) updPop.hidden = true; }
+addEventListener('keydown', e => {
+  const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (dir) { e.preventDefault(); move(...dir); }
+  else if (e.key === 'Backspace') back();
+});
+addEventListener('mousemove', () => document.documentElement.classList.remove('pad'));
+// the Gamepad API has no events for buttons, so poll it; held directions repeat
+const held = {};
+function pad() {
+  const g = [...(navigator.getGamepads?.() || [])].find(Boolean);
+  if (g) {
+    const b = i => g.buttons[i]?.pressed, ax = g.axes[0] || 0, ay = g.axes[1] || 0;
+    const input = { left: b(14) || ax < -.5, right: b(15) || ax > .5, up: b(12) || ay < -.5, down: b(13) || ay > .5, a: b(0), b: b(1), start: b(9) };
+    const now = performance.now();
+    for (const [k, on] of Object.entries(input)) {
+      if (!on) { delete held[k]; continue; }
+      const repeat = ['left', 'right', 'up', 'down'].includes(k);
+      if (held[k] && (!repeat || now < held[k])) continue;
+      held[k] = held[k] ? now + 120 : now + 380; // first repeat waits a bit longer
+      if (k === 'a') press(); else if (k === 'b') back(); else if (k === 'start') settings.open ? settings.close() : openSettings();
+      else move(...{ left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[k]);
+    }
+  }
+  requestAnimationFrame(pad);
+}
+requestAnimationFrame(pad);
 </script></body></html>
