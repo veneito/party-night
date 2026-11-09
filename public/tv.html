@@ -63,6 +63,7 @@
   .pslot{position:relative} .pslot .kick{position:absolute;top:.3rem;right:.3rem}
   .kick{width:1.6rem;height:1.6rem;border-radius:50%;background:#0004;font-size:.8rem;line-height:1;opacity:.35;flex:none;padding:0}
 .kick.crown.on{opacity:1;background:transparent} .pslot .crown{right:auto;left:.3rem}
+  .recode{font-size:.9rem;padding:.35em .9em;margin-left:.6rem} .recode.armed{background:var(--coral);box-shadow:none}
   .kick.armed{opacity:1;background:var(--coral);width:auto;border-radius:999px;padding:0 .6rem;font-weight:800}
   .kick:hover,.kick:focus-visible{opacity:1;background:var(--coral)}
   .pslot .name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -129,6 +130,7 @@
   <h3>Settings</h3>
   <label class="row">Sound effects <input type="range" min="0" max="100" id="sfxVol" oninput="setSfxVol(this.value / 100)" onchange="sfx('done')"></label>
   <label class="row">Voice-over <input type="checkbox" id="voiceOn" onchange='send("set",{key:"voice",value:this.checked ? "on" : "off"})'></label>
+  <label class="row">Players vote for next game <input type="checkbox" id="voteOn" onchange='send("set",{key:"home",value:this.checked ? "vote" : "menu"})'></label>
   <label class="row">Voice volume <input type="range" min="0" max="100" id="voiceVol" oninput="setVoiceVol(this.value / 100)"></label>
   <div id="upd" hidden><h3>Updates</h3><div class="row"><span id="updVer"></span><button class="btn ghost" onclick="checkUpdate()">Check for updates</button></div><p id="updMsg"></p></div>
   <button class="btn" onclick="settings.close()">Done</button>
@@ -143,7 +145,7 @@ let url = '', room = sessionStorage.room, spoken = '', lastKey = '', seen = new 
 let voiceVol = 1; try { voiceVol = Number(localStorage.voiceVol ?? 1); } catch {}
 function setVoiceVol(v) { voiceVol = v; try { localStorage.voiceVol = v; } catch {} }
 function openSettings() {
-  sfxVolEl.value = sfxVol * 100; voiceVolEl.value = voiceVol * 100; voiceOn.checked = S?.settings.voice !== 'off';
+  sfxVolEl.value = sfxVol * 100; voiceVolEl.value = voiceVol * 100; voiceOn.checked = S?.settings.voice !== 'off'; voteOn.checked = S?.settings.home !== 'menu';
   settings.showModal();
 }
 const sfxVolEl = document.getElementById('sfxVol'), voiceVolEl = document.getElementById('voiceVol');
@@ -210,7 +212,7 @@ async function connect() {
     if (alive === false) room = sessionStorage.room = ''; // server restarted: make a fresh room
     setTimeout(connect, alive ? 500 : 2000);
   };
-  es.onmessage = e => render(S = JSON.parse(e.data));
+  es.onmessage = e => { S = JSON.parse(e.data); if (S.code !== room) room = sessionStorage.room = S.code; render(S); };
 }
 
 // who's running things from their phone
@@ -224,6 +226,12 @@ const kickBtn = p => `<button class="kick" data-id="${esc(p.id)}" data-name="${e
 // 👑 on a real player makes them host (their phone gets these controls); the current host's crown stays lit
 const hostBtn = p => p.bot ? '' : `<button class="kick crown ${p.id === S?.host ? 'on' : ''}" data-id="${esc(p.id)}" aria-label="Make ${esc(p.name)} host" onclick="send('host',{who:this.dataset.id})">👑</button>`;
 // first click arms it ("Remove?"), a second click within 3 s removes; no pop-up, which the desktop app doesn't show
+// new code clears the room, so it asks for a second click like kicking does
+function recode(el) {
+  if (!S.players.length || el.classList.contains('armed')) return send('recode');
+  el.classList.add('armed'); el.textContent = 'Everyone rejoins. Sure?';
+  setTimeout(() => { el.classList.remove('armed'); el.textContent = '↻ New code'; }, 3000);
+}
 function kick(el) {
   if (el.classList.contains('armed')) return send('kick', { who: el.dataset.id });
   el.classList.add('armed'); el.textContent = 'Remove?';
@@ -312,7 +320,7 @@ function menu(s) {
     <div class="modes">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 100}ms" onclick='send("pick",{game:"${g.id}"})'>
       <div class="art" style="background:${MODES[g.id]?.bg || 'var(--card2)'}"><span>${MODES[g.id]?.art || '🎲'}</span></div>
       <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></button>`).join('')}</div>
-    <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${hostTag(s)}${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
+    <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${hostTag(s)} <button class="btn ghost recode" onclick="recode(this)">↻ New code</button>${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${s.settings.home === 'menu' ? '' : btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
 </div>`;
 }
 
@@ -397,7 +405,7 @@ function render(s, force) {
   const M = MODES[s.game] || {};
   const html = s.phase === 'menu' ? menu(s) : s.phase === 'lobby' ? lobby(s) : s.phase === 'gamevote' ? gamevote(s) : s.phase === 'results' || s.phase === 'scores' ? results(s) : (M[s.phase] || (() => `<h1>${s.phase}</h1>`))(s);
   // same screen: only swap the live bits so entrance animations don't replay on every update
-  const key = [s.phase, s.game, s.round, s.duelNo].join('|');
+  const key = [s.code, s.phase, s.game, s.round, s.duelNo].join('|');
   if (key === lastKey && !force) {
     const t = document.createElement('template'); t.innerHTML = html;
     for (const el of t.content.querySelectorAll('[data-live]')) {

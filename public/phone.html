@@ -32,10 +32,16 @@
   .sndbar select{flex:1;font:inherit;padding:10px 12px;border-radius:12px;border:0;background:var(--card);color:var(--ink)}
   .sndbar .pv{padding:0 16px;border-radius:12px;background:var(--card2);font-weight:800}
   .sndbar .add{background:var(--sky);color:#0b1a30}
-  .avs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:8px 0}
-  .avs button{aspect-ratio:1;border-radius:14px;background:var(--card);font-size:26px;border:2px solid transparent;padding:0}
-  .avs button.on{border-color:var(--gold);background:var(--card2)}
+  .avs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:10px 0 4px}
+  .avs button,.avs .up{aspect-ratio:1;min-width:0;margin:0;padding:0;border-radius:16px;background:var(--card);border:2px solid transparent;
+    display:grid;place-items:center;font-size:clamp(22px,7.5vw,32px);line-height:1;transition:transform .15s cubic-bezier(.2,1.6,.4,1),background .15s}
+  .avs button:active,.avs .up:active{transform:scale(.9)}
+  .avs button.on{border-color:var(--gold);transform:scale(1.06);box-shadow:0 4px 0 #0005}
   .avs button:disabled{opacity:.2}
+  /* photo tile: dashed until a photo is in, caption under the camera */
+  .avs .up{background:var(--card2);border:2px dashed #ffffff40;cursor:pointer;overflow:hidden;text-transform:none;letter-spacing:0;color:var(--mute)}
+  .avs .up small{display:block;font-size:10px;font-weight:800;margin-top:2px}
+  .avs .up.on{border:2px solid var(--gold)} .avs .up img{width:100%;height:100%;object-fit:cover}
   #hostp{max-width:480px;margin:12px auto;border-bottom:1px solid var(--line);padding-bottom:10px}
   #app+#hostp{border-bottom:0;border-top:1px solid var(--line);margin-top:28px;padding-top:6px}
   #hostp:empty{display:none}
@@ -74,20 +80,40 @@ function joinScreen() {
   app.innerHTML = `<div class="logo pop">Party <span>Night</span></div><p style="text-align:center">Enter the code on the TV</p>
     <label for="c">Room code</label><input id="c" maxlength="4" placeholder="ABCD" value="${esc(room)}" autocapitalize="characters" autocomplete="off">
     <label for="n">Your name</label><input id="n" maxlength="16" placeholder="Name" value="${esc(q.get('name') || store('name') || '')}" autocomplete="nickname">
-    <label>Pick your avatar</label>${avGrid(Number(store('av') ?? -1), [], 'pickAv')}
+    <label>Pick your avatar</label>${avGrid(Number(store('av') ?? -1), [], 'pickAv', photo)}
     <button class="btn" onclick="join()">Let's go!</button>`;
 }
 async function join() {
   room = c.value.trim().toUpperCase(); store('name', n.value);
   const av = Number(store('av') ?? -1);
-  if (await send('join', { text: n.value, av })) { store('room', room); watch(); }
+  if (await send('join', { text: n.value, av })) { store('room', room); if (photo) await send('photo', { data: photo }); watch(); }
 }
 // avatar grid; `taken` are greyed out, `fn` handles a tap
-const avGrid = (cur, taken, fn) => `<div class="avs">${AV_EMOJI.map((e, i) =>
-  `<button class="${i === cur ? 'on' : ''}" style="${i === cur ? `background:${AV_COLOR[i]}` : ''}" aria-label="Avatar ${i + 1}" ${taken.includes(i) ? 'disabled' : ''} onclick="${fn}(${i})">${e}</button>`).join('')}</div>`;
-function pickAv(i) { store('av', i); document.querySelectorAll('.avs button').forEach((b, j) => { b.classList.toggle('on', j === i); b.style.background = j === i ? AV_COLOR[i] : ''; }); }
+const avGrid = (cur, taken, fn, ph) => `<div class="avs"><label class="up ${ph ? 'on' : ''}" aria-label="Upload a photo">${ph ? `<img src="${esc(ph)}" alt="">` : '<span>📷<small>Photo</small></span>'}<input type="file" accept="image/*" hidden onchange="upload(this.files[0])"></label>
+  ${ph ? `<button aria-label="Remove photo" onclick="setPhoto('')">🚫</button>` : ''}${AV_EMOJI.map((e, i) =>
+  `<button class="${i === cur && !ph ? 'on' : ''}" style="${i === cur && !ph ? `background:${AV_COLOR[i % AV_COLOR.length]}` : ''}" data-i="${i}" aria-label="Avatar ${i + 1}" ${taken.includes(i) ? 'disabled' : ''} onclick="${fn}(${i})">${e}</button>`).join('')}</div>`;
+// Photo avatars: cropped to a centred square and shrunk to a small JPEG on the phone, so uploads are tiny.
+// Kept only in memory here and on the server, so it's gone once the player leaves.
+let photo = '';
+async function upload(file) {
+  if (!file) return;
+  try {
+    const img = await createImageBitmap(file), n = Math.min(img.width, img.height), c = document.createElement('canvas');
+    c.width = c.height = 160;
+    c.getContext('2d').drawImage(img, (img.width - n) / 2, (img.height - n) / 2, n, n, 0, 0, 160, 160);
+    setPhoto(c.toDataURL('image/jpeg', .8));
+  } catch { errEl.textContent = "Couldn't read that picture"; }
+}
+async function setPhoto(data) {
+  if (es && room && store('room') === room) { if (await send('photo', { data })) photo = data; }
+  else { photo = data; redrawJoinGrid(); } // not joined yet: show it, send it after joining
+}
+// only the grid, so the code and name already typed stay put
+function redrawJoinGrid() { const g = app.querySelector('.avs'); if (g) g.outerHTML = avGrid(Number(store('av') ?? -1), [], 'pickAv', photo);
+}
+function pickAv(i) { if (photo) { photo = ''; redrawJoinGrid(); } store('av', i); document.querySelectorAll('.avs [data-i]').forEach(b => { const on = +b.dataset.i === i; b.classList.toggle('on', on); b.style.background = on ? AV_COLOR[i % AV_COLOR.length] : ''; }); }
 async function rename() { const v = nm.value.trim(); if (v && await send('join', { text: v })) store('name', v); }
-async function changeAv(i) { if (await send('avatar', { av: i })) store('av', i); }
+async function changeAv(i) { if (await send('avatar', { av: i })) { store('av', i); if (photo) setPhoto(''); } }
 // Enter / "Go" on the phone keyboard: jump to the next empty box, or press the screen's main button.
 // (Never return false from a key handler here: that blocks typing.)
 document.addEventListener('keydown', e => {
@@ -167,7 +193,7 @@ function hostPanel(s, me) {
   const open = el.querySelector('details')?.open, G = s.games.find(x => x.id === s.game), n = s.players.length, nb = s.players.filter(p => p.bot).length;
   const b = (label, js, cls = '') => `<button class="btn ${cls}" onclick="${js}">${label}</button>`;
   let h = `<div class="kicker">👑 You're the host</div>`;
-  if (s.phase === 'menu') h += `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}</div><label>Or pick a game</label>${s.games.map(g => `<button class="opt" onclick="send('pick',{game:'${g.id}'})"><b>${esc(g.name)}</b><br>${esc(g.desc)}</button>`).join('')}`;
+  if (s.phase === 'menu') h += `${s.settings.home === 'menu' ? '' : `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}</div>`}<label>Pick a game</label>${s.games.map(g => `<button class="opt" onclick="send('pick',{game:'${g.id}'})"><b>${esc(g.name)}</b><br>${esc(g.desc)}</button>`).join('')}`;
   else if (s.phase === 'lobby') h += G.settings.map(def => `<label>${esc(def.label)}</label><div class="seg">${def.options.map(([v, l]) =>
       `<button class="${s.settings[def.key] === v ? 'on' : ''}" onclick='send("set",{key:"${def.key}",value:${JSON.stringify(v)}})'>${esc(l)}</button>`).join('')}</div>`).join('')
     + `<div class="row">${n + s.pendingBots >= G.min ? b('▶ Start game', "send('start')") : `<p>Need ${G.min - n} more player${G.min - n === 1 ? '' : 's'}</p>`}</div>`;
@@ -201,7 +227,7 @@ function watch() {
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
-    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken + ':' + me.name : ''}`;
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
     if (key === last) return; last = key; chosen = -1;
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
@@ -216,7 +242,7 @@ function watch() {
     else html = screen ? screen(s, me) : wait(me, 'Watch the TV');
     // between games players can swap avatars
     if (between) html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
-      <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv')}`;
+      <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv', me.ph)}`;
     swap(app, html, () => { app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); });
   };
 }

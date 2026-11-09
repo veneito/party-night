@@ -1,11 +1,13 @@
 // Shared by TV and phone: avatars, escaping, countdown, confetti.
-const AV_EMOJI = ['🦊', '🐸', '🐙', '🦄', '🐼', '🐯', '🦉', '🐵', '🐧', '🦖', '🐨', '🦁', '🐰', '🐳', '🦜', '🐢', '🦔', '🐝', '🦩', '🐲'];
+const AV_EMOJI = ['🦊', '🐸', '🐙', '🦄', '🐼', '🐯', '🦉', '🐵', '🐧', '🦖', '🐨', '🦁', '🐰', '🐳', '🦜', '🐢', '🦔', '🐝', '🦩', '🐲',
+  '🐶', '🐱', '🐮', '🐷', '🐔', '🦋', '🐞', '🦀', '🐠', '🦓', '🦒', '🐘', '🦥', '🦦', '🐺', '🦝', '🐗', '👽', '🤖', '👻'];
 const AV_COLOR = ['#ff6b6b', '#4ecdc4', '#ffd93d', '#a78bfa', '#6bcb77', '#ff9f43', '#4d96ff', '#f472b6', '#2dd4bf', '#facc15',
   '#fb7185', '#60a5fa', '#c084fc', '#34d399', '#f97316', '#38bdf8', '#e879f9', '#a3e635', '#fda4af', '#fbbf24'];
 const avColor = p => AV_COLOR[p.av % AV_COLOR.length];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
-const avatar = (p, size = '') => `<span class="av ${size}" style="--c:${avColor(p)}">${AV_EMOJI[p.av % AV_EMOJI.length]}</span>`;
+// p.ph is the URL of an uploaded photo, if the player added one
+const avatar = (p, size = '') => `<span class="av ${size}" style="--c:${avColor(p)}">${p.ph ? `<img src="${esc(p.ph)}" alt="">` : AV_EMOJI[p.av % AV_EMOJI.length]}</span>`;
 
 // countdown ring: server sends seconds left; we tick locally between updates
 const timer = { left: 0, total: 0, el: null };
