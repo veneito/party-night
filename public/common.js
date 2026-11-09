@@ -126,3 +126,6 @@ function countUp(root) {
     (function tick(t) { const k = Math.min(1, (t - t0) / 1100); el.textContent = Math.round(end * (1 - (1 - k) ** 3)) + suffix; if (k < 1) requestAnimationFrame(tick); })(t0);
   }
 }
+
+// casino-chip accents for game cards (TV menu and phone pickers)
+const CHIPS = ['#c8202f', '#1f5fbf', '#178a4a', '#24282d', '#d9a21b'];

@@ -36,7 +36,7 @@ function end(g) {
 const kept = g => Object.keys(g.clues).filter(id => !g.cancelled.includes(id)).map(id => ({ id, text: g.clues[id] }));
 
 module.exports = {
-  id: 'loneclue', name: 'Lone Clue', min: 3,
+  id: 'loneclue', name: 'Lone Clue', min: 3, art: '🔍',
   desc: 'Give a one-word clue to help one player guess the secret word. Matching clues cancel out!',
   tag: 'Co-op words · 5 min',
   bot(g, id) {

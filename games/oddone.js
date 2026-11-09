@@ -27,7 +27,7 @@ function tally(g) {
 }
 
 module.exports = {
-  id: 'oddone', name: 'Odd One Out', min: 3,
+  id: 'oddone', name: 'Odd One Out', min: 3, art: '🎭',
   desc: "Everyone gets the same secret word but one. Give a clue, then find who's faking it.",
   tag: 'Deduction · 5 min',
   bot(g, id) {

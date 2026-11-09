@@ -62,7 +62,7 @@ function tally(g) {
 }
 
 module.exports = {
-  id: 'fakeout', name: 'Fake Out', min: 3,
+  id: 'fakeout', name: 'Fake Out', min: 3, art: '🕵️',
   desc: 'A weird real fact with a blank. Write a fake answer, then spot the truth and fool your friends.',
   tag: 'Bluffing · 6 min',
   bot(g, id) {

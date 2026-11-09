@@ -158,7 +158,7 @@ function reveal(g) {
 }
 
 module.exports = {
-  id: 'punchline', name: 'Punchline Club', min: 3,
+  id: 'punchline', name: 'Punchline Club', min: 3, art: '🎤',
   desc: 'Give words, build jokes from your friends\' words, then battle it out joke vs joke.',
   tag: 'Comedy · 15 min',
   settings: [

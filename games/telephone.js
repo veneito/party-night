@@ -36,7 +36,7 @@ function tally(g) {
 const chainOut = (g, ch) => ch.map(e => ({ name: g.players[e.by]?.name ?? '(left)', text: e.text, strokes: e.strokes }));
 
 module.exports = {
-  id: 'telephone', name: 'Telephone Sketch', min: 3,
+  id: 'telephone', name: 'Telephone Sketch', min: 3, art: '📞',
   desc: 'Write something, draw what you read, describe what you see. Watch it all fall apart on the TV.',
   tag: 'Drawing · 10 min',
   bot(g, id) {

@@ -68,7 +68,7 @@ function win(g, id) {
 }
 
 module.exports = {
-  id: 'elemix', name: 'Elemix', min: 2,
+  id: 'elemix', name: 'Elemix', min: 2, art: '🃏',
   desc: 'Match the element or the number, play tricks on your friends, and be the first to empty your hand.',
   tag: 'Cards · 10 min',
   bot(g, id) {

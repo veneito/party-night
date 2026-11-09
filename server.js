@@ -74,7 +74,7 @@ function publicState(g) {
   const G = game(g);
   fixHost(g);
   const s = { code: g.code, host: g.host, phase: g.phase, rounds: g.settings.rounds || 3, pendingBots: g.pendingBots, game: g.game, round: g.round, settings: g.settings,
-    games: Object.values(GAMES).map(({ id, name, desc, min, tag, allSettings }) => ({ id, name, desc, min, tag, settings: allSettings })),
+    games: Object.values(GAMES).map(({ id, name, desc, min, tag, art, allSettings }) => ({ id, name, desc, min, tag, art, settings: allSettings })),
     // seconds left, not a timestamp, so phone clock skew doesn't matter
     left: g.endsAt ? Math.max(0, Math.ceil((g.endsAt - Date.now()) / 1000)) : 0,
     players: Object.entries(g.players).map(([id, p]) => ({ id, name: p.name, av: p.av, ph: p.photo ? `/photo/${g.code}/${encodeURIComponent(id)}?v=${p.photoV}` : undefined, bot: p.bot, score: p.score, done: g.phase === 'gamevote' ? id in g.gvotes : inGame(g) && G.isDone(g, id) })) };

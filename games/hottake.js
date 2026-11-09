@@ -24,7 +24,7 @@ function tally(g) {
 }
 
 module.exports = {
-  id: 'hottake', name: 'Hot Take', min: 2,
+  id: 'hottake', name: 'Hot Take', min: 2, art: '🌶️',
   desc: 'Agree or disagree, then guess how much of the room agreed with you. No typing.',
   tag: 'Quick · 3 min',
   bot() { return { type: 'take', agree: Math.random() < .5, guess: Math.round(Math.random() * 10) * 10 }; },

@@ -26,7 +26,7 @@ function correct(g, id) {
 }
 
 module.exports = {
-  id: 'draw', name: 'Draw & Guess', min: 2,
+  id: 'draw', name: 'Draw & Guess', min: 2, art: '🎨',
   desc: 'One player draws a secret word on their phone. Everyone else races to guess it.',
   tag: 'Drawing · 5 min',
   bot(g, id) {
