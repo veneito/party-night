@@ -21,16 +21,16 @@
   .kicker{font-size:1.1rem;text-transform:uppercase;letter-spacing:.2em;color:var(--gold);font-weight:700}
 
   /* menu */
-  .hero{font-size:6rem;font-weight:800;letter-spacing:-.05em;line-height:.9;margin:0}
+  .hero{font-size:5rem;font-weight:800;letter-spacing:-.05em;line-height:.9;margin:0}
   .hero span{color:var(--gold)}
-  .modes{display:flex;gap:2rem;margin:2.2rem 0 1.5rem;flex-wrap:wrap;justify-content:center}
-  .mode{width:26rem;text-align:left;border-radius:2rem;padding:0;overflow:hidden;background:var(--card);box-shadow:0 .5rem 0 #0006;transition:transform .2s}
+  .modes{display:flex;gap:1.5rem;margin:1.6rem 0 1.2rem;max-width:66rem;flex-wrap:wrap;justify-content:center}
+  .mode{width:20rem;display:flex;flex-direction:column;justify-content:flex-start;text-align:left;border-radius:2rem;padding:0;overflow:hidden;background:var(--card);box-shadow:0 .5rem 0 #0006;transition:transform .2s}
   .mode:hover,.mode:focus-visible{transform:translateY(-.5rem) rotate(-.6deg)}
-  .mode .art{height:8rem;display:grid;place-items:center;font-size:4.8rem}
+  .mode .art{height:5rem;display:grid;place-items:center;font-size:3.4rem}
   .mode .art span{animation:bob 3s ease-in-out infinite}
-  .mode .body{padding:1.5rem 1.8rem 1.8rem}
-  .mode h3{margin:0 0 .3rem;font-size:2.2rem;letter-spacing:-.02em}
-  .mode p{margin:0 0 1rem;color:var(--mute);font-size:1.15rem;line-height:1.4}
+  .mode .body{padding:1rem 1.3rem 1.3rem}
+  .mode h3{margin:0 0 .3rem;font-size:1.7rem;letter-spacing:-.02em}
+  .mode p{margin:0 0 .8rem;color:var(--mute);font-size:1rem;line-height:1.4}
   .joinrow{display:flex;align-items:center;gap:1.2rem;text-align:left}
   .joinrow .qr{width:6.5rem;height:6.5rem}
   .chip{display:inline-block;padding:.3rem .8rem;border-radius:999px;background:#ffffff14;font-size:.95rem;margin-right:.4rem}
@@ -55,6 +55,9 @@
   .count{font-size:1.6rem;color:var(--mute)} .count b{color:var(--gold)}
   .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:1rem}
   .pslot{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.6rem .4rem;border-radius:1.2rem;background:var(--card);font-weight:700;font-size:1.15rem;min-width:0}
+  .pslot{position:relative} .pslot .kick{position:absolute;top:.3rem;right:.3rem}
+  .kick{width:1.6rem;height:1.6rem;border-radius:50%;background:#0004;font-size:.8rem;line-height:1;opacity:.35;flex:none;padding:0}
+  .kick:hover,.kick:focus-visible{opacity:1;background:var(--coral)}
   .pslot .name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pslot.empty{background:transparent;border:2px dashed var(--line);color:#ffffff40;justify-content:center;min-height:5.8rem}
   .actions{display:flex;gap:1rem;margin-top:1.2rem;align-items:center;flex-wrap:wrap}
@@ -172,7 +175,12 @@ function narrate(s) {
     write: () => ['Time to write your jokes. Pick a setup and land the punchline.'],
     duel: () => { const [a, b] = s.duel; return [`Joke ${s.duelNo}.`, `${a.setup}... ${noSounds(a.punch)}`, 'Or...', `${b.setup}... ${noSounds(b.punch)}`, 'Vote now!']; },
     reveal: () => { const [a, b] = s.duel; return a.votes === b.votes ? ['It\'s a tie!'] : [`${(a.votes > b.votes ? a : b).name} wins that one!`]; },
-    answer: () => [s.prompt],
+    answer: () => [s.game === 'caption' ? 'Write a caption for this scene!' : s.prompt],
+    lie: () => [s.fact.replace('___', 'blank'), 'Write a fake answer!'],
+    pick: () => ['Which one is real?'],
+    take: () => [s.take, 'Agree or disagree?'],
+    clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
+    accuse: () => ['Who is the odd one out?'],
     vote: () => ['Time to vote for the best answer!'],
     scores: () => top ? [`End of round ${s.round}. ${top.name} is in the lead with ${top.score} points!`] : [],
     results: () => top ? [`${top.name} wins the game with ${top.score} points!`] : [],
@@ -196,8 +204,11 @@ async function connect() {
 
 // players pop in once, not every time the screen refreshes
 const popOnce = id => seen.has(id) ? '' : (seen.add(id), 'pop');
+// ✕ on a player removes them, for someone who wandered off mid-game
+const kickBtn = p => `<button class="kick" data-id="${esc(p.id)}" data-name="${esc(p.name)}" aria-label="Remove ${esc(p.name)}" onclick="kick(this)">✕</button>`;
+function kick(el) { if (confirm(`Remove ${el.dataset.name} from the game?`)) send('kick', { who: el.dataset.id }); }
 const strip = s => `<div class="strip" data-live="strip">${s.players.map(p =>
-  `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)}">${avatar(p)}${esc(p.name)}</div>`).join('')}</div>`;
+  `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)}">${avatar(p)}${esc(p.name)}${kickBtn(p)}</div>`).join('')}</div>`;
 const skip = (label = 'Time\'s up') => `<div class="footer-actions">${btn('skip', label, 'ghost')}</div>`;
 
 const MODES = {
@@ -224,7 +235,41 @@ const MODES = {
         <small>${avatar(s.players.find(p => p.name === a.name) || { av: 0 })}${esc(a.name)} · ${plural(a.votes, 'vote')}</small></div></div>`).join('')}</div>`;
     },
   },
+  fakeout: {
+    art: '🕵️', bg: 'linear-gradient(135deg,#ffd23f,#ff5e7e)',
+    lie: s => `<div class="kicker rise">Round ${s.round} · Fill the blank</div><div class="prompt pop"><h1>${esc(s.fact)}</h1></div>
+      <h2 class="rise">Write a believable fake on your phone</h2>${strip(s)}${skip()}`,
+    pick: s => `<div class="kicker rise">One of these is real</div><h1 class="pop" style="font-size:2.6rem">${esc(s.fact)}</h1>
+      <div class="answers">${s.list.map((a, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span>${esc(a.text)}</div>`).join('')}</div>
+      ${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.fact)}</h1><div class="answers">${[...s.last.list].sort((a, b) => b.truth - a.truth || b.fooled.length - a.fooled.length).map((a, i) =>
+      `<div class="answer rise ${a.truth ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack">${esc(a.text)}
+      <small>${a.truth ? `✓ The truth · ${plural(a.fooled.length, 'player')} found it` : `${esc(a.name)}'s fake · fooled ${a.fooled.length}`}</small></div></div>`).join('')}</div>`,
+  },
+  hottake: {
+    art: '🌶️', bg: 'linear-gradient(135deg,#ff9f43,#ff5e7e)',
+    take: s => `<div class="kicker rise">Round ${s.round} · Hot take</div><div class="prompt pop"><h1>${esc(s.take)}</h1></div>
+      <h2 class="rise">Agree or disagree, then guess how much of the room agrees</h2>${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.take)}</h1>
+      <div class="kicker" style="font-size:2.4rem;margin-top:.6rem">${s.last.pct}% agreed</div><div class="bar" style="width:min(50rem,90%)"><i style="width:${s.last.pct}%"></i></div>
+      <div class="rest" style="margin-top:1rem">${[...s.last.list].sort((a, b) => Math.abs(a.guess - s.last.pct) - Math.abs(b.guess - s.last.pct)).map(p =>
+        `<div class="who rise">${avatar(p)}${esc(p.name)} ${p.agree ? '👍' : '👎'} guessed ${p.guess}%</div>`).join('')}</div>`,
+  },
+  oddone: {
+    art: '🎭', bg: 'linear-gradient(135deg,#a78bfa,#3ee6b5)',
+    clue: s => `<div class="kicker rise">Round ${s.round}</div><h1 class="pop">Everyone has the same secret word…</h1>
+      <h2 class="rise">…except one of you. Give a one-word clue on your phone.</h2>${strip(s)}${skip()}`,
+    accuse: s => `<div class="kicker rise">Vote on your phone</div><h1 class="pop">Who's the odd one out?</h1>
+      <div class="answers">${s.clues.map((c, i) => { const p = s.players.find(x => x.id === c.id) || { av: 0, name: '?' };
+        return `<div class="answer rise" style="animation-delay:${i * 50}ms">${avatar(p)}<div class="stack"><small style="margin:0">${esc(p.name)}</small>${esc(c.text)}</div></div>`; }).join('')}</div>
+      ${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.6rem;margin:0">${s.last.caught ? `Caught! ${esc(s.last.odd)} was the odd one out` : `${esc(s.last.odd)} got away with it!`}</h1>
+      <h2 style="margin:.2rem 0">Everyone had <b style="color:var(--gold)">${esc(s.last.word)}</b>. ${esc(s.last.odd)} had <b style="color:var(--coral)">${esc(s.last.oddWord)}</b>.</h2>
+      <div class="answers">${s.last.clues.map((c, i) => `<div class="answer rise ${c.odd ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(c.text)}
+        <small>${esc(c.name)} · ${plural(c.votes, 'vote')}</small></div></div>`).join('')}</div>`,
+  },
 };
+MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg,#5ab0ff,#a78bfa)' };
 
 function duel(s) {
   const [a, b] = s.duel, rev = s.phase === 'reveal', w = rev ? (a.votes > b.votes ? 0 : b.votes > a.votes ? 1 : -1) : -1;
@@ -245,13 +290,13 @@ function menu(s) {
     <div class="modes">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 100}ms" onclick='send("pick",{game:"${g.id}"})'>
       <div class="art" style="background:${MODES[g.id]?.bg || 'var(--card2)'}"><span>${MODES[g.id]?.art || '🎲'}</span></div>
       <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></button>`).join('')}</div>
-    <div class="joinrow rise">${s.players.length ? '' : `<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">${s.players.length ? `${plural(s.players.length, 'player')} here: ${s.players.map(p => esc(p.name)).join(', ')}` : `Players can join already at <b>${esc(url)}</b> with code <b>${s.code}</b>`}</div>
+    <div class="joinrow rise">${s.players.length ? '' : `<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">${s.players.length ? `<div class="rest">${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${kickBtn(p)}</div>`).join('')}</div>` : `Players can join already at <b>${esc(url)}</b> with code <b>${s.code}</b>`}</div>
 </div>`;
 }
 
 function lobby(s) {
   const G = s.games.find(x => x.id === s.game), max = s.settings.max || 20, n = s.players.length;
-  const slots = s.players.map(p => `<div class="pslot ${popOnce('l' + p.id)}">${avatar(p, 'lg')}<span class="name">${esc(p.name)}</span></div>`).join('')
+  const slots = s.players.map(p => `<div class="pslot ${popOnce('l' + p.id)}">${kickBtn(p)}${avatar(p, 'lg')}<span class="name">${esc(p.name)}</span></div>`).join('')
     + Array.from({ length: Math.max(0, Math.min(max, 20) - n) }, () => `<div class="pslot empty">?</div>`).join('');
   return `<div class="lobby">
     <div class="panel rise">
@@ -326,11 +371,18 @@ function render(s, force) {
       const cur = app.querySelector(`[data-live="${el.dataset.live}"]`);
       if (cur && cur.innerHTML !== el.innerHTML) cur.innerHTML = el.innerHTML;
     }
-    return;
+    fit(); return;
   }
-  lastKey = key; app.innerHTML = html;
+  lastKey = key; app.innerHTML = html; fit();
   if (s.phase !== 'reveal') playChips(app); // reveal repeats the duel jokes, no need to replay
   if (s.phase === 'results' || s.phase === 'scores' || (s.phase === 'reveal' && s.duel.some(j => j.votes))) confetti(s.phase === 'reveal' ? 90 : s.phase === 'scores' ? 120 : 260);
 }
+// Everything is sized in rem, so shrinking the root font scales the whole screen down until nothing overflows.
+function fit() {
+  const root = document.documentElement; root.style.fontSize = '';
+  let fs = parseFloat(getComputedStyle(root).fontSize);
+  while (app.scrollHeight > app.clientHeight + 1 && fs > 5) { fs *= .94; root.style.fontSize = fs + 'px'; }
+}
+addEventListener('resize', fit); document.fonts?.ready.then(fit);
 connect();
 </script></body></html>

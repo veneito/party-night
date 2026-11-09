@@ -25,6 +25,21 @@ const PROMPTS = {
     'The museum\'s newest exhibit, which nobody understands',
     'You\'re the new GPS voice. What do you say when someone misses the exit?',
     'Your houseplant left you a note before it died. It says:',
+    'The school just banned this from lunch, and kids are furious:',
+    'The worst thing to find in your cereal box',
+    "Your robot vacuum has started leaving notes. Today's says:",
+    'The real reason the Easter Bunny hides the eggs',
+    'A terrible name for a hamster',
+    'The worst prize at the fair',
+    'What the snowman is thinking right before he melts',
+    "Your teacher's secret talent, revealed at the school assembly",
+    'A board game that ended a family friendship',
+    'The weirdest thing a squirrel could steal from you',
+    'The first rule of the treehouse club',
+    'What your sneakers would say if they could talk',
+    'A new holiday nobody asked for',
+    "The tooth fairy's side hustle",
+    'Things you should never say to a pirate',
   ],
   spicy: [
     'Your date leans in close and whispers... "I have to tell you something."',
@@ -54,13 +69,30 @@ const PROMPTS = {
     'The noise your bed makes that ended the relationship',
     'Your Tinder date shows up with:',
     'The reason the neighbours called the cops (again)',
+    'The worst thing to say during a job interview, and you said it',
+    'Your new tattoo artist was clearly drunk. Your tattoo now says:',
+    'The real reason the wedding was called off',
+    'What your Uber rating says about you',
+    'The last thing you want to hear from the next bathroom stall',
+    'The note your one-night stand left on the pillow',
+    "Your bachelor party ended at the hospital. The doctor's report says:",
+    'What your Spotify Wrapped revealed to the whole office',
+    'A terrible thing to whisper to a horse',
+    'The worst name for a sex toy company',
+    'Your houseguest found the drawer. Which drawer?',
+    "What's really in Grandma's 'medicine' cabinet",
+    'The new HR policy, written because of you specifically',
+    'The worst thing to accidentally post on the family group chat',
+    "Your landlord's most unhinged text",
   ],
 };
 
 let h;
+// Caption This reuses this whole flow with its own prompts, see make() below
+const make = ({ prompts, ...meta }) => {
 function start(g) {
   g.phase = 'answer'; g.answers = {}; g.votes = {}; g.list = [];
-  g.prompt = h.pick(PROMPTS[g.settings.pack] || PROMPTS.spicy);
+  g.prompt = h.pick(prompts(g));
   h.setTimer(g, SECS.answer, startVote);
 }
 function startVote(g) {
@@ -74,11 +106,12 @@ function tally(g) {
   h.finish(g);
 }
 
-module.exports = {
+return {
   id: 'quickwit', name: 'Quick Wit', min: 2,
   desc: 'One prompt, everyone answers, everyone votes. Fast and simple.',
   tag: 'Quick · 3 min',
   settings: [{ key: 'pack', label: 'Prompts', options: [['spicy', 'Spicy 18+'], ['family', 'Family']] }, { key: 'points', label: 'Points per vote', options: [[100, '100'], [250, '250'], [500, '500']] }],
+  ...meta,
   bot(g, id) {
     if (g.phase === 'answer') return { type: 'answer', text: h.pick(['a confused llama', 'soup, again', 'my uncle Steve', 'tiny hats', 'nobody knows', 'free WiFi']) };
     if (g.phase === 'vote') { const ok = g.list.map((a, i) => a.owner === id ? -1 : i).filter(i => i >= 0); return { type: 'vote', index: h.pick(ok) }; }
@@ -112,3 +145,6 @@ module.exports = {
     } else return 'Unknown action';
   },
 };
+};
+module.exports = make({ prompts: g => PROMPTS[g.settings.pack] || PROMPTS.spicy });
+module.exports.make = make;

@@ -112,7 +112,29 @@ const MODES = {
     vote: (s, me) => me.done ? wait(me, 'Vote cast!') :
       `<div class="kicker">Vote</div><h2>Pick the best answer</h2>${s.list.map((a, i) => `<button class="opt" onclick="send('vote',{index:${i}})">${withSounds(a.text)}</button>`).join('')}`,
   },
+  fakeout: {
+    lie: (s, me) => me.done ? wait(me, 'Fake locked in!') :
+      `<div class="kicker">Fill the blank with a fake</div><h2>${esc(s.fact)}</h2><input id="a" maxlength="40" placeholder="Something believable" autocomplete="off">
+       <button class="btn" onclick="send('lie',{text:a.value})">Send fake</button>`,
+    pick: (s, me) => me.done ? wait(me, 'Pick locked!') :
+      `<div class="kicker">Which one is real?</div><h2>${esc(s.fact)}</h2>${s.list.map((a, i) => `<button class="opt" onclick="send('guess',{index:${i}})">${esc(a.text)}</button>`).join('')}`,
+  },
+  hottake: {
+    take: (s, me) => me.done ? wait(me, 'Take locked in!') :
+      `<div class="kicker">Hot take</div><h2>${esc(s.take)}</h2><button class="opt" onclick="choose(0)">👍 <b>Agree</b></button><button class="opt" onclick="choose(1)">👎 <b>Disagree</b></button>
+       <label for="g">How much of the room agrees? <b id="gv" style="color:var(--gold)">50%</b></label><input id="g" type="range" min="0" max="100" step="5" value="50" oninput="gv.textContent = this.value + '%'" style="padding:0;accent-color:var(--gold)">
+       <button class="btn" onclick="send('take',{agree:chosen < 0 ? null : chosen === 0, guess:+g.value})">Lock it in</button>`,
+  },
+  oddone: {
+    clue: (s, me) => me.done ? wait(me, 'Clue sent!', 'Act natural…') :
+      `<div class="kicker">Your secret word</div><h2 style="font-size:40px;color:var(--gold)">${esc(s.secret[id])}</h2><p>Everyone has the same word except one player. Maybe it's you!</p>
+       <input id="a" maxlength="20" placeholder="One-word clue" autocomplete="off"><button class="btn" onclick="send('clue',{text:a.value})">Send clue</button>`,
+    accuse: (s, me) => me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">Vote</div><h2>Who's the odd one out?</h2>${s.clues.filter(c => c.id !== id).map(c => { const p = s.players.find(x => x.id === c.id) || { av: 0, name: '?' };
+        return `<button class="opt" data-id="${esc(c.id)}" onclick="send('accuse',{who:this.dataset.id})">${avatar(p)} ${esc(p.name)}: <b>${esc(c.text)}</b></button>`; }).join('')}`,
+  },
 };
+MODES.caption = MODES.quickwit;
 
 function watch() {
   es = new EventSource('/events?room=' + room);

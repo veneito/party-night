@@ -122,7 +122,10 @@ function gameAct(g, a) {
       nextRound(g); break;
     case 'menu': setTimer(g, 0); g.phase = 'menu'; g.game = null; break; // players stay joined
     case 'skip': if (g.phase === 'scores') nextRound(g); else if (inGame(g) && G.advance[g.phase]) G.advance[g.phase](g); break; // TV "time's up" / "next"
-    case 'kick': if (!inGame(g)) delete g.players[clean(a.who, 40)]; break;
+    case 'kick': // TV removes someone who stopped playing, any time
+      delete g.players[clean(a.who, 40)];
+      if (inGame(g) && Object.keys(g.players).every(p => G.isDone(g, p)) && G.advance[g.phase]) G.advance[g.phase](g);
+      break;
     case 'bots': { // TV adds bots; mid-round they wait and join when the next round starts
       const n = Math.max(0, Math.min(Number(a.n) || 1, maxOf(g) - count - g.pendingBots));
       if (inGame(g)) g.pendingBots += n; else addBots(g, n);
