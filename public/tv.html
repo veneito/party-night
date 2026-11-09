@@ -214,22 +214,22 @@ const pickVoice = () => { const vs = speechSynthesis.getVoices().filter(v => v.l
   voice = vs.find(v => /natural|online/i.test(v.name)) || vs.find(v => /google/i.test(v.name)) || vs[0]; };
 if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 // Linux has no built-in voices, so the desktop app reads lines out with its own eSpeak (one short WAV per line)
-let espeak = false, spoken = [], playing = null;
+let espeak = false, ttsQueue = [], ttsAudio = null;
 if (window.partyApp) fetch('/tts').then(r => espeak = r.status === 204).catch(() => {});
 function say(...lines) {
-  if (espeak && !voice) { const idle = !playing && !spoken.length; spoken.push(...lines); if (idle) nextLine(); return; }
+  if (espeak && !voice) { const idle = !ttsAudio && !ttsQueue.length; ttsQueue.push(...lines); if (idle) nextLine(); return; }
   if (!window.speechSynthesis) return;
   for (const t of lines) { const u = new SpeechSynthesisUtterance(t); if (voice) u.voice = voice; u.rate = 1.05; u.volume = voiceVol; speechSynthesis.speak(u); }
 }
 function nextLine() {
-  const t = spoken.shift();
-  if (!t) return playing = null;
-  const a = playing = new Audio('/tts?text=' + encodeURIComponent(t));
+  const t = ttsQueue.shift();
+  if (!t) return ttsAudio = null;
+  const a = ttsAudio = new Audio('/tts?text=' + encodeURIComponent(t));
   a.volume = voiceVol;
-  a.onended = a.onerror = () => { if (playing === a) nextLine(); };
+  a.onended = a.onerror = () => { if (ttsAudio === a) nextLine(); };
   a.play().catch(a.onerror);
 }
-function hush() { window.speechSynthesis?.cancel(); spoken = []; playing?.pause(); playing = null; }
+function hush() { window.speechSynthesis?.cancel(); ttsQueue = []; ttsAudio?.pause(); ttsAudio = null; }
 function narrate(s) {
   hush();
   if (s.settings.voice === 'off') return;
