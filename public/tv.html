@@ -38,6 +38,16 @@
   .mode p{margin:0 0 .8rem;color:var(--mute);font-size:1rem;line-height:1.4}
   .joinrow{display:flex;align-items:center;gap:1.2rem;text-align:left}
   .joinrow .qr{width:6.5rem;height:6.5rem}
+  /* game menu: cream playing cards dealt onto the felt, one accent colour each */
+  .modes.deal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.6rem 1.4rem;max-width:100rem;width:100%;margin:1.4rem 0 1.4rem}
+  .deal .mode{width:auto;background:#fffaf0;color:#231a08;border-radius:1.2rem;padding:1.1rem 1.2rem 1.2rem;rotate:var(--tilt);border-top:.55rem solid var(--acc);box-shadow:0 .45rem 0 #0006;transition:transform .2s,rotate .2s}
+  .deal .mode:hover,.deal .mode:focus-visible{rotate:0deg;transform:translateY(-.5rem)}
+  .deal .art{width:3.8rem;height:3.8rem;border-radius:50%;background:var(--acc);font-size:2.1rem;margin-bottom:.7rem;box-shadow:inset 0 -.25rem 0 #0002}
+  .deal .body{padding:0;flex:1;display:flex;flex-direction:column}
+  .deal h3{font-size:1.6rem} .deal p{color:#5d5648;flex:1}
+  .deal .chip{background:#231a080f;color:#3d3526;white-space:nowrap;font-weight:600}
+  .deal .chips{display:flex;flex-wrap:wrap;gap:.4rem} .deal .chips .chip{margin:0}
+  @media (max-width:1100px){.modes.deal{grid-template-columns:repeat(3,minmax(0,1fr))}}
   .chip{display:inline-block;padding:.3rem .8rem;border-radius:999px;background:#ffffff14;font-size:.95rem;margin-right:.4rem}
 
   /* lobby */
@@ -283,7 +293,8 @@ function tableView(s) {
       ${avatar(p)}<span>${esc(p.name)}<b>${cards}</b></span></div>`; }).join('');
   return `<div class="felt">
       <div class="pile stock"><div class="ecard back"></div><div class="ecard back"></div><div class="ecard back"></div></div>
-      <div class="pile discard">${s.recent.map((c, k, all) => ecard(c, `disabled style="--r:${k === all.length - 1 ? 0 : spin(c, all.length - k)}deg"`)).join('')}</div></div>${seats}`;
+      <div class="pile discard">${s.recent.map((c, k, all) => ecard(c, `disabled style="--r:${k === all.length - 1 ? 0 : spin(c, all.length - k)}deg"`)).join('')}
+</div></div>${seats}`;
 }
 // Telephone Sketch: a chain reads left to right, alternating words and drawings, each popping in one after another
 const chainView = (chain, k) => `<div class="answers">${chain.map((e, i) => `<div class="answer rise" style="animation-delay:${i * 900}ms"><div class="stack">${e.strokes
@@ -412,9 +423,9 @@ function duel(s) {
 
 function menu(s) {
   return `<p class="kicker rise">Pick a game</p><h1 class="hero pop">Party <span>Night</span></h1>
-    <div class="modes">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 100}ms" onclick='send("pick",{game:"${g.id}"})'>
-      <div class="art" style="background:${MODES[g.id]?.bg || 'var(--card2)'}"><span>${MODES[g.id]?.art || '🎲'}</span></div>
-      <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></button>`).join('')}</div>
+    <div class="modes deal">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 70}ms;--acc:var(--${['gold', 'coral', 'mint', 'sky'][i % 4]});--tilt:${[-1.2, .8, -.4, 1.2, -.8][i % 5]}deg" onclick='send("pick",{game:"${g.id}"})'>
+      <div class="art"><span>${MODES[g.id]?.art || '🎲'}</span></div>
+      <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><div class="chips"><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></div></button>`).join('')}</div>
     <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${hostTag(s)} <button class="btn ghost recode" onclick="recode(this)">↻ New code</button>${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${s.settings.home === 'menu' ? '' : btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
 </div>`;
 }
