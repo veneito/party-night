@@ -63,6 +63,22 @@
   #hostp .pl{display:flex;align-items:center;gap:8px;padding:6px 0;font-weight:700}
   #hostp .pl .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #hostp .pl button{background:var(--card);border-radius:10px;padding:8px 10px}
+  /* Elemix: whose turn it is should be impossible to miss */
+  body.myturn::after{content:'';position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 0 6px var(--gold);animation:frame 1.6s ease-in-out infinite;z-index:40}
+  @keyframes frame{50%{opacity:.45}}
+  .eturn{text-align:center;font-size:24px;font-weight:800;padding:14px;border-radius:18px;background:var(--card);margin:4px 0 12px}
+  .eturn .av{font-size:15px;vertical-align:middle;margin-right:4px}
+  .eturn small{display:block;font-size:14px;font-weight:600;color:var(--mute);margin-top:4px}
+  .eturn.mine{background:var(--gold);color:#231a08;font-size:28px;box-shadow:0 4px 0 #a8761c} .eturn.mine small{color:#231a08b3}
+  .eorder{display:flex;align-items:center;gap:4px;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:none}
+  .eorder span{display:flex;align-items:center;gap:4px;padding:4px 8px 4px 4px;border-radius:999px;background:var(--card);font-size:13px;flex:none;opacity:.7}
+  .eorder span.now{background:var(--ink);color:#231a08;opacity:1;transform:scale(1.1)} .eorder span.me{outline:2px solid var(--gold)}
+  .eorder i{color:var(--mute);font-style:normal;flex:none}
+  .etable{display:flex;align-items:center;gap:16px;background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:14px;font-size:16px}
+  .etable p{margin:2px 0;font-size:14px} .eneed{font-size:26px;font-weight:800} .elog{color:var(--ink)!important;opacity:.8}
+  .tpop{position:fixed;inset:0;display:grid;place-items:center;z-index:60;pointer-events:none;background:#0e1f1acc;animation:tpop 1.6s ease-in forwards}
+  .tpop div{font-size:64px;font-weight:800;line-height:.95;text-align:center;color:#231a08;background:var(--gold);padding:28px 36px;border-radius:28px;box-shadow:0 8px 0 #a8761c;animation:pop .4s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes tpop{0%,70%{opacity:1}100%{opacity:0;visibility:hidden}}
   #c{text-transform:uppercase;letter-spacing:.4em;font-weight:800;text-align:center;font-size:26px}
 </style></head><body><div class="stage"></div>
 <div class="top" id="top"></div><div id="app"></div><div id="hostp"></div><div class="err" id="err" role="alert"></div>
@@ -206,10 +222,16 @@ const MODES = {
        <input id="a" maxlength="30" placeholder="Your guess" autocomplete="off" onkeydown="if (event.key === 'Enter') guess()"><button class="btn" onclick="guess()">Guess</button>`,
   },
   elemix: {
-    turn: (s, me) => { const mine = s.cur === id, hand = s.hands[id] || [];
-      return `<div class="kicker">${mine ? 'Your turn!' : `${esc(s.players.find(p => p.id === s.cur)?.name)}'s turn`}</div>
-        <div style="display:flex;align-items:center;gap:12px;font-size:13px">${ecard(s.top, 'disabled')}<p>Play <b>${ELEM[s.elem][0]} ${ELEM[s.elem][1]}</b> or a matching ${CARD_FACE[s.top.v]?.[1] ?? s.top.v}.<br>${esc(s.log)}</p></div>
+    turn: (s, me) => { const mine = s.cur === id, hand = s.hands[id] || [], order = s.order, n = order.length;
+      const next = order[(order.indexOf(s.cur) + s.dir + n) % n], curP = s.players.find(p => p.id === s.cur) || { av: 0, name: '?' };
+      const ping = turnPing(s, mine);
+      return `${ping}<div class="eturn ${mine ? 'mine' : ''}">${mine ? '🎴 Your turn!' : `${avatar(curP)} ${esc(curP.name)} is playing`}
+          <small>${mine ? (s.playable[id].some(Boolean) ? 'Tap a bright card, or draw one' : 'Nothing matches, draw a card') : next === id ? "You're up next, get ready!" : 'Wait for your turn'}</small></div>
+        <div class="eorder">${order.map(pid => { const p = s.players.find(x => x.id === pid); return p ? `<span class="${pid === s.cur ? 'now' : ''} ${pid === id ? 'me' : ''}">${avatar(p)}<b>${(s.hands[pid] || []).length}</b></span>` : ''; }).join(`<i>${s.dir > 0 ? '→' : '←'}</i>`)}</div>
+        <div class="etable">${ecard(s.top, 'disabled')}<div><div class="kicker">Play</div><div class="eneed">${ELEM[s.elem][0]} ${ELEM[s.elem][1]}</div>
+          <p>or a matching ${CARD_FACE[s.top.v]?.[1] ?? s.top.v}</p><p class="elog">${esc(s.log)}</p></div></div>
         <div id="wild"></div>
+        <label>Your hand · ${plural(hand.length, 'card')}</label>
         <div class="hand">${hand.map((c, i) => mine && s.playable[id][i] ? ecard(c, `onclick="playCard(${i},${c.e === 4})"`, 'yes') : ecard(c, 'disabled', mine ? 'no' : '')).join('')}</div>
         ${mine ? `<button class="btn ghost" onclick="send('draw')">Draw a card</button>` : ''}`; },
   },
@@ -232,6 +254,16 @@ const padHtml = `<canvas class="pad" width="1000" height="1000" style="width:100
   <div class="row">${['#231a08', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button class="pv" aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" onclick="pad.c='${c}'"></button>`).join('')}</div>
   <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost" onclick="pad.w=${w}">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
   <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div>`;
+let pingTurn = -1;
+function turnPing(s, mine) {
+  document.body.classList.toggle('myturn', mine);
+  if (!mine || pingTurn === s.turnNo) return '';
+  pingTurn = s.turnNo; try { navigator.vibrate?.([120, 60, 120]); } catch {}
+  // on <body>, not inside #app, so it covers the host tray too; removes itself once faded
+  const el = document.createElement('div'); el.className = 'tpop'; el.setAttribute('role', 'alert'); el.innerHTML = '<div>YOUR<br>TURN</div>';
+  document.body.append(el); setTimeout(() => el.remove(), 1700);
+  return '';
+}
 function playCard(i, wild) {
   if (!wild) return send('play', { i });
   document.getElementById('wild').innerHTML = `<label>Pick the new element</label><div class="row">${ELEM.slice(0, 4).map(([m, n], e) =>
@@ -304,7 +336,7 @@ function watch() {
     if (key === last) return paintPad(s); last = key; chosen = -1;
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
-    let html;
+    let html; document.body.classList.remove('myturn'); // Elemix turns it back on while it's your turn
     if (s.phase === 'menu') html = wait(me, `You're in, ${esc(me.name)}!`, s.host === id ? 'You pick the game, above.' : 'The host is picking a game.');
     else if (s.phase === 'lobby') html = wait(me, esc(G.name), 'Get ready. The host will start soon.');
     else if (s.phase === 'scores') html = wait(me, `#${rank} with ${me.score} pts`, `Round ${s.round + 1} of ${s.rounds} is coming up!`);
