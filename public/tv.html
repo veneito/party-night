@@ -15,7 +15,7 @@
   .qr.mini{width:4.6rem;height:4.6rem;border-radius:.75rem;padding:.2rem}
   .roompill .where{display:flex;flex-direction:column;line-height:1.2;font-size:.95rem}
   .roompill .where small{font-size:.75rem;text-transform:uppercase;letter-spacing:.14em;color:var(--gold);font-weight:700}
-  .roompill b{background:var(--gold);color:#1a1230;border-radius:999px;padding:.3rem 1rem;letter-spacing:.15em;font-size:1.4rem}
+  .roompill b{background:var(--gold);color:#231a08;border-radius:999px;padding:.3rem 1rem;letter-spacing:.15em;font-size:1.4rem}
   .botctl{display:flex;align-items:center;gap:.5rem;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.35rem;font-size:1.05rem;color:var(--mute)}
   .botctl span{padding:0 .4rem 0 .7rem} .botctl b{color:var(--ink)}
   .botctl button{width:2.3rem;height:2.3rem;border-radius:50%;background:var(--card2);font-size:1.3rem;font-weight:800;line-height:1}
@@ -48,13 +48,13 @@
   .qr{width:10.5rem;height:10.5rem;border-radius:1rem;background:#fff;padding:.4rem;flex:none}
   .join .joinurl{font-size:1.1rem} .join .joinurl b{font-size:1.35rem}
   .tiles{display:flex;gap:.4rem;margin:.7rem 0 0}
-  .tiles span{flex:1;aspect-ratio:1;display:grid;place-items:center;background:var(--gold);color:#1a1230;border-radius:1rem;font-size:2.4rem;font-weight:800;box-shadow:0 .4rem 0 #b8901a}
+  .tiles span{flex:1;aspect-ratio:1;display:grid;place-items:center;background:var(--gold);color:#231a08;border-radius:1rem;font-size:2.4rem;font-weight:800;box-shadow:0 .4rem 0 #a8761c}
   .settings{margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:.7rem 1rem}
   .setting{display:flex;flex-direction:column;gap:.45rem}
   .setting label{font-size:.85rem;color:var(--mute);text-transform:uppercase;letter-spacing:.12em}
   .seg{display:flex;background:var(--bg2);border-radius:999px;padding:.25rem}
   .seg button{flex:1;background:transparent;border-radius:999px;padding:.5rem .3rem;font-size:.95rem;white-space:nowrap;font-weight:700;color:var(--mute)}
-  .seg button.on{background:var(--ink);color:#1a1230}
+  .seg button.on{background:var(--ink);color:#231a08}
   .players-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1rem}
   .players-head h2{color:var(--ink);font-weight:800;margin:0}
   .count{font-size:1.6rem;color:var(--mute)} .count b{color:var(--gold)}
@@ -82,7 +82,7 @@
   .answer{background:var(--card);border-radius:1.3rem;padding:.9rem 1.2rem;font-size:1.3rem;font-weight:700;text-align:left;display:flex;gap:.8rem;align-items:flex-start}
   .answer .n{color:var(--gold);flex:none}
   .answer small{display:flex;align-items:center;gap:.5rem;margin-top:.6rem;font-size:1rem;color:var(--mute);font-weight:500}
-  .answer.win{background:var(--gold);color:#1a1230} .answer.win small{color:#1a1230}
+  .answer.win{background:var(--gold);color:#231a08} .answer.win small{color:#231a08}
   .stack{display:flex;flex-direction:column}
   .answers.top3{grid-template-columns:repeat(3,minmax(0,1fr));max-width:90rem;margin-top:1rem} .top3 .answer{font-size:1.3rem;padding:1rem 1.2rem}
 
@@ -104,15 +104,15 @@
   .ccard .in{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,1.4,.5,1)}
   .ccard.down .in{transform:rotateY(180deg)}
   .ccard .face,.ccard .back{position:absolute;inset:0;backface-visibility:hidden;border-radius:1rem;display:grid;place-items:center;box-shadow:0 .4rem 0 #0006}
-  .ccard .face{background:#fffaf0;color:#1a1230;font:700 2.2rem/1.1 'Segoe Print','Bradley Hand','Comic Sans MS',cursive;padding:.5rem;overflow-wrap:anywhere}
-  .ccard .face small{position:absolute;bottom:.4rem;font:500 .85rem system-ui;color:#6b6280}
+  .ccard .face{background:#fffaf0;color:#231a08;font:700 2.2rem/1.1 'Segoe Print','Bradley Hand','Comic Sans MS',cursive;padding:.5rem;overflow-wrap:anywhere}
+  .ccard .face small{position:absolute;bottom:.4rem;font:500 .85rem system-ui;color:#6f6656}
   .ccard .back{transform:rotateY(180deg);background:repeating-linear-gradient(45deg,var(--card2) 0 .7rem,var(--card) .7rem 1.4rem);font-size:2.6rem}
   .ccard.flip .in{animation:flip-up .7s cubic-bezier(.3,1.4,.5,1) both}
   @keyframes flip-up{from{transform:rotateY(180deg)}}
   .ccard.flipdown .in{animation:flip-down .7s cubic-bezier(.3,1.4,.5,1) both}
   @keyframes flip-down{from{transform:rotateY(0)}}
-  .ccard.wait .face{font:600 1.1rem/1.3 system-ui;color:#6b6280;align-content:center} .ccard.wait .av{font-size:1.1rem;margin:0 auto .2rem}
-  .ccard.x .back{color:var(--coral)} .ccard.x .face{color:#a39cb4;text-decoration:line-through var(--coral) .2rem}
+  .ccard.wait .face{font:600 1.1rem/1.3 system-ui;color:#6f6656;align-content:center} .ccard.wait .av{font-size:1.1rem;margin:0 auto .2rem}
+  .ccard.x .back{color:var(--coral)} .ccard.x .face{color:#a8a08e;text-decoration:line-through var(--coral) .2rem}
   .pairs{display:flex;flex-wrap:wrap;justify-content:center;gap:1rem 2.4rem}
   .pair{display:flex;align-items:center;gap:.6rem;font-size:2rem;color:var(--coral)}
   .spot{display:flex;flex-direction:column;align-items:center;gap:.3rem;font-size:1.6rem;font-weight:700}
@@ -129,7 +129,7 @@
   .step{display:flex;flex-direction:column;align-items:center;gap:.35rem;width:14rem}
   .step .av.xl{font-size:2em}
   .step .name{font-size:1.4rem;font-weight:800} .step .pts{color:var(--mute);font-size:1.1rem}
-  .step .block{transform-origin:bottom;animation:grow-up .8s cubic-bezier(.2,1.3,.4,1) both;animation-delay:inherit;width:100%;border-radius:1.2rem 1.2rem 0 0;display:grid;place-items:start center;padding-top:.4rem;font-size:2.4rem;font-weight:800;color:#1a1230}
+  .step .block{transform-origin:bottom;animation:grow-up .8s cubic-bezier(.2,1.3,.4,1) both;animation-delay:inherit;width:100%;border-radius:1.2rem 1.2rem 0 0;display:grid;place-items:start center;padding-top:.4rem;font-size:2.4rem;font-weight:800;color:#231a08}
   .rest{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;max-width:100rem}
   .rest .who{font-size:.95rem;padding:.2rem .8rem .2rem .2rem}
   .rest .who{opacity:1}
@@ -292,7 +292,7 @@ const skip = (label = 'Time\'s up') => `<div class="footer-actions">${btn('skip'
 
 const MODES = {
   punchline: {
-    art: '🎤', bg: 'linear-gradient(135deg,#ff5e7e,#a78bfa)',
+    art: '🎤', bg: 'linear-gradient(135deg,#ff5e7e,#5fb6e8)',
     words: s => `<div class="kicker rise">Round ${s.round} · Step 1 of 3</div><h1 class="pop">Give us some words!</h1>
       <h2 class="rise">Check your phone. Your words become other people's jokes.</h2>${strip(s)}${skip()}`,
     write: s => `<div class="kicker rise">Step 2 of 3</div><h1 class="pop">Write your jokes</h1>
@@ -300,7 +300,7 @@ const MODES = {
     duel: s => duel(s), reveal: s => duel(s),
   },
   quickwit: {
-    art: '⚡', bg: 'linear-gradient(135deg,#3ee6b5,#5ab0ff)',
+    art: '⚡', bg: 'linear-gradient(135deg,#8fd16a,#5ab0ff)',
     answer: s => `<div class="kicker rise">Round ${s.round}</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
       <h2 class="rise">Answer on your phone!</h2>${strip(s)}${skip()}`,
     vote: s => `<div class="kicker rise">Vote for the best</div><h1 class="pop" style="font-size:2.6rem">${esc(s.prompt)}</h1>
@@ -315,7 +315,7 @@ const MODES = {
     },
   },
   fakeout: {
-    art: '🕵️', bg: 'linear-gradient(135deg,#ffd23f,#ff5e7e)',
+    art: '🕵️', bg: 'linear-gradient(135deg,#f2b33d,#ff5e7e)',
     lie: s => `<div class="kicker rise">Round ${s.round} · Fill the blank</div><div class="prompt pop"><h1>${esc(s.fact)}</h1></div>
       <h2 class="rise">Write a believable fake on your phone</h2>${strip(s)}${skip()}`,
     pick: s => `<div class="kicker rise">One of these is real</div><h1 class="pop" style="font-size:2.6rem">${esc(s.fact)}</h1>
@@ -335,7 +335,7 @@ const MODES = {
         `<div class="who rise">${avatar(p)}${esc(p.name)} ${p.agree ? '👍' : '👎'} guessed ${p.guess}%</div>`).join('')}</div>`,
   },
   draw: {
-    art: '🎨', bg: 'linear-gradient(135deg,#4d96ff,#f472b6)',
+    art: '🎨', bg: 'linear-gradient(135deg,#4d96ff,#ef5b45)',
     draw: s => { const d = s.players.find(p => p.id === s.drawer) || { av: 0, name: '?' };
       return `<div class="kicker rise">Round ${s.round} · ${avatar(d)} ${esc(d.name)} is drawing</div>
       <div style="display:flex;gap:2rem;align-items:flex-start;justify-content:center">${sketch(s.strokes, 'live', '30rem')}
@@ -345,7 +345,7 @@ const MODES = {
       <h2 style="margin:.2rem 0">${esc(s.last.drawer)}'s drawing · ${s.last.got.length ? `got by ${s.last.got.map(esc).join(', ')}` : 'nobody got it!'}</h2>${sketch(s.last.strokes, 'last', '18rem')}`,
   },
   elemix: {
-    art: '🃏', bg: 'linear-gradient(135deg,#ff7a45,#8b5cf6)',
+    art: '🃏', bg: 'linear-gradient(135deg,#ff7a45,#8fd16a)',
     turn: s => `<div class="kicker rise">Round ${s.round}</div><div class="table3d" data-live="table">${tableView(s)}</div>
       <h2 data-live="log" class="rise" style="margin:.4rem 0">${esc(s.log) || 'First card is down. Go!'}<br><small style="font-size:.6em;color:var(--mute)">Now: ${ELEM[s.elem][0]} ${ELEM[s.elem][1]} · ${s.dir > 0 ? '↻ Clockwise' : '↺ Counter-clockwise'} · ${s.stock} cards left</small></h2>${skip('Skip turn')}`,
     results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">${esc(s.last.winner)} emptied their hand!</h1>
@@ -381,7 +381,7 @@ const MODES = {
         ccard(`<span class="face">${esc(c.text)}<small>${esc(c.name)}</small></span>`, '✕', 'x flip', i)).join('<b>=</b>')}✕</div>`).join('')}</div>` : ''}`; },
   },
   oddone: {
-    art: '🎭', bg: 'linear-gradient(135deg,#a78bfa,#3ee6b5)',
+    art: '🎭', bg: 'linear-gradient(135deg,#5fb6e8,#8fd16a)',
     clue: s => `<div class="kicker rise">Round ${s.round}</div><h1 class="pop">Everyone has the same secret word…</h1>
       <h2 class="rise">…except one of you. Give a one-word clue on your phone.</h2>${strip(s)}${skip()}`,
     accuse: s => `<div class="kicker rise">Vote on your phone</div><h1 class="pop">Who's the odd one out?</h1>
@@ -394,7 +394,7 @@ const MODES = {
         <small>${esc(c.name)} · ${plural(c.votes, 'vote')}</small></div></div>`).join('')}</div>`,
   },
 };
-MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg,#5ab0ff,#a78bfa)' };
+MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg,#5ab0ff,#5fb6e8)' };
 
 function duel(s) {
   const [a, b] = s.duel, rev = s.phase === 'reveal', w = rev ? (a.votes > b.votes ? 0 : b.votes > a.votes ? 1 : -1) : -1;

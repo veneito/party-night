@@ -52,7 +52,7 @@ module.exports = {
       if (id !== g.drawer) return 'Not your turn to draw';
       const p = Array.isArray(a.p) ? a.p.slice(0, MAX_POINTS * 2).map(n => Math.max(0, Math.min(1000, Math.round(Number(n) || 0)))) : [];
       if (p.length < 2 || g.strokes.length >= MAX_STROKES) return 'Not now';
-      g.strokes.push({ c: /^#[0-9a-f]{6}$/i.test(a.c) ? a.c : '#1a1230', w: [4, 10, 24].includes(a.w) ? a.w : 10, p });
+      g.strokes.push({ c: /^#[0-9a-f]{6}$/i.test(a.c) ? a.c : '#231a08', w: [4, 10, 24].includes(a.w) ? a.w : 10, p });
     } else if (a.type === 'undo' || a.type === 'wipe') {
       if (id !== g.drawer) return 'Not your turn to draw';
       if (a.type === 'undo') g.strokes.pop(); else g.strokes = [];

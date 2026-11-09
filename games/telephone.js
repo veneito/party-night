@@ -41,7 +41,7 @@ module.exports = {
   tag: 'Drawing · 10 min',
   bot(g, id) {
     if (g.phase === 'tstart' || g.phase === 'tguess') return { type: 'entry', text: h.pick(STARTERS) };
-    if (g.phase === 'tdraw') return { type: 'entry', strokes: [{ c: '#1a1230', w: 10, p: Array.from({ length: 12 }, () => Math.floor(Math.random() * 1000)) }] };
+    if (g.phase === 'tdraw') return { type: 'entry', strokes: [{ c: '#231a08', w: 10, p: Array.from({ length: 12 }, () => Math.floor(Math.random() * 1000)) }] };
     if (g.phase === 'tvote') return { type: 'tvote', chain: Math.floor(Math.random() * g.chains.length) };
   },
   init(helpers) { h = helpers; },
@@ -71,7 +71,7 @@ module.exports = {
       if (!drawing) return 'Not now';
       const pad = g.pads[id] ||= [], p = Array.isArray(a.p) ? a.p.slice(0, MAX_POINTS * 2).map(n => Math.max(0, Math.min(1000, Math.round(Number(n) || 0)))) : [];
       if (p.length < 2 || pad.length >= MAX_STROKES) return 'Not now';
-      pad.push({ c: /^#[0-9a-f]{6}$/i.test(a.c) ? a.c : '#1a1230', w: [4, 10, 24].includes(a.w) ? a.w : 10, p });
+      pad.push({ c: /^#[0-9a-f]{6}$/i.test(a.c) ? a.c : '#231a08', w: [4, 10, 24].includes(a.w) ? a.w : 10, p });
     } else if (a.type === 'undo' || a.type === 'wipe') {
       if (!drawing) return 'Not now';
       if (a.type === 'undo') g.pads[id]?.pop(); else g.pads[id] = [];
