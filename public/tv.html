@@ -42,7 +42,7 @@
   .modes.deal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.6rem 1.4rem;max-width:100rem;width:100%;margin:1.4rem 0 1.4rem}
   .deal .mode{width:auto;background:#ffffff;color:#1b1e22;border-radius:1.2rem;padding:1.1rem 1.2rem 1.2rem;rotate:var(--tilt);border-top:.55rem solid var(--acc);box-shadow:0 .45rem 0 #0006;transition:transform .2s,rotate .2s}
   .deal .mode:hover,.deal .mode:focus-visible{rotate:0deg;transform:translateY(-.5rem)}
-  .deal .art{width:3.8rem;height:3.8rem;border-radius:50%;background:var(--acc);font-size:2.1rem;margin-bottom:.7rem;box-shadow:inset 0 -.25rem 0 #0002}
+  .deal .art{width:3.8rem;height:3.8rem;border-radius:50%;background:var(--acc);border:.28rem dashed #ffffffb3;outline:.2rem solid var(--acc);font-size:2.1rem;margin-bottom:.7rem;box-shadow:inset 0 -.25rem 0 #0002}
   .deal .body{padding:0;flex:1;display:flex;flex-direction:column}
   .deal h3{font-size:1.6rem} .deal p{color:#5c6670;flex:1}
   .deal .chip{background:#1b1e220f;color:#3a424b;white-space:nowrap;font-weight:600}
@@ -265,6 +265,8 @@ const hostTag = s => { const h = s.players.find(p => p.id === s.host); return h 
 // done chips bounce once per screen, not on every refresh
 const dk = (s, p) => ['d', s.phase, s.round, s.duelNo, p.id].join('|');
 // players pop in once, not every time the screen refreshes
+// casino-chip accents for the game menu, staggered so no column repeats a colour
+const CHIPS = ['#c8202f', '#1f5fbf', '#178a4a', '#24282d', '#d9a21b'];
 const once = (k, cls) => seen.has(k) ? '' : (seen.add(k), cls);
 // Lone Clue: a tilted clue card (face, back) and the guesser in the spotlight
 const ccard = (face, back, cls, i) => `<div class="ccard ${cls}" style="--tilt:${[-3, 2, -1, 3, -2, 1][i % 6]}deg;animation-delay:${i * 80}ms"><div class="in" style="animation-delay:${i * 120}ms">${face}<span class="back">${back}</span></div></div>`;
@@ -428,7 +430,7 @@ function duel(s) {
 
 function menu(s) {
   return `<p class="kicker rise">Pick a game</p><h1 class="hero pop">Party <span>Night</span></h1>
-    <div class="modes deal">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 70}ms;--acc:var(--${['gold', 'coral', 'mint', 'sky'][i % 4]});--tilt:${[-1.2, .8, -.4, 1.2, -.8][i % 5]}deg" onclick='send("pick",{game:"${g.id}"})'>
+    <div class="modes deal">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 70}ms;--acc:${CHIPS[(i + Math.floor(i / 5) * 2) % 5]};--tilt:${[-1.2, .8, -.4, 1.2, -.8][i % 5]}deg" onclick='send("pick",{game:"${g.id}"})'>
       <div class="art"><span>${MODES[g.id]?.art || '🎲'}</span></div>
       <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><div class="chips"><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></div><span class="pip" aria-hidden="true">${MODES[g.id]?.art || '🎲'}</span></button>`).join('')}</div>
     <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${hostTag(s)} <button class="btn ghost recode" onclick="recode(this)">↻ New code</button>${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${s.settings.home === 'menu' ? '' : btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
