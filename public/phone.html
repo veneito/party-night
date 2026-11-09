@@ -19,6 +19,8 @@
   .btn{width:100%;font-size:19px;margin-top:18px;padding:16px}
   .opt{display:block;width:100%;text-align:left;background:var(--card);border-radius:16px;padding:16px 18px;margin:10px 0;font-size:17px;line-height:1.35;
     border:2px solid transparent;transition:transform .1s,border-color .15s}
+  #app .opt{animation:rise .4s ease-out both} #app .opt:nth-of-type(2){animation-delay:.05s} #app .opt:nth-of-type(3){animation-delay:.1s} #app .opt:nth-of-type(4){animation-delay:.15s} #app .opt:nth-of-type(n+5){animation-delay:.2s}
+  .opt.on{animation:done-pop .35s cubic-bezier(.2,1.6,.4,1)}
   .opt:active{transform:scale(.98)} .opt.on{border-color:var(--gold);background:var(--card2)}
   .opt b{color:var(--gold)}
   .err{color:var(--coral);min-height:22px;font-weight:700;text-align:center;margin-top:10px}
@@ -26,13 +28,35 @@
   .wait .av{font-size:44px;animation:bob 2.4s ease-in-out infinite}
   .logo{font-size:44px;font-weight:800;letter-spacing:-.04em;text-align:center;margin:8vh 0 6px}
   .logo span{color:var(--gold)}
-  .avs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:8px 0}
-  .avs button{aspect-ratio:1;border-radius:14px;background:var(--card);font-size:26px;border:2px solid transparent;padding:0}
-  .avs button.on{border-color:var(--gold);background:var(--card2)}
+  .sndbar{display:flex;gap:8px;margin-top:8px}
+  .sndbar select{flex:1;font:inherit;padding:10px 12px;border-radius:12px;border:0;background:var(--card);color:var(--ink)}
+  .sndbar .pv{padding:0 16px;border-radius:12px;background:var(--card2);font-weight:800}
+  .sndbar .add{background:var(--sky);color:#0b1a30}
+  .avs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:10px 0 4px}
+  .avs button,.avs .up{aspect-ratio:1;min-width:0;margin:0;padding:0;border-radius:16px;background:var(--card);border:2px solid transparent;
+    display:grid;place-items:center;font-size:clamp(22px,7.5vw,32px);line-height:1;transition:transform .15s cubic-bezier(.2,1.6,.4,1),background .15s}
+  .avs button:active,.avs .up:active{transform:scale(.9)}
+  .avs button.on{border-color:var(--gold);transform:scale(1.06);box-shadow:0 4px 0 #0005}
   .avs button:disabled{opacity:.2}
+  /* photo tile: dashed until a photo is in, caption under the camera */
+  .avs .up{background:var(--card2);border:2px dashed #ffffff40;cursor:pointer;overflow:hidden;text-transform:none;letter-spacing:0;color:var(--mute)}
+  .avs .up small{display:block;font-size:10px;font-weight:800;margin-top:2px}
+  .avs .up.on{border:2px solid var(--gold)} .avs .up img{width:100%;height:100%;object-fit:cover}
+  #hostp{max-width:480px;margin:12px auto;border-bottom:1px solid var(--line);padding-bottom:10px}
+  #app+#hostp{border-bottom:0;border-top:1px solid var(--line);margin-top:28px;padding-top:6px}
+  #hostp:empty{display:none}
+  #hostp .row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  #hostp .row .btn{flex:1;width:auto;margin:0;padding:12px 14px;font-size:16px;min-width:40%}
+  #hostp .seg{display:flex;background:var(--bg2);border-radius:999px;padding:3px;margin-bottom:6px}
+  #hostp .seg button{flex:1;background:transparent;border-radius:999px;padding:9px 4px;font-weight:700;color:var(--mute);font-size:14px}
+  #hostp .seg button.on{background:var(--ink);color:#1a1230}
+  #hostp summary{cursor:pointer;font-weight:800;padding:10px 0}
+  #hostp .pl{display:flex;align-items:center;gap:8px;padding:6px 0;font-weight:700}
+  #hostp .pl .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #hostp .pl button{background:var(--card);border-radius:10px;padding:8px 10px}
   #c{text-transform:uppercase;letter-spacing:.4em;font-weight:800;text-align:center;font-size:26px}
 </style></head><body><div class="stage"></div>
-<div class="top" id="top"></div><div id="app"></div><div class="err" id="err" role="alert"></div>
+<div class="top" id="top"></div><div id="app"></div><div id="hostp"></div><div class="err" id="err" role="alert"></div>
 <script src="/common.js"></script>
 <script>
 const app = document.getElementById('app'), errEl = document.getElementById('err'), topEl = document.getElementById('top');
@@ -41,10 +65,12 @@ const q = new URLSearchParams(location.search), ns = q.get('p') || '';
 const store = (k, v) => v === undefined ? localStorage[k + ns] : (localStorage[k + ns] = v);
 // id survives refresh so a phone that reloads keeps its seat
 const id = store('pid') || store('pid', Math.random().toString(36).slice(2));
+let drawnAt = 0;
 let room = q.get('room') || store('room') || '', es, last = '', chosen = -1;
 async function send(type, extra = {}) {
   const r = await fetch('/action', { method: 'POST', body: JSON.stringify({ id, room, type, ...extra }) });
   errEl.textContent = r.ok ? '' : (await r.json()).error;
+  if (!r.ok) { errEl.classList.remove('shake'); void errEl.offsetWidth; errEl.classList.add('shake'); }
   if (r.ok) { sfx('tap'); navigator.vibrate?.(15); } else sfx('leave');
   return r.ok;
 }
@@ -54,30 +80,63 @@ function joinScreen() {
   app.innerHTML = `<div class="logo pop">Party <span>Night</span></div><p style="text-align:center">Enter the code on the TV</p>
     <label for="c">Room code</label><input id="c" maxlength="4" placeholder="ABCD" value="${esc(room)}" autocapitalize="characters" autocomplete="off">
     <label for="n">Your name</label><input id="n" maxlength="16" placeholder="Name" value="${esc(q.get('name') || store('name') || '')}" autocomplete="nickname">
-    <label>Pick your avatar</label>${avGrid(Number(store('av') ?? -1), [], 'pickAv')}
+    <label>Pick your avatar</label>${avGrid(Number(store('av') ?? -1), [], 'pickAv', photo)}
     <button class="btn" onclick="join()">Let's go!</button>`;
 }
 async function join() {
   room = c.value.trim().toUpperCase(); store('name', n.value);
   const av = Number(store('av') ?? -1);
-  if (await send('join', { text: n.value, av })) { store('room', room); watch(); }
+  if (await send('join', { text: n.value, av })) { store('room', room); if (photo) await send('photo', { data: photo }); watch(); }
 }
 // avatar grid; `taken` are greyed out, `fn` handles a tap
-const avGrid = (cur, taken, fn) => `<div class="avs">${AV_EMOJI.map((e, i) =>
-  `<button class="${i === cur ? 'on' : ''}" style="${i === cur ? `background:${AV_COLOR[i]}` : ''}" aria-label="Avatar ${i + 1}" ${taken.includes(i) ? 'disabled' : ''} onclick="${fn}(${i})">${e}</button>`).join('')}</div>`;
-function pickAv(i) { store('av', i); document.querySelectorAll('.avs button').forEach((b, j) => { b.classList.toggle('on', j === i); b.style.background = j === i ? AV_COLOR[i] : ''; }); }
-async function changeAv(i) { if (await send('avatar', { av: i })) store('av', i); }
+const avGrid = (cur, taken, fn, ph) => `<div class="avs"><label class="up ${ph ? 'on' : ''}" aria-label="Upload a photo">${ph ? `<img src="${esc(ph)}" alt="">` : '<span>📷<small>Photo</small></span>'}<input type="file" accept="image/*" hidden onchange="upload(this.files[0])"></label>
+  ${ph ? `<button aria-label="Remove photo" onclick="setPhoto('')">🚫</button>` : ''}${AV_EMOJI.map((e, i) =>
+  `<button class="${i === cur && !ph ? 'on' : ''}" style="${i === cur && !ph ? `background:${AV_COLOR[i % AV_COLOR.length]}` : ''}" data-i="${i}" aria-label="Avatar ${i + 1}" ${taken.includes(i) ? 'disabled' : ''} onclick="${fn}(${i})">${e}</button>`).join('')}</div>`;
+// Photo avatars: cropped to a centred square and shrunk to a small JPEG on the phone, so uploads are tiny.
+// Kept only in memory here and on the server, so it's gone once the player leaves.
+let photo = '';
+async function upload(file) {
+  if (!file) return;
+  try {
+    const img = await createImageBitmap(file), n = Math.min(img.width, img.height), c = document.createElement('canvas');
+    c.width = c.height = 160;
+    c.getContext('2d').drawImage(img, (img.width - n) / 2, (img.height - n) / 2, n, n, 0, 0, 160, 160);
+    setPhoto(c.toDataURL('image/jpeg', .8));
+  } catch { errEl.textContent = "Couldn't read that picture"; }
+}
+async function setPhoto(data) {
+  if (es && room && store('room') === room) { if (await send('photo', { data })) photo = data; }
+  else { photo = data; redrawJoinGrid(); } // not joined yet: show it, send it after joining
+}
+// only the grid, so the code and name already typed stay put
+function redrawJoinGrid() { const g = app.querySelector('.avs'); if (g) g.outerHTML = avGrid(Number(store('av') ?? -1), [], 'pickAv', photo);
+}
+function pickAv(i) { if (photo) { photo = ''; redrawJoinGrid(); } store('av', i); document.querySelectorAll('.avs [data-i]').forEach(b => { const on = +b.dataset.i === i; b.classList.toggle('on', on); b.style.background = on ? AV_COLOR[i % AV_COLOR.length] : ''; }); }
+async function rename() { const v = nm.value.trim(); if (v && await send('join', { text: v })) store('name', v); }
+async function changeAv(i) { if (await send('avatar', { av: i })) { store('av', i); if (photo) setPhoto(''); } }
 // Enter / "Go" on the phone keyboard: jump to the next empty box, or press the screen's main button.
 // (Never return false from a key handler here: that blocks typing.)
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
   e.preventDefault();
+  // A held or double-tapped Enter used to submit the next screen too (e.g. the second joke, blank).
+  // So: ignore Enter right after a new screen appears, and never submit from an empty box.
+  if (e.repeat || Date.now() - drawnAt < 1000 || !e.target.value.trim()) return;
+  if (e.target.id === 'nm') return rename();
   const empty = [...app.querySelectorAll('input')].find(i => !i.value.trim() && i !== e.target);
   if (empty) empty.focus(); else app.querySelector('.btn')?.click();
 });
-function leave() { room = ''; store('room', ''); joinScreen(); }
+function leave() { document.getElementById('hostp').innerHTML = ''; room = ''; store('room', ''); joinScreen(); }
 function choose(i) { chosen = i; document.querySelectorAll('.opt').forEach((b, j) => b.classList.toggle('on', j === i)); document.getElementById('p')?.focus(); }
 const sendWords = () => send('words', { words: [...document.querySelectorAll('.w')].map(i => i.value) });
+// sound picker under an answer box: picking one previews it, + drops <name> in at the cursor
+const soundBar = inp => `<div class="sndbar"><select aria-label="Sound effect" onchange="sfx(this.value)">${Object.keys(SOUNDS).map(n => `<option>${n}</option>`).join('')}</select>
+  <button class="pv" aria-label="Preview sound" onclick="sfx(this.previousElementSibling.value)">▶</button><button class="pv add" onclick="addSound('${inp}', this.parentNode.firstElementChild.value)">+ Add</button></div>`;
+function addSound(inp, n) {
+  const el = document.getElementById(inp), at = el.selectionStart ?? el.value.length, tag = `<${n}>`;
+  if (el.value.length + tag.length > el.maxLength) return errEl.textContent = 'No room for another sound';
+  el.value = el.value.slice(0, at) + tag + el.value.slice(el.selectionEnd ?? at); el.focus(); el.setSelectionRange(at + tag.length, at + tag.length);
+}
 const wait = (me, title, msg = 'Eyes on the TV!') => `<div class="wait">${avatar(me, 'xl')}<h2 class="pop">${title}</h2><p>${msg}</p></div>`;
 
 // one screen builder per game mode and phase
@@ -88,19 +147,69 @@ const MODES = {
         `<label for="w${i}">${esc(c)}</label><input id="w${i}" class="w" maxlength="30" autocomplete="off">`).join('')}<button class="btn" onclick="sendWords()">Send words</button>`,
     write: (s, me) => me.done || !s.opts[id] ? wait(me, 'Jokes written!', 'Waiting for the others…') :
       `<div class="kicker">Step 2 of 3</div><h2>Pick a setup</h2>${s.opts[id].map((o, i) => `<button class="opt" onclick="choose(${i})">${esc(o)}…</button>`).join('')}
-       <label for="p">Punchline</label><input id="p" maxlength="100" placeholder="…and that's why" autocomplete="off"><button class="btn" onclick="send('joke',{pick:chosen,text:p.value})">Tell it</button>`,
+       <label for="p">Punchline</label><input id="p" maxlength="100" placeholder="…and that's why" autocomplete="off">${soundBar('p')}<button class="btn" onclick="send('joke',{pick:chosen,text:p.value})">Tell it</button>`,
     duel: (s, me) => me.done ? wait(me, s.duel ? 'Vote locked' : 'Waiting…', 'Eyes on the TV!') :
       `<div class="kicker">Joke-off ${s.duelNo} of ${s.duelCount}</div><h2>Which is funnier?</h2>${s.duel.map((j, i) =>
-        `<button class="opt" onclick="send('vote',{index:${i}})">${esc(j.setup)} <b>${esc(j.punch)}</b></button>`).join('')}`,
+        `<button class="opt" onclick="send('vote',{index:${i}})">${esc(j.setup)} <b>${withSounds(j.punch)}</b></button>`).join('')}`,
   },
   quickwit: {
     answer: (s, me) => me.done ? wait(me, 'Answer locked in!') :
-      `<div class="kicker">Round ${s.round}</div><h2>${esc(s.prompt)}</h2><input id="a" maxlength="80" placeholder="Your answer" autocomplete="off">
+      `<div class="kicker">Round ${s.round}</div><h2>${esc(s.prompt)}</h2><input id="a" maxlength="80" placeholder="Your answer" autocomplete="off">${soundBar('a')}
        <button class="btn" onclick="send('answer',{text:a.value})">Send</button>`,
     vote: (s, me) => me.done ? wait(me, 'Vote cast!') :
-      `<div class="kicker">Vote</div><h2>Pick the best answer</h2>${s.list.map((a, i) => `<button class="opt" onclick="send('vote',{index:${i}})">${esc(a.text)}</button>`).join('')}`,
+      `<div class="kicker">Vote</div><h2>Pick the best answer</h2>${s.list.map((a, i) => `<button class="opt" onclick="send('vote',{index:${i}})">${withSounds(a.text)}</button>`).join('')}`,
+  },
+  fakeout: {
+    lie: (s, me) => me.done ? wait(me, 'Fake locked in!') :
+      `<div class="kicker">Fill the blank with a fake</div><h2>${esc(s.fact)}</h2><input id="a" maxlength="40" placeholder="Something believable" autocomplete="off">
+       <button class="btn" onclick="send('lie',{text:a.value})">Send fake</button>`,
+    pick: (s, me) => me.done ? wait(me, 'Pick locked!') :
+      `<div class="kicker">Which one is real?</div><h2>${esc(s.fact)}</h2>${s.list.map((a, i) => `<button class="opt" onclick="send('guess',{index:${i}})">${esc(a.text)}</button>`).join('')}`,
+  },
+  hottake: {
+    take: (s, me) => me.done ? wait(me, 'Take locked in!') :
+      `<div class="kicker">Hot take</div><h2>${esc(s.take)}</h2><button class="opt" onclick="choose(0)">👍 <b>Agree</b></button><button class="opt" onclick="choose(1)">👎 <b>Disagree</b></button>
+       <label for="g">How much of the room agrees? <b id="gv" style="color:var(--gold)">50%</b></label><input id="g" type="range" min="0" max="100" step="5" value="50" oninput="gv.textContent = this.value + '%'" style="padding:0;accent-color:var(--gold)">
+       <button class="btn" onclick="send('take',{agree:chosen < 0 ? null : chosen === 0, guess:+g.value})">Lock it in</button>`,
+  },
+  oddone: {
+    clue: (s, me) => me.done ? wait(me, 'Clue sent!', 'Act natural…') :
+      `<div class="kicker">Your secret word</div><h2 style="font-size:40px;color:var(--gold)">${esc(s.secret[id])}</h2><p>Everyone has the same word except one player. Maybe it's you!</p>
+       <input id="a" maxlength="20" placeholder="One-word clue" autocomplete="off"><button class="btn" onclick="send('clue',{text:a.value})">Send clue</button>`,
+    accuse: (s, me) => me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">Vote</div><h2>Who's the odd one out?</h2>${s.clues.filter(c => c.id !== id).map(c => { const p = s.players.find(x => x.id === c.id) || { av: 0, name: '?' };
+        return `<button class="opt" data-id="${esc(c.id)}" onclick="send('accuse',{who:this.dataset.id})">${avatar(p)} ${esc(p.name)}: <b>${esc(c.text)}</b></button>`; }).join('')}`,
   },
 };
+MODES.caption = MODES.quickwit;
+
+// The host's phone gets the TV's controls, so nobody needs a mouse on the TV.
+// It lives outside #app and redraws on every update; it has no text boxes, so nothing typed gets wiped.
+function hostPanel(s, me) {
+  const el = document.getElementById('hostp');
+  if (s.host !== id) return el.innerHTML = '';
+  // between games the controls are the main thing, so they go on top; mid-game the answer screen comes first
+  if (['menu', 'lobby', 'scores', 'results'].includes(s.phase)) app.before(el); else app.after(el);
+  const open = el.querySelector('details')?.open, G = s.games.find(x => x.id === s.game), n = s.players.length, nb = s.players.filter(p => p.bot).length;
+  const b = (label, js, cls = '') => `<button class="btn ${cls}" onclick="${js}">${label}</button>`;
+  let h = `<div class="kicker">👑 You're the host</div>`;
+  if (s.phase === 'menu') h += `${s.settings.home === 'menu' ? '' : `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}</div>`}<label>Pick a game</label>${s.games.map(g => `<button class="opt" onclick="send('pick',{game:'${g.id}'})"><b>${esc(g.name)}</b><br>${esc(g.desc)}</button>`).join('')}`;
+  else if (s.phase === 'lobby') h += G.settings.map(def => `<label>${esc(def.label)}</label><div class="seg">${def.options.map(([v, l]) =>
+      `<button class="${s.settings[def.key] === v ? 'on' : ''}" onclick='send("set",{key:"${def.key}",value:${JSON.stringify(v)}})'>${esc(l)}</button>`).join('')}</div>`).join('')
+    + `<div class="row">${n + s.pendingBots >= G.min ? b('▶ Start game', "send('start')") : `<p>Need ${G.min - n} more player${G.min - n === 1 ? '' : 's'}</p>`}</div>`;
+  else if (s.phase === 'scores') h += `<div class="row">${b(`▶ Round ${s.round + 1}`, "send('skip')")}</div>`;
+  else if (s.phase === 'results') h += `<div class="row">${b('↻ Play again', "send('start')")}</div>`;
+  else if (s.phase === 'gamevote') h += `<div class="row">${b('⏭ Pick now', "send('skip')")}${b('← Straight to menu', "send('menu')", 'ghost')}</div>`;
+  else h += `<div class="row">${b(s.phase === 'reveal' ? 'Next ▶' : "⏭ Time's up", "send('skip')", 'ghost')}</div>`;
+  const home = s.settings.home !== 'menu' && !['lobby', 'gamevote'].includes(s.phase);
+  if (s.game && !['lobby', 'menu'].includes(s.phase)) h += `<label>Home button</label><div class="seg">${[['vote', 'Players vote next'], ['menu', 'Back to menu']].map(([v, l]) =>
+    `<button class="${(s.settings.home || 'vote') === v ? 'on' : ''}" onclick="send('set',{key:'home',value:'${v}'})">${l}</button>`).join('')}</div>`;
+  h += `<div class="row">${!['menu', 'gamevote'].includes(s.phase) ? b(home ? '🏠 Home (vote)' : '🏠 Menu', "send('menu')", 'ghost') : ''}${b(`🤖 − (${nb + s.pendingBots})`, "send('unbot',{n:1})", 'ghost')}${b('🤖 +', "send('bots',{n:1})", 'ghost')}</div>`;
+  h += `<details ${open ? 'open' : ''}><summary>Players (${n})</summary>${s.players.map(p => `<div class="pl">${avatar(p)}<span class="nm">${esc(p.name)}${p.id === s.host ? ' 👑' : ''}</span>
+    ${p.bot || p.id === s.host ? '' : `<button data-id="${esc(p.id)}" onclick="send('host',{who:this.dataset.id})">👑 Make host</button>`}
+    ${p.id === id ? '' : `<button data-id="${esc(p.id)}" onclick="if (confirm('Remove this player?')) send('kick',{who:this.dataset.id})">✕</button>`}</div>`).join('')}</details>`;
+  el.innerHTML = h;
+}
 
 function watch() {
   es = new EventSource('/events?room=' + room);
@@ -112,23 +221,29 @@ function watch() {
   es.onmessage = e => {
     const s = JSON.parse(e.data), me = s.players.find(p => p.id === id);
     if (!me) return leave(); // removed from the room
-    topEl.innerHTML = `<div class="me">${avatar(me)}${esc(me.name)}</div><div class="pts">${me.score} pts</div><div class="timer" id="timer" hidden><b></b></div>`;
+    hostPanel(s, me);
+    topEl.innerHTML = `<div class="me">${avatar(me)}${esc(me.name)}${s.host === id ? ' 👑' : ''}</div><div class="pts">${me.score} pts</div><div class="timer" id="timer" hidden><b></b></div>`;
     setTimerFrom(s, document.getElementById('timer'));
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
-    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken : ''}`;
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
     if (key === last) return; last = key; chosen = -1;
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
-    if (s.phase === 'menu') app.innerHTML = wait(me, `You're in, ${esc(me.name)}!`, 'The host is picking a game.');
-    else if (s.phase === 'lobby') app.innerHTML = wait(me, esc(G.name), 'Get ready. The host will start soon.');
-    else if (s.phase === 'scores') app.innerHTML = wait(me, `#${rank} with ${me.score} pts`, `Round ${s.round + 1} of ${s.rounds} is coming up!`);
-    else if (s.phase === 'results') app.innerHTML = wait(me, `#${rank} with ${me.score} pts`, rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!');
-    else app.innerHTML = screen ? screen(s, me) : wait(me, 'Watch the TV');
+    let html;
+    if (s.phase === 'menu') html = wait(me, `You're in, ${esc(me.name)}!`, s.host === id ? 'You pick the game, above.' : 'The host is picking a game.');
+    else if (s.phase === 'lobby') html = wait(me, esc(G.name), 'Get ready. The host will start soon.');
+    else if (s.phase === 'scores') html = wait(me, `#${rank} with ${me.score} pts`, `Round ${s.round + 1} of ${s.rounds} is coming up!`);
+    else if (s.phase === 'gamevote') html = me.done ? wait(me, 'Vote cast!', 'Eyes on the TV!') :
+      `<div class="kicker">What's next?</div><h2>Vote for the next game</h2>${G ? `<button class="opt" onclick="send('gvote',{game:'replay'})">↻ <b>Play ${esc(G.name)} again</b></button>` : ''}${s.games.filter(g => g.id !== s.game).map(g =>
+        `<button class="opt" onclick="send('gvote',{game:'${g.id}'})"><b>${esc(g.name)}</b><br>${esc(g.desc)}</button>`).join('')}`;
+    else if (s.phase === 'results') html = wait(me, `#${rank} with ${me.score} pts`, rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!');
+    else html = screen ? screen(s, me) : wait(me, 'Watch the TV');
     // between games players can swap avatars
-    if (between) app.innerHTML += `<label>Change avatar</label>${avGrid(me.av, taken, 'changeAv')}`;
-    app.querySelector('input')?.focus();
+    if (between) html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
+      <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv', me.ph)}`;
+    swap(app, html, () => { app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); });
   };
 }
 if (room && q.get('auto') && q.get('name')) send('join', { text: q.get('name') }).then(ok => { if (ok) { store('room', room); watch(); } else joinScreen(); });

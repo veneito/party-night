@@ -2,7 +2,7 @@
 // Phones on the same Wi-Fi join at the address shown on screen.
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
-const { start } = require('./server.js');
+const { start, stop } = require('./server.js');
 
 // sound effects and read-aloud jokes should play without a click first
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -10,7 +10,7 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 // a second launch just focuses the first window instead of starting another server
 if (!app.requestSingleInstanceLock()) app.quit();
 
-let win;
+let win, updating = false; // while an update installs, let the updater quit the app its own way
 app.whenReady().then(async () => {
   let port;
   try { port = await start(); } catch (e) {
@@ -38,7 +38,14 @@ app.whenReady().then(async () => {
   win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
 });
 app.on('second-instance', () => { if (win) { win.isMinimized() && win.restore(); win.focus(); } });
-app.on('window-all-closed', () => app.quit());
+// Closing the window ends everything: the game server and the app process. Open phone connections
+// could otherwise keep it alive in the background, holding the port for the next launch.
+app.on('window-all-closed', async () => {
+  if (updating) { await stop().catch(() => {}); return; }
+  setTimeout(() => app.exit(0), 2000); // never hang on the way out
+  try { await stop(); } catch {}
+  app.exit(0);
+});
 
 // Updates come from GitHub releases. The app asks first (popup on the TV screen); on "Update" it downloads,
 // installs silently and reopens itself.
@@ -54,9 +61,8 @@ function setupUpdates() {
   autoUpdater.on('update-available', i => tell({ state: 'available', version: i.version }));
   autoUpdater.on('update-not-available', () => tell({ state: 'none' }));
   autoUpdater.on('download-progress', p => tell({ state: 'progress', percent: Math.round(p.percent) }));
-  autoUpdater.on('update-downloaded', () => { tell({ state: 'installing' }); setTimeout(() => autoUpdater.quitAndInstall(true, true), 1500); });
-  autoUpdater.on('error', e => tell({ state: 'error', message: e.message.split('
-')[0] }));
+  autoUpdater.on('update-downloaded', () => { updating = true; tell({ state: 'installing' }); setTimeout(() => autoUpdater.quitAndInstall(true, true), 1500); });
+  autoUpdater.on('error', e => tell({ state: 'error', message: e.message.split('\n')[0] }));
   ipcMain.on('update:check', () => autoUpdater.checkForUpdates().catch(() => {}));
   ipcMain.on('update:download', () => autoUpdater.downloadUpdate().catch(() => {}));
   // check once shortly after opening, so the popup shows without anyone asking

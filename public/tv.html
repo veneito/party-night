@@ -4,32 +4,38 @@
 <style>
   html{font-size:clamp(9px,min(1.15vw,2vh),30px)}
   body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-  header{display:flex;align-items:center;gap:1.5rem;padding:.8rem 2.4rem;min-height:5rem}
+  header{display:flex;align-items:center;gap:1.5rem;padding:.8rem 2.4rem;height:7rem;flex:none}
+  /* header items keep their space when hidden so nothing shifts between screens */
+  #timer[hidden]{display:grid!important;visibility:hidden} #room[hidden]{display:flex!important;visibility:hidden}
   .brand{font-weight:800;font-size:1.6rem;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem}
   .brand i{font-style:normal;color:var(--gold)}
   .roompill{margin-left:auto;display:flex;align-items:center;gap:1rem;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.5rem .6rem .5rem 1.4rem;font-size:1.1rem;color:var(--mute)}
+  /* in-game join card: QR, then "Join at" over the address, then the code */
+  .roompill{border-radius:1.1rem;padding:.35rem 1rem .35rem .35rem;gap:.9rem}
+  .qr.mini{width:4.6rem;height:4.6rem;border-radius:.75rem;padding:.2rem}
+  .roompill .where{display:flex;flex-direction:column;line-height:1.2;font-size:.95rem}
+  .roompill .where small{font-size:.75rem;text-transform:uppercase;letter-spacing:.14em;color:var(--gold);font-weight:700}
   .roompill b{background:var(--gold);color:#1a1230;border-radius:999px;padding:.3rem 1rem;letter-spacing:.15em;font-size:1.4rem}
   .botctl{display:flex;align-items:center;gap:.5rem;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.35rem;font-size:1.05rem;color:var(--mute)}
   .botctl span{padding:0 .4rem 0 .7rem} .botctl b{color:var(--ink)}
   .botctl button{width:2.3rem;height:2.3rem;border-radius:50%;background:var(--card2);font-size:1.3rem;font-weight:800;line-height:1}
-  #room:not([hidden])+.botctl{margin-left:0} .botctl{margin-left:auto}
   .mute{width:3rem;height:3rem;border-radius:50%;background:var(--bg2);border:1px solid var(--line);font-size:1.3rem}
-  main{flex:1;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:safe center;padding:0 3rem 1rem;min-height:0;text-align:center}
+  main{flex:1;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:1.5rem 3rem 1rem;min-height:0;text-align:center}
   h1{font-size:3.6rem;line-height:1.05;letter-spacing:-.03em;margin:.2em 0;max-width:22em;text-wrap:balance}
   h2{font-size:2rem;margin:.3em 0;color:var(--mute);font-weight:500}
   .kicker{font-size:1.1rem;text-transform:uppercase;letter-spacing:.2em;color:var(--gold);font-weight:700}
 
   /* menu */
-  .hero{font-size:6rem;font-weight:800;letter-spacing:-.05em;line-height:.9;margin:0}
+  .hero{font-size:5rem;font-weight:800;letter-spacing:-.05em;line-height:.9;margin:0}
   .hero span{color:var(--gold)}
-  .modes{display:flex;gap:2rem;margin:2.2rem 0 1.5rem;flex-wrap:wrap;justify-content:center}
-  .mode{width:26rem;text-align:left;border-radius:2rem;padding:0;overflow:hidden;background:var(--card);box-shadow:0 .5rem 0 #0006;transition:transform .2s}
+  .modes{display:flex;gap:1.5rem;margin:1.6rem 0 1.2rem;max-width:66rem;flex-wrap:wrap;justify-content:center}
+  .mode{width:20rem;display:flex;flex-direction:column;justify-content:flex-start;text-align:left;border-radius:2rem;padding:0;overflow:hidden;background:var(--card);box-shadow:0 .5rem 0 #0006;transition:transform .2s}
   .mode:hover,.mode:focus-visible{transform:translateY(-.5rem) rotate(-.6deg)}
-  .mode .art{height:8rem;display:grid;place-items:center;font-size:4.8rem}
+  .mode .art{align-self:stretch;width:100%;height:5rem;display:grid;place-items:center;font-size:3.4rem}
   .mode .art span{animation:bob 3s ease-in-out infinite}
-  .mode .body{padding:1.5rem 1.8rem 1.8rem}
-  .mode h3{margin:0 0 .3rem;font-size:2.2rem;letter-spacing:-.02em}
-  .mode p{margin:0 0 1rem;color:var(--mute);font-size:1.15rem;line-height:1.4}
+  .mode .body{padding:1rem 1.3rem 1.3rem}
+  .mode h3{margin:0 0 .3rem;font-size:1.7rem;letter-spacing:-.02em}
+  .mode p{margin:0 0 .8rem;color:var(--mute);font-size:1rem;line-height:1.4}
   .joinrow{display:flex;align-items:center;gap:1.2rem;text-align:left}
   .joinrow .qr{width:6.5rem;height:6.5rem}
   .chip{display:inline-block;padding:.3rem .8rem;border-radius:999px;background:#ffffff14;font-size:.95rem;margin-right:.4rem}
@@ -54,6 +60,12 @@
   .count{font-size:1.6rem;color:var(--mute)} .count b{color:var(--gold)}
   .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:1rem}
   .pslot{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.6rem .4rem;border-radius:1.2rem;background:var(--card);font-weight:700;font-size:1.15rem;min-width:0}
+  .pslot{position:relative} .pslot .kick{position:absolute;top:.3rem;right:.3rem}
+  .kick{width:1.6rem;height:1.6rem;border-radius:50%;background:#0004;font-size:.8rem;line-height:1;opacity:.35;flex:none;padding:0}
+.kick.crown.on{opacity:1;background:transparent} .pslot .crown{right:auto;left:.3rem}
+  .recode{font-size:.9rem;padding:.35em .9em;margin-left:.6rem} .recode.armed{background:var(--coral);box-shadow:none}
+  .kick.armed{opacity:1;background:var(--coral);width:auto;border-radius:999px;padding:0 .6rem;font-weight:800}
+  .kick:hover,.kick:focus-visible{opacity:1;background:var(--coral)}
   .pslot .name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pslot.empty{background:transparent;border:2px dashed var(--line);color:#ffffff40;justify-content:center;min-height:5.8rem}
   .actions{display:flex;gap:1rem;margin-top:1.2rem;align-items:center;flex-wrap:wrap}
@@ -83,16 +95,19 @@
   .bar{height:1rem;border-radius:999px;background:#ffffff14;margin-top:1rem;overflow:hidden}
   .bar i{display:block;height:100%;background:var(--gold);border-radius:999px;animation:grow 1s ease-out both}
   @keyframes grow{from{width:0}}
+  @keyframes grow-up{from{transform:scaleY(0)}}
+  .answers .answer{transition:transform .25s} .vs{animation:vs-pulse 1.4s ease-in-out infinite}
+  @keyframes vs-pulse{50%{transform:rotate(-8deg) scale(1.15)}}
   .vs{align-self:center;font-size:3.5rem;font-weight:800;color:var(--coral);transform:rotate(-8deg)}
   .bonus{position:absolute;top:-1.2rem;right:1.5rem;background:var(--coral);border-radius:999px;padding:.3rem 1rem;font-size:1.1rem;font-weight:800}
 
   /* results */
   .podium{display:flex;align-items:flex-end;gap:1.5rem;margin:1rem 0 1rem}
-  main:has(.podium){justify-content:flex-start;padding-top:1rem}
+  main:has(.hero){justify-content:safe center}
   .step{display:flex;flex-direction:column;align-items:center;gap:.35rem;width:14rem}
   .step .av.xl{font-size:2em}
   .step .name{font-size:1.4rem;font-weight:800} .step .pts{color:var(--mute);font-size:1.1rem}
-  .step .block{width:100%;border-radius:1.2rem 1.2rem 0 0;display:grid;place-items:start center;padding-top:.4rem;font-size:2.4rem;font-weight:800;color:#1a1230}
+  .step .block{transform-origin:bottom;animation:grow-up .8s cubic-bezier(.2,1.3,.4,1) both;animation-delay:inherit;width:100%;border-radius:1.2rem 1.2rem 0 0;display:grid;place-items:start center;padding-top:.4rem;font-size:2.4rem;font-weight:800;color:#1a1230}
   .rest{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;max-width:100rem}
   .rest .who{font-size:.95rem;padding:.2rem .8rem .2rem .2rem}
   .rest .who{opacity:1}
@@ -109,12 +124,13 @@
   .toast{position:fixed;right:1.5rem;bottom:1.5rem;z-index:50;display:grid;gap:.4rem;width:24rem;animation:pop .35s}
   .toast b{font-size:1.3rem} .toast span{color:var(--mute)} .toast .row{margin:.6rem 0 0;justify-content:flex-end}
 </style></head><body><div class="stage"></div>
-<header><div class="brand">🎉 Party <i>Night</i></div><div id="room"></div><div class="botctl" id="bots"></div><button class="mute" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="timer" id="timer" hidden><b></b></div></header>
+<header><div class="brand">🎉 Party <i>Night</i></div><div id="room"></div><div class="botctl" id="bots"></div><button class="mute" id="home" onclick="send('menu')" aria-label="Home" title="Home" hidden>🏠</button><button class="mute" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="timer" id="timer" hidden><b></b></div></header>
 <main id="app"><h2>Connecting…</h2></main>
 <dialog id="settings" class="panel">
   <h3>Settings</h3>
   <label class="row">Sound effects <input type="range" min="0" max="100" id="sfxVol" oninput="setSfxVol(this.value / 100)" onchange="sfx('done')"></label>
   <label class="row">Voice-over <input type="checkbox" id="voiceOn" onchange='send("set",{key:"voice",value:this.checked ? "on" : "off"})'></label>
+  <label class="row">Players vote for next game <input type="checkbox" id="voteOn" onchange='send("set",{key:"home",value:this.checked ? "vote" : "menu"})'></label>
   <label class="row">Voice volume <input type="range" min="0" max="100" id="voiceVol" oninput="setVoiceVol(this.value / 100)"></label>
   <div id="upd" hidden><h3>Updates</h3><div class="row"><span id="updVer"></span><button class="btn ghost" onclick="checkUpdate()">Check for updates</button></div><p id="updMsg"></p></div>
   <button class="btn" onclick="settings.close()">Done</button>
@@ -129,7 +145,7 @@ let url = '', room = sessionStorage.room, spoken = '', lastKey = '', seen = new 
 let voiceVol = 1; try { voiceVol = Number(localStorage.voiceVol ?? 1); } catch {}
 function setVoiceVol(v) { voiceVol = v; try { localStorage.voiceVol = v; } catch {} }
 function openSettings() {
-  sfxVolEl.value = sfxVol * 100; voiceVolEl.value = voiceVol * 100; voiceOn.checked = S?.settings.voice !== 'off';
+  sfxVolEl.value = sfxVol * 100; voiceVolEl.value = voiceVol * 100; voiceOn.checked = S?.settings.voice !== 'off'; voteOn.checked = S?.settings.home !== 'menu';
   settings.showModal();
 }
 const sfxVolEl = document.getElementById('sfxVol'), voiceVolEl = document.getElementById('voiceVol');
@@ -169,10 +185,16 @@ function narrate(s) {
     lobby: () => [`${s.games.find(g => g.id === s.game)?.name}! Grab your phones and join.`],
     words: () => ['Give us some words! Check your phone.'],
     write: () => ['Time to write your jokes. Pick a setup and land the punchline.'],
-    duel: () => { const [a, b] = s.duel; return [`Joke ${s.duelNo}.`, `${a.setup}... ${a.punch}`, 'Or...', `${b.setup}... ${b.punch}`, 'Vote now!']; },
+    duel: () => { const [a, b] = s.duel; return [`Joke ${s.duelNo}.`, `${a.setup}... ${noSounds(a.punch)}`, 'Or...', `${b.setup}... ${noSounds(b.punch)}`, 'Vote now!']; },
     reveal: () => { const [a, b] = s.duel; return a.votes === b.votes ? ['It\'s a tie!'] : [`${(a.votes > b.votes ? a : b).name} wins that one!`]; },
-    answer: () => [s.prompt],
+    answer: () => [s.game === 'caption' ? 'Write a caption for this scene!' : s.prompt],
+    lie: () => [s.fact.replace('___', 'blank'), 'Write a fake answer!'],
+    pick: () => ['Which one is real?'],
+    take: () => [s.take, 'Agree or disagree?'],
+    clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
+    accuse: () => ['Who is the odd one out?'],
     vote: () => ['Time to vote for the best answer!'],
+    gamevote: () => ["What's next? Vote on your phone!"],
     scores: () => top ? [`End of round ${s.round}. ${top.name} is in the lead with ${top.score} points!`] : [],
     results: () => top ? [`${top.name} wins the game with ${top.score} points!`] : [],
   }[s.phase];
@@ -190,13 +212,33 @@ async function connect() {
     if (alive === false) room = sessionStorage.room = ''; // server restarted: make a fresh room
     setTimeout(connect, alive ? 500 : 2000);
   };
-  es.onmessage = e => render(S = JSON.parse(e.data));
+  es.onmessage = e => { S = JSON.parse(e.data); if (S.code !== room) room = sessionStorage.room = S.code; render(S); };
 }
 
+// who's running things from their phone
+const hostTag = s => { const h = s.players.find(p => p.id === s.host); return h ? ` · 👑 <b>${esc(h.name)}</b> is host` : ''; };
+// done chips bounce once per screen, not on every refresh
+const dk = (s, p) => ['d', s.phase, s.round, s.duelNo, p.id].join('|');
 // players pop in once, not every time the screen refreshes
 const popOnce = id => seen.has(id) ? '' : (seen.add(id), 'pop');
+// ✕ on a player removes them, for someone who wandered off mid-game
+const kickBtn = p => `<button class="kick" data-id="${esc(p.id)}" data-name="${esc(p.name)}" aria-label="Remove ${esc(p.name)}" onclick="kick(this)">✕</button>`;
+// 👑 on a real player makes them host (their phone gets these controls); the current host's crown stays lit
+const hostBtn = p => p.bot ? '' : `<button class="kick crown ${p.id === S?.host ? 'on' : ''}" data-id="${esc(p.id)}" aria-label="Make ${esc(p.name)} host" onclick="send('host',{who:this.dataset.id})">👑</button>`;
+// first click arms it ("Remove?"), a second click within 3 s removes; no pop-up, which the desktop app doesn't show
+// new code clears the room, so it asks for a second click like kicking does
+function recode(el) {
+  if (!S.players.length || el.classList.contains('armed')) return send('recode');
+  el.classList.add('armed'); el.textContent = 'Everyone rejoins. Sure?';
+  setTimeout(() => { el.classList.remove('armed'); el.textContent = '↻ New code'; }, 3000);
+}
+function kick(el) {
+  if (el.classList.contains('armed')) return send('kick', { who: el.dataset.id });
+  el.classList.add('armed'); el.textContent = 'Remove?';
+  setTimeout(() => { el.classList.remove('armed'); el.textContent = '✕'; }, 3000);
+}
 const strip = s => `<div class="strip" data-live="strip">${s.players.map(p =>
-  `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)}">${avatar(p)}${esc(p.name)}</div>`).join('')}</div>`;
+  `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)} ${p.done && !seen.has(dk(s, p)) ? (seen.add(dk(s, p)), 'justdone') : ''}">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>`;
 const skip = (label = 'Time\'s up') => `<div class="footer-actions">${btn('skip', label, 'ghost')}</div>`;
 
 const MODES = {
@@ -213,24 +255,58 @@ const MODES = {
     answer: s => `<div class="kicker rise">Round ${s.round}</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
       <h2 class="rise">Answer on your phone!</h2>${strip(s)}${skip()}`,
     vote: s => `<div class="kicker rise">Vote for the best</div><h1 class="pop" style="font-size:2.6rem">${esc(s.prompt)}</h1>
-      <div class="answers">${s.list.map((a, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span>${esc(a.text)}</div>`).join('')}</div>
+      <div class="answers">${s.list.map((a, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span><span>${withSounds(a.text)}</span></div>`).join('')}</div>
       ${strip(s)}${skip()}`,
     results: s => {
       if (!s.last) return '';
       const top = Math.max(...s.last.list.map(a => a.votes), 1);
       return `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.prompt)}</h1><div class="answers top3">${[...s.last.list].sort((a, b) => b.votes - a.votes).slice(0, 3).map((a, i) =>
-        `<div class="answer rise ${a.votes === top ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack">${esc(a.text)}
+        `<div class="answer rise ${a.votes === top ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack"><span>${withSounds(a.text)}</span>
         <small>${avatar(s.players.find(p => p.name === a.name) || { av: 0 })}${esc(a.name)} · ${plural(a.votes, 'vote')}</small></div></div>`).join('')}</div>`;
     },
   },
+  fakeout: {
+    art: '🕵️', bg: 'linear-gradient(135deg,#ffd23f,#ff5e7e)',
+    lie: s => `<div class="kicker rise">Round ${s.round} · Fill the blank</div><div class="prompt pop"><h1>${esc(s.fact)}</h1></div>
+      <h2 class="rise">Write a believable fake on your phone</h2>${strip(s)}${skip()}`,
+    pick: s => `<div class="kicker rise">One of these is real</div><h1 class="pop" style="font-size:2.6rem">${esc(s.fact)}</h1>
+      <div class="answers">${s.list.map((a, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span>${esc(a.text)}</div>`).join('')}</div>
+      ${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.fact)}</h1><div class="answers">${[...s.last.list].sort((a, b) => b.truth - a.truth || b.fooled.length - a.fooled.length).map((a, i) =>
+      `<div class="answer rise ${a.truth ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack">${esc(a.text)}
+      <small>${a.truth ? `✓ The truth · ${plural(a.fooled.length, 'player')} found it` : `${esc(a.name)}'s fake · fooled ${a.fooled.length}`}</small></div></div>`).join('')}</div>`,
+  },
+  hottake: {
+    art: '🌶️', bg: 'linear-gradient(135deg,#ff9f43,#ff5e7e)',
+    take: s => `<div class="kicker rise">Round ${s.round} · Hot take</div><div class="prompt pop"><h1>${esc(s.take)}</h1></div>
+      <h2 class="rise">Agree or disagree, then guess how much of the room agrees</h2>${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.take)}</h1>
+      <div class="kicker" style="font-size:2.4rem;margin-top:.6rem">${s.last.pct}% agreed</div><div class="bar" style="width:min(50rem,90%)"><i style="width:${s.last.pct}%"></i></div>
+      <div class="rest" style="margin-top:1rem">${[...s.last.list].sort((a, b) => Math.abs(a.guess - s.last.pct) - Math.abs(b.guess - s.last.pct)).map(p =>
+        `<div class="who rise">${avatar(p)}${esc(p.name)} ${p.agree ? '👍' : '👎'} guessed ${p.guess}%</div>`).join('')}</div>`,
+  },
+  oddone: {
+    art: '🎭', bg: 'linear-gradient(135deg,#a78bfa,#3ee6b5)',
+    clue: s => `<div class="kicker rise">Round ${s.round}</div><h1 class="pop">Everyone has the same secret word…</h1>
+      <h2 class="rise">…except one of you. Give a one-word clue on your phone.</h2>${strip(s)}${skip()}`,
+    accuse: s => `<div class="kicker rise">Vote on your phone</div><h1 class="pop">Who's the odd one out?</h1>
+      <div class="answers">${s.clues.map((c, i) => { const p = s.players.find(x => x.id === c.id) || { av: 0, name: '?' };
+        return `<div class="answer rise" style="animation-delay:${i * 50}ms">${avatar(p)}<div class="stack"><small style="margin:0">${esc(p.name)}</small>${esc(c.text)}</div></div>`; }).join('')}</div>
+      ${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.6rem;margin:0">${s.last.caught ? `Caught! ${esc(s.last.odd)} was the odd one out` : `${esc(s.last.odd)} got away with it!`}</h1>
+      <h2 style="margin:.2rem 0">Everyone had <b style="color:var(--gold)">${esc(s.last.word)}</b>. ${esc(s.last.odd)} had <b style="color:var(--coral)">${esc(s.last.oddWord)}</b>.</h2>
+      <div class="answers">${s.last.clues.map((c, i) => `<div class="answer rise ${c.odd ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(c.text)}
+        <small>${esc(c.name)} · ${plural(c.votes, 'vote')}</small></div></div>`).join('')}</div>`,
+  },
 };
+MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg,#5ab0ff,#a78bfa)' };
 
 function duel(s) {
   const [a, b] = s.duel, rev = s.phase === 'reveal', w = rev ? (a.votes > b.votes ? 0 : b.votes > a.votes ? 1 : -1) : -1;
   const total = rev ? Math.max(1, a.votes + b.votes) : 1;
   const joke = (j, i) => `<div class="joke ${rev ? (w === i ? 'win' : w >= 0 ? 'lose' : '') : 'pop'}" style="animation-delay:${i * 250}ms">
     ${rev && w === i && j.votes >= 2 && (i ? a : b).votes === 0 ? '<span class="bonus">SWEEP +200</span>' : ''}
-    ${esc(j.setup)}<div class="punch">${esc(j.punch)}</div>
+    ${esc(j.setup)}<div class="punch">${withSounds(j.punch)}</div>
     ${rev ? `<div class="by">${avatar(s.players.find(p => p.name === j.name) || { av: 0 })}${esc(j.name)} · ${plural(j.votes, 'vote')}</div>
       <div class="bar"><i style="width:${j.votes / total * 100}%"></i></div>` : ''}</div>`;
   return `<div class="kicker">Joke-off ${s.duelNo} of ${s.duelCount}</div>
@@ -244,13 +320,13 @@ function menu(s) {
     <div class="modes">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 100}ms" onclick='send("pick",{game:"${g.id}"})'>
       <div class="art" style="background:${MODES[g.id]?.bg || 'var(--card2)'}"><span>${MODES[g.id]?.art || '🎲'}</span></div>
       <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></button>`).join('')}</div>
-    <div class="joinrow rise">${s.players.length ? '' : `<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">${s.players.length ? `${plural(s.players.length, 'player')} here: ${s.players.map(p => esc(p.name)).join(', ')}` : `Players can join already at <b>${esc(url)}</b> with code <b>${s.code}</b>`}</div>
+    <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${hostTag(s)} <button class="btn ghost recode" onclick="recode(this)">↻ New code</button>${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${s.settings.home === 'menu' ? '' : btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
 </div>`;
 }
 
 function lobby(s) {
   const G = s.games.find(x => x.id === s.game), max = s.settings.max || 20, n = s.players.length;
-  const slots = s.players.map(p => `<div class="pslot ${popOnce('l' + p.id)}">${avatar(p, 'lg')}<span class="name">${esc(p.name)}</span></div>`).join('')
+  const slots = s.players.map(p => `<div class="pslot ${popOnce('l' + p.id)}">${kickBtn(p)}${avatar(p, 'lg')}<span class="name">${esc(p.name)}</span>${hostBtn(p)}</div>`).join('')
     + Array.from({ length: Math.max(0, Math.min(max, 20) - n) }, () => `<div class="pslot empty">?</div>`).join('');
   return `<div class="lobby">
     <div class="panel rise">
@@ -264,7 +340,7 @@ function lobby(s) {
         `<button class="${s.settings[def.key] === v ? 'on' : ''}" onclick='send("set",{key:"${def.key}",value:${JSON.stringify(v)}})'>${esc(l)}</button>`).join('')}</div></div>`).join('')}</div>
     </div>
     <div>
-      <div class="players-head"><h2>Players</h2><div class="count" data-live="count"><b>${n}</b> / ${max}</div></div>
+      <div class="players-head"><h2>Players</h2><span class="hint" data-live="hosttag">${hostTag(s)}</span><div class="count" data-live="count"><b>${n}</b> / ${max}</div></div>
       <div class="pgrid" data-live="slots">${slots}</div>
       <div class="actions" data-live="actions">
         ${n >= G.min ? btn('start', '▶ Start game') : `<span class="hint">Need ${G.min - n} more player${G.min - n === 1 ? '' : 's'} to start</span>`}
@@ -274,16 +350,25 @@ function lobby(s) {
     </div></div>`;
 }
 
+function gamevote(s) {
+  const G = s.games.find(x => x.id === s.game), opts = [...(G ? [{ id: 'replay', name: `${G.name} again`, art: '↻', bg: 'var(--card2)' }] : []),
+    ...s.games.filter(g => g.id !== s.game).map(g => ({ id: g.id, name: g.name, art: MODES[g.id]?.art || '🎲', bg: MODES[g.id]?.bg || 'var(--card2)' }))];
+  return `<div class="kicker rise">Vote on your phone</div><h1 class="pop">What's next?</h1>
+    <div class="modes" data-live="gv">${opts.map(o => `<div class="mode" style="width:16rem"><div class="art" style="background:${o.bg};height:4rem"><span>${o.art}</span></div>
+      <div class="body"><h3 style="font-size:1.4rem">${esc(o.name)}</h3><span class="chip">${plural(s.gvotes[o.id] || 0, 'vote')}</span></div></div>`).join('')}</div>
+    ${strip(s)}${skip('Pick now')}`;
+}
+
 function results(s) {
   const M = MODES[s.game] || {}, ranked = [...s.players].sort((a, b) => b.score - a.score);
   const order = [1, 0, 2].filter(i => ranked[i]), H = ['7rem', '5rem', '3.8rem'], C = ['var(--gold)', '#d6dbe6', '#e3a46b'];
   const final = s.phase === 'results';
   return `${M.results ? M.results(s) : ''}<div class="kicker" style="margin-top:1rem">${final ? '🏆 Final scores' : `Scores after round ${s.round} of ${s.rounds}`}</div>
     <div class="podium">${order.map(i => `<div class="step rise" style="animation-delay:${[300, 0, 600][i]}ms">${avatar(ranked[i], 'xl')}
-      <div class="name">${esc(ranked[i].name)}</div><div class="pts">${ranked[i].score} pts</div>
+      <div class="name">${esc(ranked[i].name)}</div><div class="pts" data-count="${ranked[i].score}" data-suffix=" pts">${ranked[i].score} pts</div>
       <div class="block" style="height:${H[i]};background:${C[i]}">${i + 1}</div></div>`).join('')}</div>
     <div class="rest">${ranked.slice(3).map((p, i) => `<div class="who rise">${i + 4}. ${avatar(p)}${esc(p.name)} · ${p.score}</div>`).join('')}</div>
-    <div class="footer-actions sticky">${final ? btn('start', '↻ Play again') : btn('skip', `▶ Round ${s.round + 1}`)}${btn('menu', '← Menu', 'ghost')}</div>`;
+    <div class="footer-actions sticky">${final ? btn('start', '↻ Play again') : btn('skip', `▶ Round ${s.round + 1}`)}${btn('menu', s.settings.home === 'menu' ? '← Menu' : '🏠 Vote next game', 'ghost')}</div>`;
 }
 
 // sounds follow what changed since the last update
@@ -307,8 +392,10 @@ function playSounds(s) {
 function render(s, force) {
   if (!force) playSounds(s);
   setTimerFrom(s, document.getElementById('timer'));
+  document.getElementById('home').hidden = s.phase === 'menu' || s.phase === 'gamevote';
   roomEl.className = 'roompill'; roomEl.hidden = s.phase === 'menu' || s.phase === 'lobby';
-  roomEl.innerHTML = `${esc(url.replace('http://', ''))}<b>${s.code}</b>`;
+  // scan-to-join stays up during games too; late joiners get in when the round ends
+  if (roomEl.dataset.k !== s.code + url) roomEl.dataset.k = s.code + url, roomEl.innerHTML = `<img class="qr mini" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}"><span class="where"><small>Scan or join at</small>${esc(url.replace('http://', ''))}</span><b>${s.code}</b>`;
   voiceOn.checked = s.settings.voice !== 'off';
   if (s.settings.voice === 'off' && prev && prev.settings.voice !== 'off') speechSynthesis?.cancel();
   // bots can be added or removed at any time; mid-round additions wait for the next round
@@ -316,19 +403,30 @@ function render(s, force) {
   document.getElementById('bots').innerHTML = `<span>🤖 Bots <b>${nb}</b>${s.pendingBots ? ` <small>(+${s.pendingBots} next round)</small>` : ''}</span>
     <button aria-label="Remove a bot" onclick='send("unbot",{n:1})' ${nb + s.pendingBots ? '' : 'disabled'}>−</button><button aria-label="Add a bot" onclick='send("bots",{n:1})'>+</button>`;
   const M = MODES[s.game] || {};
-  const html = s.phase === 'menu' ? menu(s) : s.phase === 'lobby' ? lobby(s) : s.phase === 'results' || s.phase === 'scores' ? results(s) : (M[s.phase] || (() => `<h1>${s.phase}</h1>`))(s);
+  const html = s.phase === 'menu' ? menu(s) : s.phase === 'lobby' ? lobby(s) : s.phase === 'gamevote' ? gamevote(s) : s.phase === 'results' || s.phase === 'scores' ? results(s) : (M[s.phase] || (() => `<h1>${s.phase}</h1>`))(s);
   // same screen: only swap the live bits so entrance animations don't replay on every update
-  const key = [s.phase, s.game, s.round, s.duelNo].join('|');
+  const key = [s.code, s.phase, s.game, s.round, s.duelNo].join('|');
   if (key === lastKey && !force) {
     const t = document.createElement('template'); t.innerHTML = html;
     for (const el of t.content.querySelectorAll('[data-live]')) {
       const cur = app.querySelector(`[data-live="${el.dataset.live}"]`);
       if (cur && cur.innerHTML !== el.innerHTML) cur.innerHTML = el.innerHTML;
     }
-    return;
+    fit(); return;
   }
-  lastKey = key; app.innerHTML = html;
-  if (s.phase === 'results' || s.phase === 'scores' || (s.phase === 'reveal' && s.duel.some(j => j.votes))) confetti(s.phase === 'reveal' ? 90 : s.phase === 'scores' ? 120 : 260);
+  lastKey = key;
+  swap(app, html, () => {
+    fit();
+    if (s.phase !== 'reveal') playChips(app); // reveal repeats the duel jokes, no need to replay
+    if (s.phase === 'results' || s.phase === 'scores' || (s.phase === 'reveal' && s.duel.some(j => j.votes))) confetti(s.phase === 'reveal' ? 90 : s.phase === 'scores' ? 120 : 260);
+  });
 }
+// Everything is sized in rem, so shrinking the root font scales the whole screen down until nothing overflows.
+function fit() {
+  const root = document.documentElement; root.style.fontSize = '';
+  let fs = parseFloat(getComputedStyle(root).fontSize);
+  while (app.scrollHeight > app.clientHeight + 1 && fs > 5) { fs *= .94; root.style.fontSize = fs + 'px'; }
+}
+addEventListener('resize', fit); document.fonts?.ready.then(fit);
 connect();
 </script></body></html>

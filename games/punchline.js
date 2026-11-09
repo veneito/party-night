@@ -77,6 +77,27 @@ const PACKS = {
     },
   },
 };
+// extra setups, merged into the packs above by category
+const MORE = {
+  family: [
+    ['{w} entered the science fair with', 'The principal called home because {w}'],
+    ['{w} got a star on the Walk of Fame for', 'My teacher looks exactly like {w}, especially when'],
+    ['{w} ate my homework and left a note:', 'The zoo had to close because {w}'],
+    ['{w} is the only place where you can', 'Our family vacation to {w} ended with'],
+    ['Dad tried to fix the car with {w} and', 'The museum put {w} on display, labelled'],
+    ['My grandpa still holds the world record in {w} for', 'Our school added {w} to gym class, and now'],
+  ],
+  spicy: [
+    ['{w} was the last person I expected to see at the strip club, but', 'My therapist and {w} both agree that'],
+    ['{w} officiated our wedding and kept saying', '{w} has a podcast, and every episode is about'],
+    ['The hotel minibar now includes {w}, because', 'I tried to return {w} to IKEA and'],
+    ['The office retreat at {w} ended with HR', 'My Tinder bio says "find me at {w}", and'],
+    ['I listed {w} as a skill on my résumé, and the interviewer', 'My last relationship ended because of {w} and'],
+    ['The first date went great until {w} came out and', 'Nothing ruins a hookup like {w}, especially'],
+    ['{w} got into the hot tub and', 'The neighbours think {w} is our child because'],
+  ],
+};
+for (const k of ['family', 'spicy']) Object.values(PACKS[k]).forEach((c, i) => c.setups.push(...(MORE[k][i] || [])));
 const pack = g => PACKS[g.settings.pack] || PACKS.spicy;
 const cap = s => s[0].toUpperCase() + s.slice(1); // "a raccoon is..." -> "A raccoon is..."
 // works with any category's setups, so bot jokes still read like jokes

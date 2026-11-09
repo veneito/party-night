@@ -1,11 +1,13 @@
 // Shared by TV and phone: avatars, escaping, countdown, confetti.
-const AV_EMOJI = ['🦊', '🐸', '🐙', '🦄', '🐼', '🐯', '🦉', '🐵', '🐧', '🦖', '🐨', '🦁', '🐰', '🐳', '🦜', '🐢', '🦔', '🐝', '🦩', '🐲'];
+const AV_EMOJI = ['🦊', '🐸', '🐙', '🦄', '🐼', '🐯', '🦉', '🐵', '🐧', '🦖', '🐨', '🦁', '🐰', '🐳', '🦜', '🐢', '🦔', '🐝', '🦩', '🐲',
+  '🐶', '🐱', '🐮', '🐷', '🐔', '🦋', '🐞', '🦀', '🐠', '🦓', '🦒', '🐘', '🦥', '🦦', '🐺', '🦝', '🐗', '👽', '🤖', '👻'];
 const AV_COLOR = ['#ff6b6b', '#4ecdc4', '#ffd93d', '#a78bfa', '#6bcb77', '#ff9f43', '#4d96ff', '#f472b6', '#2dd4bf', '#facc15',
   '#fb7185', '#60a5fa', '#c084fc', '#34d399', '#f97316', '#38bdf8', '#e879f9', '#a3e635', '#fda4af', '#fbbf24'];
 const avColor = p => AV_COLOR[p.av % AV_COLOR.length];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
-const avatar = (p, size = '') => `<span class="av ${size}" style="--c:${avColor(p)}">${AV_EMOJI[p.av % AV_EMOJI.length]}</span>`;
+// p.ph is the URL of an uploaded photo, if the player added one
+const avatar = (p, size = '') => `<span class="av ${size}" style="--c:${avColor(p)}">${p.ph ? `<img src="${esc(p.ph)}" alt="">` : AV_EMOJI[p.av % AV_EMOJI.length]}</span>`;
 
 // countdown ring: server sends seconds left; we tick locally between updates
 const timer = { left: 0, total: 0, el: null };
@@ -64,6 +66,29 @@ const SFX = {
   fanfare: () => [[523, 0], [523, .15], [523, .3], [659, .45], [784, .75], [659, 1], [784, 1.15], [1047, 1.3]].forEach(([f, t]) => tone(f, t, .35, 'square', .08)),
   sad: () => [392, 370, 349, 330].forEach((f, i) => tone(f, i * .3, .35, 'triangle', .12)),
 };
+// Sounds players can drop into answers as <name>. Same synth as above.
+const SOUNDS = {
+  boing: () => tone(180, 0, .5, 'sine', .25, 3),
+  honk: () => { tone(330, 0, .18, 'sawtooth', .12); tone(330, .25, .3, 'sawtooth', .12); },
+  rimshot: () => { tone(200, 0, .08, 'triangle', .2); tone(180, .2, .08, 'triangle', .2); tone(2400, .4, .3, 'square', .05, .5); },
+  airhorn: () => [0, .3, .45].forEach(t => { tone(466, t, .25, 'sawtooth', .1); tone(470, t, .25, 'sawtooth', .1); }),
+  whistle: () => tone(400, 0, .7, 'sine', .15, 4),
+  fail: () => [392, 370, 349, 330].forEach((f, i) => tone(f, i * .3, .35, 'triangle', .12)),
+  ding: () => { tone(1320, 0, .6, 'sine', .15); tone(1980, 0, .4, 'sine', .06); },
+  crickets: () => { for (let i = 0; i < 6; i++) tone(4200, i * .12 + (i > 2 ? .4 : 0), .05, 'sine', .05); },
+  drumroll: () => { for (let i = 0; i < 16; i++) tone(120, i * .05, .05, 'square', .06); tone(80, .85, .4, 'triangle', .25); },
+  wow: () => tone(300, 0, .6, 'square', .07, 2.5),
+};
+Object.assign(SFX, SOUNDS);
+const TAG = new RegExp(`<(${Object.keys(SOUNDS).join('|')})>`, 'g');
+// escaped text with sound tags turned into chips; data-snd lets the TV play them in order
+const withSounds = t => esc(t).replace(new RegExp(`&lt;(${Object.keys(SOUNDS).join('|')})&gt;`, 'g'), (_, n) => `<span class="snd" data-snd="${n}">🔊 ${n}</span>`);
+const noSounds = t => String(t ?? '').replace(TAG, ' ');
+// plays every chip inside el one after another, lighting each up
+function playChips(el, gap = 900) {
+  [...el.querySelectorAll('.snd')].forEach((c, i) => setTimeout(() => { sfx(c.dataset.snd); c.classList.remove('hit'); void c.offsetWidth; c.classList.add('hit'); }, 400 + i * gap));
+}
+
 function sfx(name) { if (!sfxVol || !actx || actx.state !== 'running') return; try { SFX[name]?.(); } catch {} }
 function setSfxVol(v) { sfxVol = v; try { localStorage.sfxVol = v; } catch {} }
 
@@ -75,4 +100,20 @@ async function roomAlive(room) {
     const r = await fetch('/action', { method: 'POST', body: JSON.stringify({ type: 'ping', room }) });
     return r.ok ? true : (await r.json()).error !== 'Room not found';
   } catch { return null; }
+}
+
+// Swap a screen's HTML with a quick crossfade where the browser supports View Transitions.
+// `after` runs once the new HTML is in place (focus, confetti, sizing...).
+const calm = matchMedia('(prefers-reduced-motion: reduce)');
+function swap(el, html, after) {
+  const go = () => { el.innerHTML = html; countUp(el); after?.(); };
+  if (document.startViewTransition && !calm.matches && !document.hidden) document.startViewTransition(go); else go();
+}
+// numbers marked data-count="1234" tick up from 0
+function countUp(root) {
+  for (const el of root.querySelectorAll('[data-count]')) {
+    const end = Number(el.dataset.count), t0 = performance.now(), suffix = el.dataset.suffix || '';
+    if (calm.matches || !end) { el.textContent = end + suffix; continue; }
+    (function tick(t) { const k = Math.min(1, (t - t0) / 1100); el.textContent = Math.round(end * (1 - (1 - k) ** 3)) + suffix; if (k < 1) requestAnimationFrame(tick); })(t0);
+  }
 }
