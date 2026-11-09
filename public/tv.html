@@ -170,7 +170,7 @@ function narrate(s) {
     lobby: () => [`${s.games.find(g => g.id === s.game)?.name}! Grab your phones and join.`],
     words: () => ['Give us some words! Check your phone.'],
     write: () => ['Time to write your jokes. Pick a setup and land the punchline.'],
-    duel: () => { const [a, b] = s.duel; return [`Joke ${s.duelNo}.`, `${a.setup}... ${a.punch}`, 'Or...', `${b.setup}... ${b.punch}`, 'Vote now!']; },
+    duel: () => { const [a, b] = s.duel; return [`Joke ${s.duelNo}.`, `${a.setup}... ${noSounds(a.punch)}`, 'Or...', `${b.setup}... ${noSounds(b.punch)}`, 'Vote now!']; },
     reveal: () => { const [a, b] = s.duel; return a.votes === b.votes ? ['It\'s a tie!'] : [`${(a.votes > b.votes ? a : b).name} wins that one!`]; },
     answer: () => [s.prompt],
     vote: () => ['Time to vote for the best answer!'],
@@ -214,13 +214,13 @@ const MODES = {
     answer: s => `<div class="kicker rise">Round ${s.round}</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
       <h2 class="rise">Answer on your phone!</h2>${strip(s)}${skip()}`,
     vote: s => `<div class="kicker rise">Vote for the best</div><h1 class="pop" style="font-size:2.6rem">${esc(s.prompt)}</h1>
-      <div class="answers">${s.list.map((a, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span>${esc(a.text)}</div>`).join('')}</div>
+      <div class="answers">${s.list.map((a, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span><span>${withSounds(a.text)}</span></div>`).join('')}</div>
       ${strip(s)}${skip()}`,
     results: s => {
       if (!s.last) return '';
       const top = Math.max(...s.last.list.map(a => a.votes), 1);
       return `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.prompt)}</h1><div class="answers top3">${[...s.last.list].sort((a, b) => b.votes - a.votes).slice(0, 3).map((a, i) =>
-        `<div class="answer rise ${a.votes === top ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack">${esc(a.text)}
+        `<div class="answer rise ${a.votes === top ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack"><span>${withSounds(a.text)}</span>
         <small>${avatar(s.players.find(p => p.name === a.name) || { av: 0 })}${esc(a.name)} · ${plural(a.votes, 'vote')}</small></div></div>`).join('')}</div>`;
     },
   },
@@ -231,7 +231,7 @@ function duel(s) {
   const total = rev ? Math.max(1, a.votes + b.votes) : 1;
   const joke = (j, i) => `<div class="joke ${rev ? (w === i ? 'win' : w >= 0 ? 'lose' : '') : 'pop'}" style="animation-delay:${i * 250}ms">
     ${rev && w === i && j.votes >= 2 && (i ? a : b).votes === 0 ? '<span class="bonus">SWEEP +200</span>' : ''}
-    ${esc(j.setup)}<div class="punch">${esc(j.punch)}</div>
+    ${esc(j.setup)}<div class="punch">${withSounds(j.punch)}</div>
     ${rev ? `<div class="by">${avatar(s.players.find(p => p.name === j.name) || { av: 0 })}${esc(j.name)} · ${plural(j.votes, 'vote')}</div>
       <div class="bar"><i style="width:${j.votes / total * 100}%"></i></div>` : ''}</div>`;
   return `<div class="kicker">Joke-off ${s.duelNo} of ${s.duelCount}</div>
@@ -329,6 +329,7 @@ function render(s, force) {
     return;
   }
   lastKey = key; app.innerHTML = html;
+  if (s.phase !== 'reveal') playChips(app); // reveal repeats the duel jokes, no need to replay
   if (s.phase === 'results' || s.phase === 'scores' || (s.phase === 'reveal' && s.duel.some(j => j.votes))) confetti(s.phase === 'reveal' ? 90 : s.phase === 'scores' ? 120 : 260);
 }
 connect();

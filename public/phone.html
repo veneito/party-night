@@ -26,6 +26,10 @@
   .wait .av{font-size:44px;animation:bob 2.4s ease-in-out infinite}
   .logo{font-size:44px;font-weight:800;letter-spacing:-.04em;text-align:center;margin:8vh 0 6px}
   .logo span{color:var(--gold)}
+  .sndbar{display:flex;gap:8px;margin-top:8px}
+  .sndbar select{flex:1;font:inherit;padding:10px 12px;border-radius:12px;border:0;background:var(--card);color:var(--ink)}
+  .sndbar .pv{padding:0 16px;border-radius:12px;background:var(--card2);font-weight:800}
+  .sndbar .add{background:var(--sky);color:#0b1a30}
   .avs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:8px 0}
   .avs button{aspect-ratio:1;border-radius:14px;background:var(--card);font-size:26px;border:2px solid transparent;padding:0}
   .avs button.on{border-color:var(--gold);background:var(--card2)}
@@ -78,6 +82,14 @@ document.addEventListener('keydown', e => {
 function leave() { room = ''; store('room', ''); joinScreen(); }
 function choose(i) { chosen = i; document.querySelectorAll('.opt').forEach((b, j) => b.classList.toggle('on', j === i)); document.getElementById('p')?.focus(); }
 const sendWords = () => send('words', { words: [...document.querySelectorAll('.w')].map(i => i.value) });
+// sound picker under an answer box: picking one previews it, + drops <name> in at the cursor
+const soundBar = inp => `<div class="sndbar"><select aria-label="Sound effect" onchange="sfx(this.value)">${Object.keys(SOUNDS).map(n => `<option>${n}</option>`).join('')}</select>
+  <button class="pv" aria-label="Preview sound" onclick="sfx(this.previousElementSibling.value)">▶</button><button class="pv add" onclick="addSound('${inp}', this.parentNode.firstElementChild.value)">+ Add</button></div>`;
+function addSound(inp, n) {
+  const el = document.getElementById(inp), at = el.selectionStart ?? el.value.length, tag = `<${n}>`;
+  if (el.value.length + tag.length > el.maxLength) return errEl.textContent = 'No room for another sound';
+  el.value = el.value.slice(0, at) + tag + el.value.slice(el.selectionEnd ?? at); el.focus(); el.setSelectionRange(at + tag.length, at + tag.length);
+}
 const wait = (me, title, msg = 'Eyes on the TV!') => `<div class="wait">${avatar(me, 'xl')}<h2 class="pop">${title}</h2><p>${msg}</p></div>`;
 
 // one screen builder per game mode and phase
@@ -88,17 +100,17 @@ const MODES = {
         `<label for="w${i}">${esc(c)}</label><input id="w${i}" class="w" maxlength="30" autocomplete="off">`).join('')}<button class="btn" onclick="sendWords()">Send words</button>`,
     write: (s, me) => me.done || !s.opts[id] ? wait(me, 'Jokes written!', 'Waiting for the others…') :
       `<div class="kicker">Step 2 of 3</div><h2>Pick a setup</h2>${s.opts[id].map((o, i) => `<button class="opt" onclick="choose(${i})">${esc(o)}…</button>`).join('')}
-       <label for="p">Punchline</label><input id="p" maxlength="100" placeholder="…and that's why" autocomplete="off"><button class="btn" onclick="send('joke',{pick:chosen,text:p.value})">Tell it</button>`,
+       <label for="p">Punchline</label><input id="p" maxlength="100" placeholder="…and that's why" autocomplete="off">${soundBar('p')}<button class="btn" onclick="send('joke',{pick:chosen,text:p.value})">Tell it</button>`,
     duel: (s, me) => me.done ? wait(me, s.duel ? 'Vote locked' : 'Waiting…', 'Eyes on the TV!') :
       `<div class="kicker">Joke-off ${s.duelNo} of ${s.duelCount}</div><h2>Which is funnier?</h2>${s.duel.map((j, i) =>
-        `<button class="opt" onclick="send('vote',{index:${i}})">${esc(j.setup)} <b>${esc(j.punch)}</b></button>`).join('')}`,
+        `<button class="opt" onclick="send('vote',{index:${i}})">${esc(j.setup)} <b>${withSounds(j.punch)}</b></button>`).join('')}`,
   },
   quickwit: {
     answer: (s, me) => me.done ? wait(me, 'Answer locked in!') :
-      `<div class="kicker">Round ${s.round}</div><h2>${esc(s.prompt)}</h2><input id="a" maxlength="80" placeholder="Your answer" autocomplete="off">
+      `<div class="kicker">Round ${s.round}</div><h2>${esc(s.prompt)}</h2><input id="a" maxlength="80" placeholder="Your answer" autocomplete="off">${soundBar('a')}
        <button class="btn" onclick="send('answer',{text:a.value})">Send</button>`,
     vote: (s, me) => me.done ? wait(me, 'Vote cast!') :
-      `<div class="kicker">Vote</div><h2>Pick the best answer</h2>${s.list.map((a, i) => `<button class="opt" onclick="send('vote',{index:${i}})">${esc(a.text)}</button>`).join('')}`,
+      `<div class="kicker">Vote</div><h2>Pick the best answer</h2>${s.list.map((a, i) => `<button class="opt" onclick="send('vote',{index:${i}})">${withSounds(a.text)}</button>`).join('')}`,
   },
 };
 

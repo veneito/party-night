@@ -64,6 +64,29 @@ const SFX = {
   fanfare: () => [[523, 0], [523, .15], [523, .3], [659, .45], [784, .75], [659, 1], [784, 1.15], [1047, 1.3]].forEach(([f, t]) => tone(f, t, .35, 'square', .08)),
   sad: () => [392, 370, 349, 330].forEach((f, i) => tone(f, i * .3, .35, 'triangle', .12)),
 };
+// Sounds players can drop into answers as <name>. Same synth as above.
+const SOUNDS = {
+  boing: () => tone(180, 0, .5, 'sine', .25, 3),
+  honk: () => { tone(330, 0, .18, 'sawtooth', .12); tone(330, .25, .3, 'sawtooth', .12); },
+  rimshot: () => { tone(200, 0, .08, 'triangle', .2); tone(180, .2, .08, 'triangle', .2); tone(2400, .4, .3, 'square', .05, .5); },
+  airhorn: () => [0, .3, .45].forEach(t => { tone(466, t, .25, 'sawtooth', .1); tone(470, t, .25, 'sawtooth', .1); }),
+  whistle: () => tone(400, 0, .7, 'sine', .15, 4),
+  fail: () => [392, 370, 349, 330].forEach((f, i) => tone(f, i * .3, .35, 'triangle', .12)),
+  ding: () => { tone(1320, 0, .6, 'sine', .15); tone(1980, 0, .4, 'sine', .06); },
+  crickets: () => { for (let i = 0; i < 6; i++) tone(4200, i * .12 + (i > 2 ? .4 : 0), .05, 'sine', .05); },
+  drumroll: () => { for (let i = 0; i < 16; i++) tone(120, i * .05, .05, 'square', .06); tone(80, .85, .4, 'triangle', .25); },
+  wow: () => tone(300, 0, .6, 'square', .07, 2.5),
+};
+Object.assign(SFX, SOUNDS);
+const TAG = new RegExp(`<(${Object.keys(SOUNDS).join('|')})>`, 'g');
+// escaped text with sound tags turned into chips; data-snd lets the TV play them in order
+const withSounds = t => esc(t).replace(new RegExp(`&lt;(${Object.keys(SOUNDS).join('|')})&gt;`, 'g'), (_, n) => `<span class="snd" data-snd="${n}">🔊 ${n}</span>`);
+const noSounds = t => String(t ?? '').replace(TAG, ' ');
+// plays every chip inside el one after another, lighting each up
+function playChips(el, gap = 900) {
+  [...el.querySelectorAll('.snd')].forEach((c, i) => setTimeout(() => { sfx(c.dataset.snd); c.classList.remove('hit'); void c.offsetWidth; c.classList.add('hit'); }, 400 + i * gap));
+}
+
 function sfx(name) { if (!sfxVol || !actx || actx.state !== 'running') return; try { SFX[name]?.(); } catch {} }
 function setSfxVol(v) { sfxVol = v; try { localStorage.sfxVol = v; } catch {} }
 

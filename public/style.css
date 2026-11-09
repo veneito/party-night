@@ -43,3 +43,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 .rise{animation:rise .5s ease-out both}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 [hidden]{display:none!important}
+
+/* sound tags inside answers */
+.snd{display:inline-block;padding:0 .45em;margin:0 .1em;border-radius:999px;background:var(--sky);color:#0b1a30;font-size:.8em;font-weight:800;white-space:nowrap;vertical-align:.08em}
+.snd.hit{animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
