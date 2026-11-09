@@ -57,7 +57,7 @@ module.exports = {
     if (g.phase === 'guess') { s.kept = kept(g); s.cancelled = g.cancelled.length; }
     if ((g.phase === 'scores' || g.phase === 'results') && g.word) s.last = { word: g.word, answer: g.answer, correct: g.correct,
       guesser: g.players[g.guesser]?.name ?? '(left)',
-      clues: Object.entries(g.clues).map(([id, text]) => ({ name: g.players[id]?.name ?? '(left)', text, out: g.cancelled.includes(id) })) };
+      clues: Object.entries(g.clues).map(([id, text]) => ({ name: g.players[id]?.name ?? '(left)', text, out: g.cancelled.includes(id), k: norm(text) })) };
   },
   act(g, a, id) {
     if (a.type === 'clue') {
