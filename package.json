@@ -1,7 +1,7 @@
 {
   "name": "party-night",
   "productName": "Party Night",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Party games on your TV, played from your phones",
   "main": "app.js",
   "scripts": {
