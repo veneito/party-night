@@ -55,8 +55,7 @@ function setupUpdates() {
   autoUpdater.on('update-not-available', () => tell({ state: 'none' }));
   autoUpdater.on('download-progress', p => tell({ state: 'progress', percent: Math.round(p.percent) }));
   autoUpdater.on('update-downloaded', () => { tell({ state: 'installing' }); setTimeout(() => autoUpdater.quitAndInstall(true, true), 1500); });
-  autoUpdater.on('error', e => tell({ state: 'error', message: e.message.split('
-')[0] }));
+  autoUpdater.on('error', e => tell({ state: 'error', message: e.message.split('\n')[0] }));
   ipcMain.on('update:check', () => autoUpdater.checkForUpdates().catch(() => {}));
   ipcMain.on('update:download', () => autoUpdater.downloadUpdate().catch(() => {}));
   // check once shortly after opening, so the popup shows without anyone asking
