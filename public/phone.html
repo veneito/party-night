@@ -180,8 +180,36 @@ const MODES = {
       `<div class="kicker">Vote</div><h2>Who's the odd one out?</h2>${s.clues.filter(c => c.id !== id).map(c => { const p = s.players.find(x => x.id === c.id) || { av: 0, name: '?' };
         return `<button class="opt" data-id="${esc(c.id)}" onclick="send('accuse',{who:this.dataset.id})">${avatar(p)} ${esc(p.name)}: <b>${esc(c.text)}</b></button>`; }).join('')}`,
   },
+  draw: {
+    draw: (s, me) => s.drawer === id ?
+      `<div class="kicker">You're drawing</div><h2 style="font-size:34px;color:var(--gold);margin:0">${esc(s.word)}</h2><p>No letters or numbers!</p>
+       <canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
+       <div class="row">${['#1a1230', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button class="pv" aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" onclick="pad.c='${c}'"></button>`).join('')}</div>
+       <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost" onclick="pad.w=${w}">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
+       <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div>` :
+      me.done ? wait(me, 'You got it! 🎉', 'Watch the others guess') :
+      `<div class="kicker">Watch the TV</div><h2>What's being drawn?</h2><p style="font-size:28px;letter-spacing:4px">${esc(s.hint)}</p>
+       <input id="a" maxlength="30" placeholder="Your guess" autocomplete="off" onkeydown="if (event.key === 'Enter') guess()"><button class="btn" onclick="guess()">Guess</button>`,
+  },
 };
 MODES.caption = MODES.quickwit;
+function guess() { const el = document.getElementById('a'); send('guess', { text: el.value }); el.value = ''; el.focus(); }
+// drawing pad: each finished stroke is sent as points scaled to 0-1000, and the TV redraws them all
+const pad = { c: '#1a1230', w: 10 };
+function initPad(cv) {
+  const x = cv.getContext('2d'); let pts = null;
+  const at = e => { const r = cv.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / r.width * 1000), Math.round((e.clientY - r.top) / r.height * 1000)]; };
+  cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); pts = at(e); x.strokeStyle = pad.c; x.lineWidth = pad.w; x.lineCap = x.lineJoin = 'round'; x.beginPath(); x.moveTo(...pts); };
+  cv.onpointermove = e => { if (!pts || pts.length >= 1200) return; const p = at(e); pts.push(...p); x.lineTo(...p); x.stroke(); };
+  cv.onpointerup = cv.onpointercancel = () => { if (pts) { if (pts.length === 2) pts.push(pts[0] + 1, pts[1]); send('stroke', { p: pts, c: pad.c, w: pad.w }); } pts = null; };
+}
+// undo / clear come back from the server, so the drawer's pad redraws from the shared strokes
+function paintPad(s) {
+  const cv = app.querySelector('canvas.pad'); if (!cv || !s.strokes) return;
+  if (cv.dataset.n === String(s.strokes.length) || cv.matches(':active')) return; cv.dataset.n = s.strokes.length;
+  const x = cv.getContext('2d'); x.clearRect(0, 0, 1000, 1000); x.lineCap = x.lineJoin = 'round';
+  for (const k of s.strokes) { x.strokeStyle = k.c; x.lineWidth = k.w; x.beginPath(); x.moveTo(k.p[0], k.p[1]); for (let i = 2; i < k.p.length; i += 2) x.lineTo(k.p[i], k.p[i + 1]); x.stroke(); }
+}
 
 // The host's phone gets the TV's controls, so nobody needs a mouse on the TV.
 // It lives outside #app and redraws on every update; it has no text boxes, so nothing typed gets wiped.
@@ -228,7 +256,7 @@ function watch() {
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
     const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
-    if (key === last) return; last = key; chosen = -1;
+    if (key === last) return paintPad(s); last = key; chosen = -1;
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
     let html;
@@ -243,7 +271,7 @@ function watch() {
     // between games players can swap avatars
     if (between) html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
       <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv', me.ph)}`;
-    swap(app, html, () => { app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); });
+    swap(app, html, () => { app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } });
   };
 }
 if (room && q.get('auto') && q.get('name')) send('join', { text: q.get('name') }).then(ok => { if (ok) { store('room', room); watch(); } else joinScreen(); });

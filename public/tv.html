@@ -193,6 +193,7 @@ function narrate(s) {
     take: () => [s.take, 'Agree or disagree?'],
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
+    draw: () => [`${s.players.find(p => p.id === s.drawer)?.name ?? 'Someone'} is drawing. Guess on your phone!`],
     vote: () => ['Time to vote for the best answer!'],
     gamevote: () => ["What's next? Vote on your phone!"],
     scores: () => top ? [`End of round ${s.round}. ${top.name} is in the lead with ${top.score} points!`] : [],
@@ -239,6 +240,9 @@ function kick(el) {
 }
 const strip = s => `<div class="strip" data-live="strip">${s.players.map(p =>
   `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)} ${p.done && !seen.has(dk(s, p)) ? (seen.add(dk(s, p)), 'justdone') : ''}">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>`;
+// Draw & Guess strokes as SVG; data-live so new strokes swap in without replaying animations
+const sketch = (strokes, k, size) => `<svg data-live="sk-${k}" viewBox="0 0 1000 1000" style="width:${size};height:${size};background:#fff;border-radius:1rem;flex:none">${strokes.map(t =>
+  `<polyline points="${t.p.join(' ')}" fill="none" stroke="${esc(t.c)}" stroke-width="${t.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</svg>`;
 const skip = (label = 'Time\'s up') => `<div class="footer-actions">${btn('skip', label, 'ghost')}</div>`;
 
 const MODES = {
@@ -284,6 +288,16 @@ const MODES = {
       <div class="kicker" style="font-size:2.4rem;margin-top:.6rem">${s.last.pct}% agreed</div><div class="bar" style="width:min(50rem,90%)"><i style="width:${s.last.pct}%"></i></div>
       <div class="rest" style="margin-top:1rem">${[...s.last.list].sort((a, b) => Math.abs(a.guess - s.last.pct) - Math.abs(b.guess - s.last.pct)).map(p =>
         `<div class="who rise">${avatar(p)}${esc(p.name)} ${p.agree ? '👍' : '👎'} guessed ${p.guess}%</div>`).join('')}</div>`,
+  },
+  draw: {
+    art: '🎨', bg: 'linear-gradient(135deg,#4d96ff,#f472b6)',
+    draw: s => { const d = s.players.find(p => p.id === s.drawer) || { av: 0, name: '?' };
+      return `<div class="kicker rise">Round ${s.round} · ${avatar(d)} ${esc(d.name)} is drawing</div>
+      <div style="display:flex;gap:2rem;align-items:flex-start;justify-content:center">${sketch(s.strokes, 'live', '30rem')}
+      <div data-live="feed" style="min-width:16rem;text-align:left"><h2 style="letter-spacing:.3em">${esc(s.hint)}</h2><p>${plural(s.got, 'player')} got it</p>${s.feed.map(f => { const p = s.players.find(x => x.id === f.id) || { av: 0, name: '?' };
+        return `<div class="who">${avatar(p)}${esc(p.name)} ${f.ok ? '<b style="color:var(--gold)">got it! 🎉</b>' : esc(f.text)}</div>`; }).join('')}</div></div>${strip(s)}${skip()}`; },
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">It was <b style="color:var(--gold)">${esc(s.last.word)}</b></h1>
+      <h2 style="margin:.2rem 0">${esc(s.last.drawer)}'s drawing · ${s.last.got.length ? `got by ${s.last.got.map(esc).join(', ')}` : 'nobody got it!'}</h2>${sketch(s.last.strokes, 'last', '18rem')}`,
   },
   oddone: {
     art: '🎭', bg: 'linear-gradient(135deg,#a78bfa,#3ee6b5)',
