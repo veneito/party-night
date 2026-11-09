@@ -268,7 +268,13 @@ function start(port = PORT) {
 if (require.main === module) start().then(p => console.log(`TV:     http://localhost:${p}/tv
 Phones: ${lanUrl()}
 Test:   http://localhost:${p}/test`));
-module.exports = { start, lanUrl };
+// shut everything down: round timers, every phone/TV live connection, then the server itself
+function stop() {
+  for (const g of Object.values(rooms)) { clearTimeout(g.timer); g.clients.forEach(c => c.end()); }
+  server.closeAllConnections?.();
+  return new Promise(r => server.close(() => r()));
+}
+module.exports = { start, stop, lanUrl };
 
 // The address phones should type. Skips virtual adapters (VirtualBox, Hyper-V, WSL, VPNs) that phones can't reach.
 function lanUrl() {
