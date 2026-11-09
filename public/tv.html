@@ -47,6 +47,11 @@
   .deal h3{font-size:1.6rem} .deal p{color:#5d5648;flex:1}
   .deal .chip{background:#231a080f;color:#3d3526;white-space:nowrap;font-weight:600}
   .deal .chips{display:flex;flex-wrap:wrap;gap:.4rem} .deal .chips .chip{margin:0}
+  .deal .mode{position:relative;box-shadow:inset 0 0 0 .45rem #fffaf0,inset 0 0 0 .55rem #231a0812,0 .45rem 0 #0006,0 1.2rem 1.6rem #0005}
+  .deal .pip{position:absolute;right:.9rem;bottom:.7rem;font-size:1.3rem;rotate:180deg;opacity:.55}
+  .deal .mode:hover,.deal .mode:focus-visible{box-shadow:inset 0 0 0 .45rem #fffaf0,inset 0 0 0 .55rem #231a0812,0 .8rem 0 #0006,0 2rem 2.4rem #0006}
+  /* the TV is the table: wooden rail round the edge, felt darkening toward it */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;box-shadow:inset 0 0 0 .8rem #5a3820,inset 0 0 0 1.05rem #8a5a35,inset 0 0 0 1.2rem #2e1c10,inset 0 0 10rem 3rem #000a}
   @media (max-width:1100px){.modes.deal{grid-template-columns:repeat(3,minmax(0,1fr))}}
   .chip{display:inline-block;padding:.3rem .8rem;border-radius:999px;background:#ffffff14;font-size:.95rem;margin-right:.4rem}
 
@@ -425,7 +430,7 @@ function menu(s) {
   return `<p class="kicker rise">Pick a game</p><h1 class="hero pop">Party <span>Night</span></h1>
     <div class="modes deal">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 70}ms;--acc:var(--${['gold', 'coral', 'mint', 'sky'][i % 4]});--tilt:${[-1.2, .8, -.4, 1.2, -.8][i % 5]}deg" onclick='send("pick",{game:"${g.id}"})'>
       <div class="art"><span>${MODES[g.id]?.art || '🎲'}</span></div>
-      <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><div class="chips"><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></div></button>`).join('')}</div>
+      <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><div class="chips"><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></div><span class="pip" aria-hidden="true">${MODES[g.id]?.art || '🎲'}</span></button>`).join('')}</div>
     <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${hostTag(s)} <button class="btn ghost recode" onclick="recode(this)">↻ New code</button>${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${s.settings.home === 'menu' ? '' : btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
 </div>`;
 }
