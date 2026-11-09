@@ -57,6 +57,8 @@
   .pslot{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.6rem .4rem;border-radius:1.2rem;background:var(--card);font-weight:700;font-size:1.15rem;min-width:0}
   .pslot{position:relative} .pslot .kick{position:absolute;top:.3rem;right:.3rem}
   .kick{width:1.6rem;height:1.6rem;border-radius:50%;background:#0004;font-size:.8rem;line-height:1;opacity:.35;flex:none;padding:0}
+.kick.crown.on{opacity:1;background:transparent} .pslot .crown{right:auto;left:.3rem}
+  .kick.armed{opacity:1;background:var(--coral);width:auto;border-radius:999px;padding:0 .6rem;font-weight:800}
   .kick:hover,.kick:focus-visible{opacity:1;background:var(--coral)}
   .pslot .name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pslot.empty{background:transparent;border:2px dashed var(--line);color:#ffffff40;justify-content:center;min-height:5.8rem}
@@ -113,7 +115,7 @@
   .toast{position:fixed;right:1.5rem;bottom:1.5rem;z-index:50;display:grid;gap:.4rem;width:24rem;animation:pop .35s}
   .toast b{font-size:1.3rem} .toast span{color:var(--mute)} .toast .row{margin:.6rem 0 0;justify-content:flex-end}
 </style></head><body><div class="stage"></div>
-<header><div class="brand">🎉 Party <i>Night</i></div><div id="room"></div><div class="botctl" id="bots"></div><button class="mute" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="timer" id="timer" hidden><b></b></div></header>
+<header><div class="brand">🎉 Party <i>Night</i></div><div id="room"></div><div class="botctl" id="bots"></div><button class="mute" id="home" onclick="send('menu')" aria-label="Home" title="Home" hidden>🏠</button><button class="mute" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="timer" id="timer" hidden><b></b></div></header>
 <main id="app"><h2>Connecting…</h2></main>
 <dialog id="settings" class="panel">
   <h3>Settings</h3>
@@ -182,6 +184,7 @@ function narrate(s) {
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
     vote: () => ['Time to vote for the best answer!'],
+    gamevote: () => ["What's next? Vote on your phone!"],
     scores: () => top ? [`End of round ${s.round}. ${top.name} is in the lead with ${top.score} points!`] : [],
     results: () => top ? [`${top.name} wins the game with ${top.score} points!`] : [],
   }[s.phase];
@@ -206,9 +209,16 @@ async function connect() {
 const popOnce = id => seen.has(id) ? '' : (seen.add(id), 'pop');
 // ✕ on a player removes them, for someone who wandered off mid-game
 const kickBtn = p => `<button class="kick" data-id="${esc(p.id)}" data-name="${esc(p.name)}" aria-label="Remove ${esc(p.name)}" onclick="kick(this)">✕</button>`;
-function kick(el) { if (confirm(`Remove ${el.dataset.name} from the game?`)) send('kick', { who: el.dataset.id }); }
+// 👑 on a real player makes them host (their phone gets these controls); the current host's crown stays lit
+const hostBtn = p => p.bot ? '' : `<button class="kick crown ${p.id === S?.host ? 'on' : ''}" data-id="${esc(p.id)}" aria-label="Make ${esc(p.name)} host" onclick="send('host',{who:this.dataset.id})">👑</button>`;
+// first click arms it ("Remove?"), a second click within 3 s removes; no pop-up, which the desktop app doesn't show
+function kick(el) {
+  if (el.classList.contains('armed')) return send('kick', { who: el.dataset.id });
+  el.classList.add('armed'); el.textContent = 'Remove?';
+  setTimeout(() => { el.classList.remove('armed'); el.textContent = '✕'; }, 3000);
+}
 const strip = s => `<div class="strip" data-live="strip">${s.players.map(p =>
-  `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)}">${avatar(p)}${esc(p.name)}${kickBtn(p)}</div>`).join('')}</div>`;
+  `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)}">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>`;
 const skip = (label = 'Time\'s up') => `<div class="footer-actions">${btn('skip', label, 'ghost')}</div>`;
 
 const MODES = {
@@ -290,13 +300,13 @@ function menu(s) {
     <div class="modes">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 100}ms" onclick='send("pick",{game:"${g.id}"})'>
       <div class="art" style="background:${MODES[g.id]?.bg || 'var(--card2)'}"><span>${MODES[g.id]?.art || '🎲'}</span></div>
       <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></button>`).join('')}</div>
-    <div class="joinrow rise">${s.players.length ? '' : `<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">${s.players.length ? `<div class="rest">${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${kickBtn(p)}</div>`).join('')}</div>` : `Players can join already at <b>${esc(url)}</b> with code <b>${s.code}</b>`}</div>
+    <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
 </div>`;
 }
 
 function lobby(s) {
   const G = s.games.find(x => x.id === s.game), max = s.settings.max || 20, n = s.players.length;
-  const slots = s.players.map(p => `<div class="pslot ${popOnce('l' + p.id)}">${kickBtn(p)}${avatar(p, 'lg')}<span class="name">${esc(p.name)}</span></div>`).join('')
+  const slots = s.players.map(p => `<div class="pslot ${popOnce('l' + p.id)}">${kickBtn(p)}${avatar(p, 'lg')}<span class="name">${esc(p.name)}</span>${hostBtn(p)}</div>`).join('')
     + Array.from({ length: Math.max(0, Math.min(max, 20) - n) }, () => `<div class="pslot empty">?</div>`).join('');
   return `<div class="lobby">
     <div class="panel rise">
@@ -320,6 +330,15 @@ function lobby(s) {
     </div></div>`;
 }
 
+function gamevote(s) {
+  const G = s.games.find(x => x.id === s.game), opts = [...(G ? [{ id: 'replay', name: `${G.name} again`, art: '↻', bg: 'var(--card2)' }] : []),
+    ...s.games.filter(g => g.id !== s.game).map(g => ({ id: g.id, name: g.name, art: MODES[g.id]?.art || '🎲', bg: MODES[g.id]?.bg || 'var(--card2)' }))];
+  return `<div class="kicker rise">Vote on your phone</div><h1 class="pop">What's next?</h1>
+    <div class="modes" data-live="gv">${opts.map(o => `<div class="mode" style="width:16rem"><div class="art" style="background:${o.bg};height:4rem"><span>${o.art}</span></div>
+      <div class="body"><h3 style="font-size:1.4rem">${esc(o.name)}</h3><span class="chip">${plural(s.gvotes[o.id] || 0, 'vote')}</span></div></div>`).join('')}</div>
+    ${strip(s)}${skip('Pick now')}`;
+}
+
 function results(s) {
   const M = MODES[s.game] || {}, ranked = [...s.players].sort((a, b) => b.score - a.score);
   const order = [1, 0, 2].filter(i => ranked[i]), H = ['7rem', '5rem', '3.8rem'], C = ['var(--gold)', '#d6dbe6', '#e3a46b'];
@@ -329,7 +348,7 @@ function results(s) {
       <div class="name">${esc(ranked[i].name)}</div><div class="pts">${ranked[i].score} pts</div>
       <div class="block" style="height:${H[i]};background:${C[i]}">${i + 1}</div></div>`).join('')}</div>
     <div class="rest">${ranked.slice(3).map((p, i) => `<div class="who rise">${i + 4}. ${avatar(p)}${esc(p.name)} · ${p.score}</div>`).join('')}</div>
-    <div class="footer-actions sticky">${final ? btn('start', '↻ Play again') : btn('skip', `▶ Round ${s.round + 1}`)}${btn('menu', '← Menu', 'ghost')}</div>`;
+    <div class="footer-actions sticky">${final ? btn('start', '↻ Play again') : btn('skip', `▶ Round ${s.round + 1}`)}${btn('menu', s.settings.home === 'menu' ? '← Menu' : '🏠 Vote next game', 'ghost')}</div>`;
 }
 
 // sounds follow what changed since the last update
@@ -353,6 +372,7 @@ function playSounds(s) {
 function render(s, force) {
   if (!force) playSounds(s);
   setTimerFrom(s, document.getElementById('timer'));
+  document.getElementById('home').hidden = s.phase === 'menu' || s.phase === 'gamevote';
   roomEl.className = 'roompill'; roomEl.hidden = s.phase === 'menu' || s.phase === 'lobby';
   roomEl.innerHTML = `${esc(url.replace('http://', ''))}<b>${s.code}</b>`;
   voiceOn.checked = s.settings.voice !== 'off';
@@ -362,7 +382,7 @@ function render(s, force) {
   document.getElementById('bots').innerHTML = `<span>🤖 Bots <b>${nb}</b>${s.pendingBots ? ` <small>(+${s.pendingBots} next round)</small>` : ''}</span>
     <button aria-label="Remove a bot" onclick='send("unbot",{n:1})' ${nb + s.pendingBots ? '' : 'disabled'}>−</button><button aria-label="Add a bot" onclick='send("bots",{n:1})'>+</button>`;
   const M = MODES[s.game] || {};
-  const html = s.phase === 'menu' ? menu(s) : s.phase === 'lobby' ? lobby(s) : s.phase === 'results' || s.phase === 'scores' ? results(s) : (M[s.phase] || (() => `<h1>${s.phase}</h1>`))(s);
+  const html = s.phase === 'menu' ? menu(s) : s.phase === 'lobby' ? lobby(s) : s.phase === 'gamevote' ? gamevote(s) : s.phase === 'results' || s.phase === 'scores' ? results(s) : (M[s.phase] || (() => `<h1>${s.phase}</h1>`))(s);
   // same screen: only swap the live bits so entrance animations don't replay on every update
   const key = [s.phase, s.game, s.round, s.duelNo].join('|');
   if (key === lastKey && !force) {

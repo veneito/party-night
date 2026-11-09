@@ -34,9 +34,21 @@
   .avs button{aspect-ratio:1;border-radius:14px;background:var(--card);font-size:26px;border:2px solid transparent;padding:0}
   .avs button.on{border-color:var(--gold);background:var(--card2)}
   .avs button:disabled{opacity:.2}
+  #hostp{max-width:480px;margin:12px auto;border-bottom:1px solid var(--line);padding-bottom:10px}
+  #app+#hostp{border-bottom:0;border-top:1px solid var(--line);margin-top:28px;padding-top:6px}
+  #hostp:empty{display:none}
+  #hostp .row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  #hostp .row .btn{flex:1;width:auto;margin:0;padding:12px 14px;font-size:16px;min-width:40%}
+  #hostp .seg{display:flex;background:var(--bg2);border-radius:999px;padding:3px;margin-bottom:6px}
+  #hostp .seg button{flex:1;background:transparent;border-radius:999px;padding:9px 4px;font-weight:700;color:var(--mute);font-size:14px}
+  #hostp .seg button.on{background:var(--ink);color:#1a1230}
+  #hostp summary{cursor:pointer;font-weight:800;padding:10px 0}
+  #hostp .pl{display:flex;align-items:center;gap:8px;padding:6px 0;font-weight:700}
+  #hostp .pl .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #hostp .pl button{background:var(--card);border-radius:10px;padding:8px 10px}
   #c{text-transform:uppercase;letter-spacing:.4em;font-weight:800;text-align:center;font-size:26px}
 </style></head><body><div class="stage"></div>
-<div class="top" id="top"></div><div id="app"></div><div class="err" id="err" role="alert"></div>
+<div class="top" id="top"></div><div id="app"></div><div id="hostp"></div><div class="err" id="err" role="alert"></div>
 <script src="/common.js"></script>
 <script>
 const app = document.getElementById('app'), errEl = document.getElementById('err'), topEl = document.getElementById('top');
@@ -79,7 +91,7 @@ document.addEventListener('keydown', e => {
   const empty = [...app.querySelectorAll('input')].find(i => !i.value.trim() && i !== e.target);
   if (empty) empty.focus(); else app.querySelector('.btn')?.click();
 });
-function leave() { room = ''; store('room', ''); joinScreen(); }
+function leave() { document.getElementById('hostp').innerHTML = ''; room = ''; store('room', ''); joinScreen(); }
 function choose(i) { chosen = i; document.querySelectorAll('.opt').forEach((b, j) => b.classList.toggle('on', j === i)); document.getElementById('p')?.focus(); }
 const sendWords = () => send('words', { words: [...document.querySelectorAll('.w')].map(i => i.value) });
 // sound picker under an answer box: picking one previews it, + drops <name> in at the cursor
@@ -136,6 +148,34 @@ const MODES = {
 };
 MODES.caption = MODES.quickwit;
 
+// The host's phone gets the TV's controls, so nobody needs a mouse on the TV.
+// It lives outside #app and redraws on every update; it has no text boxes, so nothing typed gets wiped.
+function hostPanel(s, me) {
+  const el = document.getElementById('hostp');
+  if (s.host !== id) return el.innerHTML = '';
+  // between games the controls are the main thing, so they go on top; mid-game the answer screen comes first
+  if (['menu', 'lobby', 'scores', 'results'].includes(s.phase)) app.before(el); else app.after(el);
+  const open = el.querySelector('details')?.open, G = s.games.find(x => x.id === s.game), n = s.players.length, nb = s.players.filter(p => p.bot).length;
+  const b = (label, js, cls = '') => `<button class="btn ${cls}" onclick="${js}">${label}</button>`;
+  let h = `<div class="kicker">👑 You're the host</div>`;
+  if (s.phase === 'menu') h += `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}</div><label>Or pick a game</label>${s.games.map(g => `<button class="opt" onclick="send('pick',{game:'${g.id}'})"><b>${esc(g.name)}</b><br>${esc(g.desc)}</button>`).join('')}`;
+  else if (s.phase === 'lobby') h += G.settings.map(def => `<label>${esc(def.label)}</label><div class="seg">${def.options.map(([v, l]) =>
+      `<button class="${s.settings[def.key] === v ? 'on' : ''}" onclick='send("set",{key:"${def.key}",value:${JSON.stringify(v)}})'>${esc(l)}</button>`).join('')}</div>`).join('')
+    + `<div class="row">${n + s.pendingBots >= G.min ? b('▶ Start game', "send('start')") : `<p>Need ${G.min - n} more player${G.min - n === 1 ? '' : 's'}</p>`}</div>`;
+  else if (s.phase === 'scores') h += `<div class="row">${b(`▶ Round ${s.round + 1}`, "send('skip')")}</div>`;
+  else if (s.phase === 'results') h += `<div class="row">${b('↻ Play again', "send('start')")}</div>`;
+  else if (s.phase === 'gamevote') h += `<div class="row">${b('⏭ Pick now', "send('skip')")}${b('← Straight to menu', "send('menu')", 'ghost')}</div>`;
+  else h += `<div class="row">${b(s.phase === 'reveal' ? 'Next ▶' : "⏭ Time's up", "send('skip')", 'ghost')}</div>`;
+  const home = s.settings.home !== 'menu' && !['lobby', 'gamevote'].includes(s.phase);
+  if (s.game && !['lobby', 'menu'].includes(s.phase)) h += `<label>Home button</label><div class="seg">${[['vote', 'Players vote next'], ['menu', 'Back to menu']].map(([v, l]) =>
+    `<button class="${(s.settings.home || 'vote') === v ? 'on' : ''}" onclick="send('set',{key:'home',value:'${v}'})">${l}</button>`).join('')}</div>`;
+  h += `<div class="row">${!['menu', 'gamevote'].includes(s.phase) ? b(home ? '🏠 Home (vote)' : '🏠 Menu', "send('menu')", 'ghost') : ''}${b(`🤖 − (${nb + s.pendingBots})`, "send('unbot',{n:1})", 'ghost')}${b('🤖 +', "send('bots',{n:1})", 'ghost')}</div>`;
+  h += `<details ${open ? 'open' : ''}><summary>Players (${n})</summary>${s.players.map(p => `<div class="pl">${avatar(p)}<span class="nm">${esc(p.name)}${p.id === s.host ? ' 👑' : ''}</span>
+    ${p.bot || p.id === s.host ? '' : `<button data-id="${esc(p.id)}" onclick="send('host',{who:this.dataset.id})">👑 Make host</button>`}
+    ${p.id === id ? '' : `<button data-id="${esc(p.id)}" onclick="if (confirm('Remove this player?')) send('kick',{who:this.dataset.id})">✕</button>`}</div>`).join('')}</details>`;
+  el.innerHTML = h;
+}
+
 function watch() {
   es = new EventSource('/events?room=' + room);
   es.onerror = async () => {
@@ -146,7 +186,8 @@ function watch() {
   es.onmessage = e => {
     const s = JSON.parse(e.data), me = s.players.find(p => p.id === id);
     if (!me) return leave(); // removed from the room
-    topEl.innerHTML = `<div class="me">${avatar(me)}${esc(me.name)}</div><div class="pts">${me.score} pts</div><div class="timer" id="timer" hidden><b></b></div>`;
+    hostPanel(s, me);
+    topEl.innerHTML = `<div class="me">${avatar(me)}${esc(me.name)}${s.host === id ? ' 👑' : ''}</div><div class="pts">${me.score} pts</div><div class="timer" id="timer" hidden><b></b></div>`;
     setTimerFrom(s, document.getElementById('timer'));
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
@@ -155,9 +196,12 @@ function watch() {
     if (key === last) return; last = key; chosen = -1;
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
-    if (s.phase === 'menu') app.innerHTML = wait(me, `You're in, ${esc(me.name)}!`, 'The host is picking a game.');
+    if (s.phase === 'menu') app.innerHTML = wait(me, `You're in, ${esc(me.name)}!`, s.host === id ? 'You pick the game, above.' : 'The host is picking a game.');
     else if (s.phase === 'lobby') app.innerHTML = wait(me, esc(G.name), 'Get ready. The host will start soon.');
     else if (s.phase === 'scores') app.innerHTML = wait(me, `#${rank} with ${me.score} pts`, `Round ${s.round + 1} of ${s.rounds} is coming up!`);
+    else if (s.phase === 'gamevote') app.innerHTML = me.done ? wait(me, 'Vote cast!', 'Eyes on the TV!') :
+      `<div class="kicker">What's next?</div><h2>Vote for the next game</h2>${G ? `<button class="opt" onclick="send('gvote',{game:'replay'})">↻ <b>Play ${esc(G.name)} again</b></button>` : ''}${s.games.filter(g => g.id !== s.game).map(g =>
+        `<button class="opt" onclick="send('gvote',{game:'${g.id}'})"><b>${esc(g.name)}</b><br>${esc(g.desc)}</button>`).join('')}`;
     else if (s.phase === 'results') app.innerHTML = wait(me, `#${rank} with ${me.score} pts`, rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!');
     else app.innerHTML = screen ? screen(s, me) : wait(me, 'Watch the TV');
     // between games players can swap avatars
