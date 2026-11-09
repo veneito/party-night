@@ -61,9 +61,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 /* a player who just finished gets a little bounce and a green flash */
 .justdone{animation:done-pop .5s cubic-bezier(.2,1.6,.4,1)}
 @keyframes done-pop{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
-/* winners glow */
+/* winners bob gently */
 .answer.win{animation:glow 1.8s ease-in-out infinite alternate}
-@keyframes glow{from{box-shadow:0 0 0 0 #f2b33d00}to{box-shadow:0 0 1.6em .2em #f2b33d66}}
+@keyframes glow{from{transform:none;box-shadow:0 .2em 0 #0005}to{transform:translateY(-.25em);box-shadow:0 .45em 0 #0005}}
 /* buttons feel springy */
 .btn{transition:transform .15s cubic-bezier(.2,1.6,.4,1),box-shadow .1s,filter .15s}
 .btn:hover{filter:brightness(1.08)}
