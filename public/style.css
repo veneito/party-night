@@ -70,3 +70,38 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 /* shake for errors */
 .shake{animation:shake .35s}
 @keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+/* Elemix cards */
+.ecard{--ec:#ff7a45;--ec2:#ffb36b;position:relative;width:5.2em;aspect-ratio:5/7;border-radius:.7em;flex:none;overflow:hidden;padding:0;
+  display:grid;place-items:center;align-content:center;color:#1a1230;font-family:var(--font);
+  background:linear-gradient(160deg,var(--ec2),var(--ec));box-shadow:inset 0 0 0 .3em #ffffffcc,0 .25em 0 #0005;transition:transform .15s}
+.ecard.e1{--ec:#3a8dff;--ec2:#8cc8ff} .ecard.e2{--ec:#1fc893;--ec2:#7ff0cc} .ecard.e3{--ec:#8b5cf6;--ec2:#c4b0ff}
+.ecard.e4{background:conic-gradient(from 45deg,#ff7a45,#3a8dff,#1fc893,#8b5cf6,#ff7a45);color:#fff}
+.ecard .mark{position:absolute;font-style:normal;font-size:3.4em;opacity:.28;right:-.15em;bottom:-.1em;transform:rotate(-18deg)}
+.ecard b{font-size:2em;font-weight:800;line-height:1;z-index:1} .ecard.e4 b{text-shadow:0 .08em 0 #0006}
+.ecard small{font-size:.55em;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.8;z-index:1}
+.ecard .cn{position:absolute;font-size:.6em;font-weight:800} .ecard .tl{top:.6em;left:.7em} .ecard .br{bottom:.6em;right:.7em;transform:rotate(180deg)}
+.ecard.no{filter:saturate(.25) brightness(.6);cursor:default}
+.ecard.yes:hover,.ecard.yes:focus-visible{transform:translateY(-.4em)}
+.ecard.back{background:repeating-linear-gradient(45deg,#30255a 0 .4em,#251c45 .4em .8em);box-shadow:inset 0 0 0 .3em var(--gold),0 .25em 0 #0005}
+.hand{display:flex;flex-wrap:wrap;gap:.4em;justify-content:center;font-size:15px;margin:.6em 0}
+
+/* Elemix TV table: tilted felt, seats around the rim */
+.table3d{position:relative;width:min(66rem,94vw);height:36rem;margin:4rem auto 3rem;perspective:70rem}
+.felt{position:absolute;inset:4.5rem 7rem;border-radius:50%;transform:rotateX(36deg);transform-style:preserve-3d;
+  background:radial-gradient(ellipse at 50% 40%,#2b7a64,#164a3e 70%,#0e3029);
+  border:1.3rem solid #6b4428;box-shadow:inset 0 0 0 .3rem #8a5a35,inset 0 1.5rem 3rem #0006,0 2.5rem 0 #2e1c10,0 3.5rem 4rem #0008;
+  display:flex;align-items:center;justify-content:center;gap:5rem;font-size:1.9rem}
+.pile{position:relative;width:5.2em;aspect-ratio:5/7}
+.pile .ecard{position:absolute;inset:0;width:100%;transform:rotate(var(--r,0deg))}
+.pile.stock .ecard:nth-child(1){transform:translate(.25em,.25em)} .pile.stock .ecard:nth-child(2){transform:translate(.12em,.12em)}
+.pile.discard .ecard:last-of-type{animation:land .35s ease-out}
+@keyframes land{from{transform:translateY(-1.5em) rotate(-12deg) scale(1.15);opacity:.4}}
+.seat{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:.3rem;font-size:1.4rem;font-weight:700;transition:transform .25s}
+.seat span{display:flex;white-space:nowrap;gap:.4rem;align-items:center;background:#0f0b1ecc;padding:.15rem .6rem;border-radius:999px}
+.seat b{background:var(--card2);border-radius:999px;padding:0 .45rem;font-size:.85em}
+.seat.now{transform:translate(-50%,-50%) scale(1.18)} .seat.now span{background:var(--gold);color:#1a1230} .seat.now b{background:#1a123033}
+.seat .fan{position:relative;height:2.6rem;width:4rem}
+.seat .fan i{position:absolute;left:50%;bottom:0;width:1.7rem;height:2.4rem;margin-left:-.85rem;border-radius:.25rem;transform-origin:50% 120%;transform:rotate(var(--r));
+  background:repeating-linear-gradient(45deg,#30255a 0 .2rem,#251c45 .2rem .4rem);box-shadow:inset 0 0 0 .12rem var(--gold)}
+@media (prefers-reduced-motion:reduce){.pile.discard .ecard:last-of-type{animation:none}}

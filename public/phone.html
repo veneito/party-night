@@ -187,6 +187,14 @@ const MODES = {
       `<div class="kicker">Watch the TV</div><h2>What's being drawn?</h2><p style="font-size:28px;letter-spacing:4px">${esc(s.hint)}</p>
        <input id="a" maxlength="30" placeholder="Your guess" autocomplete="off" onkeydown="if (event.key === 'Enter') guess()"><button class="btn" onclick="guess()">Guess</button>`,
   },
+  elemix: {
+    turn: (s, me) => { const mine = s.cur === id, hand = s.hands[id] || [];
+      return `<div class="kicker">${mine ? 'Your turn!' : `${esc(s.players.find(p => p.id === s.cur)?.name)}'s turn`}</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:13px">${ecard(s.top, 'disabled')}<p>Play <b>${ELEM[s.elem][0]} ${ELEM[s.elem][1]}</b> or a matching ${CARD_FACE[s.top.v]?.[1] ?? s.top.v}.<br>${esc(s.log)}</p></div>
+        <div id="wild"></div>
+        <div class="hand">${hand.map((c, i) => mine && s.playable[id][i] ? ecard(c, `onclick="playCard(${i},${c.e === 4})"`, 'yes') : ecard(c, 'disabled', mine ? 'no' : '')).join('')}</div>
+        ${mine ? `<button class="btn ghost" onclick="send('draw')">Draw a card</button>` : ''}`; },
+  },
   telephone: {
     tstart: (s, me) => me.done ? wait(me, 'Sent down the line!') :
       `<div class="kicker">Start a chain</div><h2>Write something for the next player to draw</h2>
@@ -206,6 +214,11 @@ const padHtml = `<canvas class="pad" width="1000" height="1000" style="width:100
   <div class="row">${['#1a1230', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button class="pv" aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" onclick="pad.c='${c}'"></button>`).join('')}</div>
   <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost" onclick="pad.w=${w}">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
   <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div>`;
+function playCard(i, wild) {
+  if (!wild) return send('play', { i });
+  document.getElementById('wild').innerHTML = `<label>Pick the new element</label><div class="row">${ELEM.slice(0, 4).map(([m, n], e) =>
+    `<button class="btn ghost" onclick="send('play',{i:${i},elem:${e}})">${m} ${n}</button>`).join('')}</div>`;
+}
 function guess() { const el = document.getElementById('a'); send('guess', { text: el.value }); el.value = ''; el.focus(); }
 // drawing pad: each finished stroke is sent as points scaled to 0-1000, and the TV redraws them all
 const pad = { c: '#1a1230', w: 10 };
@@ -268,7 +281,7 @@ function watch() {
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
-    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
     if (key === last) return paintPad(s); last = key; chosen = -1;
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;

@@ -193,6 +193,7 @@ function narrate(s) {
     take: () => [s.take, 'Agree or disagree?'],
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
+    turn: () => ['Elemix! Match the element or the number. Your hand is on your phone.'],
     tstart: () => ['Write something for the next player to draw!'],
     tdraw: () => ['Draw what you read!'],
     tguess: () => ['Now describe what you see!'],
@@ -245,6 +246,18 @@ function kick(el) {
 }
 const strip = s => `<div class="strip" data-live="strip">${s.players.map(p =>
   `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)} ${p.done && !seen.has(dk(s, p)) ? (seen.add(dk(s, p)), 'justdone') : ''}">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>`;
+// Elemix table: felt tilted away in perspective, piles in the middle, players seated around the rim (seats stay upright to read)
+function tableView(s) {
+  const n = s.order.length, spin = (c, k) => ((s.turnNo - k) * 47 + (c.e * 13)) % 34 - 17; // stable messy-pile angles
+  const seats = s.order.map((pid, i) => {
+    const p = s.players.find(x => x.id === pid), a = Math.PI / 2 + i * 2 * Math.PI / n, cards = s.hands[pid].length, fan = Math.min(cards, 9);
+    return `<div class="seat ${pid === s.cur ? 'now' : ''}" style="left:${50 + 47 * Math.cos(a)}%;top:${50 + 42 * Math.sin(a)}%">
+      <div class="fan">${Array.from({ length: fan }, (_, k) => `<i style="--r:${(k - (fan - 1) / 2) * 9}deg"></i>`).join('')}</div>
+      ${avatar(p)}<span>${esc(p.name)}<b>${cards}</b></span></div>`; }).join('');
+  return `<div class="felt">
+      <div class="pile stock"><div class="ecard back"></div><div class="ecard back"></div><div class="ecard back"></div></div>
+      <div class="pile discard">${s.recent.map((c, k, all) => ecard(c, `disabled style="--r:${k === all.length - 1 ? 0 : spin(c, all.length - k)}deg"`)).join('')}</div></div>${seats}`;
+}
 // Telephone Sketch: a chain reads left to right, alternating words and drawings, each popping in one after another
 const chainView = (chain, k) => `<div class="answers">${chain.map((e, i) => `<div class="answer rise" style="animation-delay:${i * 900}ms"><div class="stack">${e.strokes
   ? sketch(e.strokes, `${k}-${i}`, '11rem') : esc(e.text)}<small>${esc(e.name)}</small></div></div>`).join('')}</div>`;
@@ -303,6 +316,13 @@ const MODES = {
         return `<div class="who">${avatar(p)}${esc(p.name)} ${f.ok ? '<b style="color:var(--gold)">got it! 🎉</b>' : esc(f.text)}</div>`; }).join('')}</div></div>${strip(s)}${skip()}`; },
     results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">It was <b style="color:var(--gold)">${esc(s.last.word)}</b></h1>
       <h2 style="margin:.2rem 0">${esc(s.last.drawer)}'s drawing · ${s.last.got.length ? `got by ${s.last.got.map(esc).join(', ')}` : 'nobody got it!'}</h2>${sketch(s.last.strokes, 'last', '18rem')}`,
+  },
+  elemix: {
+    art: '🃏', bg: 'linear-gradient(135deg,#ff7a45,#8b5cf6)',
+    turn: s => `<div class="kicker rise">Round ${s.round}</div><div class="table3d" data-live="table">${tableView(s)}</div>
+      <h2 data-live="log" class="rise" style="margin:.4rem 0">${esc(s.log) || 'First card is down. Go!'}<br><small style="font-size:.6em;color:var(--mute)">Now: ${ELEM[s.elem][0]} ${ELEM[s.elem][1]} · ${s.dir > 0 ? '↻ Clockwise' : '↺ Counter-clockwise'} · ${s.stock} cards left</small></h2>${skip('Skip turn')}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">${esc(s.last.winner)} emptied their hand!</h1>
+      <h2 style="margin:.2rem 0">+${s.last.won} points from cards left: ${s.last.left.map(p => `${esc(p.name)} ${p.n}`).join(' · ')}</h2>`,
   },
   telephone: {
     art: '📞', bg: 'linear-gradient(135deg,#6bcb77,#4d96ff)',
@@ -437,11 +457,12 @@ function render(s, force) {
   const key = [s.code, s.phase, s.game, s.round, s.duelNo, s.show].join('|');
   if (key === lastKey && !force) {
     const t = document.createElement('template'); t.innerHTML = html;
-    for (const el of t.content.querySelectorAll('[data-live]')) {
-      const cur = app.querySelector(`[data-live="${el.dataset.live}"]`);
-      if (cur && cur.innerHTML !== el.innerHTML) cur.innerHTML = el.innerHTML;
+    const live = [...t.content.querySelectorAll('[data-live]')].map(el => [el, app.querySelector(`[data-live="${el.dataset.live}"]`)]);
+    // a missing piece means the screen change is still animating in; redraw in full so this update isn't lost
+    if (live.every(([, cur]) => cur)) {
+      for (const [el, cur] of live) if (cur.innerHTML !== el.innerHTML) cur.innerHTML = el.innerHTML;
+      fit(); return;
     }
-    fit(); return;
   }
   lastKey = key;
   swap(app, html, () => {
