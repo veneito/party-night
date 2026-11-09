@@ -105,6 +105,9 @@ async function roomAlive(room) {
 // Swap a screen's HTML with a quick crossfade where the browser supports View Transitions.
 // `after` runs once the new HTML is in place (focus, confetti, sizing...).
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
+// drawing strokes as SVG; data-live so new strokes swap in on the TV without replaying animations
+const sketch = (strokes, k, size) => `<svg data-live="sk-${k}" viewBox="0 0 1000 1000" style="width:${size};aspect-ratio:1;max-width:100%;background:#fff;border-radius:1rem;flex:none">${strokes.map(t =>
+  `<polyline points="${t.p.join(' ')}" fill="none" stroke="${esc(t.c)}" stroke-width="${t.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</svg>`;
 function swap(el, html, after) {
   const go = () => { el.innerHTML = html; countUp(el); after?.(); };
   if (document.startViewTransition && !calm.matches && !document.hidden) document.startViewTransition(go); else go();

@@ -182,17 +182,30 @@ const MODES = {
   },
   draw: {
     draw: (s, me) => s.drawer === id ?
-      `<div class="kicker">You're drawing</div><h2 style="font-size:34px;color:var(--gold);margin:0">${esc(s.word)}</h2><p>No letters or numbers!</p>
-       <canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
-       <div class="row">${['#1a1230', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button class="pv" aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" onclick="pad.c='${c}'"></button>`).join('')}</div>
-       <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost" onclick="pad.w=${w}">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
-       <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div>` :
+      `<div class="kicker">You're drawing</div><h2 style="font-size:34px;color:var(--gold);margin:0">${esc(s.word)}</h2><p>No letters or numbers!</p>${padHtml}` :
       me.done ? wait(me, 'You got it! 🎉', 'Watch the others guess') :
       `<div class="kicker">Watch the TV</div><h2>What's being drawn?</h2><p style="font-size:28px;letter-spacing:4px">${esc(s.hint)}</p>
        <input id="a" maxlength="30" placeholder="Your guess" autocomplete="off" onkeydown="if (event.key === 'Enter') guess()"><button class="btn" onclick="guess()">Guess</button>`,
   },
+  telephone: {
+    tstart: (s, me) => me.done ? wait(me, 'Sent down the line!') :
+      `<div class="kicker">Start a chain</div><h2>Write something for the next player to draw</h2>
+       <input id="a" maxlength="60" placeholder="A dog doing taxes" autocomplete="off"><button class="btn" onclick="send('entry',{text:a.value})">Send</button>`,
+    tdraw: (s, me) => me.done ? wait(me, 'Drawing sent!', 'Waiting for the others…') :
+      `<div class="kicker">Step ${s.step + 1} of ${s.steps} · Draw this</div><h2 style="color:var(--gold);margin:0">${esc(s.task[id].text)}</h2>${padHtml}
+       <button class="btn" onclick="send('entry')">Done drawing</button>`,
+    tguess: (s, me) => me.done ? wait(me, 'Sent down the line!') :
+      `<div class="kicker">Step ${s.step + 1} of ${s.steps} · What is this?</div>${sketch(s.task[id].strokes, 'task', '100%')}
+       <input id="a" maxlength="60" placeholder="Describe the drawing" autocomplete="off"><button class="btn" onclick="send('entry',{text:a.value})">Send</button>`,
+    tvote: (s, me) => me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">Vote</div><h2>Funniest chain?</h2>${s.firsts.map((t, i) => `<button class="opt" onclick="send('tvote',{chain:${i}})">${esc(t)}</button>`).join('')}`,
+  },
 };
 MODES.caption = MODES.quickwit;
+const padHtml = `<canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
+  <div class="row">${['#1a1230', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button class="pv" aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" onclick="pad.c='${c}'"></button>`).join('')}</div>
+  <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost" onclick="pad.w=${w}">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
+  <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div>`;
 function guess() { const el = document.getElementById('a'); send('guess', { text: el.value }); el.value = ''; el.focus(); }
 // drawing pad: each finished stroke is sent as points scaled to 0-1000, and the TV redraws them all
 const pad = { c: '#1a1230', w: 10 };
@@ -205,10 +218,10 @@ function initPad(cv) {
 }
 // undo / clear come back from the server, so the drawer's pad redraws from the shared strokes
 function paintPad(s) {
-  const cv = app.querySelector('canvas.pad'); if (!cv || !s.strokes) return;
-  if (cv.dataset.n === String(s.strokes.length) || cv.matches(':active')) return; cv.dataset.n = s.strokes.length;
+  const cv = app.querySelector('canvas.pad'), strokes = s.pads ? s.pads[id] || [] : s.strokes; if (!cv || !strokes) return;
+  if (cv.dataset.n === String(strokes.length) || cv.matches(':active')) return; cv.dataset.n = strokes.length;
   const x = cv.getContext('2d'); x.clearRect(0, 0, 1000, 1000); x.lineCap = x.lineJoin = 'round';
-  for (const k of s.strokes) { x.strokeStyle = k.c; x.lineWidth = k.w; x.beginPath(); x.moveTo(k.p[0], k.p[1]); for (let i = 2; i < k.p.length; i += 2) x.lineTo(k.p[i], k.p[i + 1]); x.stroke(); }
+  for (const k of strokes) { x.strokeStyle = k.c; x.lineWidth = k.w; x.beginPath(); x.moveTo(k.p[0], k.p[1]); for (let i = 2; i < k.p.length; i += 2) x.lineTo(k.p[i], k.p[i + 1]); x.stroke(); }
 }
 
 // The host's phone gets the TV's controls, so nobody needs a mouse on the TV.

@@ -193,6 +193,11 @@ function narrate(s) {
     take: () => [s.take, 'Agree or disagree?'],
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
+    tstart: () => ['Write something for the next player to draw!'],
+    tdraw: () => ['Draw what you read!'],
+    tguess: () => ['Now describe what you see!'],
+    tshow: () => [`Chain ${s.show + 1}. It started with: ${s.chain[0].text}`],
+    tvote: () => ['Which chain was the funniest? Vote now!'],
     draw: () => [`${s.players.find(p => p.id === s.drawer)?.name ?? 'Someone'} is drawing. Guess on your phone!`],
     vote: () => ['Time to vote for the best answer!'],
     gamevote: () => ["What's next? Vote on your phone!"],
@@ -240,9 +245,9 @@ function kick(el) {
 }
 const strip = s => `<div class="strip" data-live="strip">${s.players.map(p =>
   `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)} ${p.done && !seen.has(dk(s, p)) ? (seen.add(dk(s, p)), 'justdone') : ''}">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>`;
-// Draw & Guess strokes as SVG; data-live so new strokes swap in without replaying animations
-const sketch = (strokes, k, size) => `<svg data-live="sk-${k}" viewBox="0 0 1000 1000" style="width:${size};height:${size};background:#fff;border-radius:1rem;flex:none">${strokes.map(t =>
-  `<polyline points="${t.p.join(' ')}" fill="none" stroke="${esc(t.c)}" stroke-width="${t.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</svg>`;
+// Telephone Sketch: a chain reads left to right, alternating words and drawings, each popping in one after another
+const chainView = (chain, k) => `<div class="answers">${chain.map((e, i) => `<div class="answer rise" style="animation-delay:${i * 900}ms"><div class="stack">${e.strokes
+  ? sketch(e.strokes, `${k}-${i}`, '11rem') : esc(e.text)}<small>${esc(e.name)}</small></div></div>`).join('')}</div>`;
 const skip = (label = 'Time\'s up') => `<div class="footer-actions">${btn('skip', label, 'ghost')}</div>`;
 
 const MODES = {
@@ -298,6 +303,16 @@ const MODES = {
         return `<div class="who">${avatar(p)}${esc(p.name)} ${f.ok ? '<b style="color:var(--gold)">got it! 🎉</b>' : esc(f.text)}</div>`; }).join('')}</div></div>${strip(s)}${skip()}`; },
     results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">It was <b style="color:var(--gold)">${esc(s.last.word)}</b></h1>
       <h2 style="margin:.2rem 0">${esc(s.last.drawer)}'s drawing · ${s.last.got.length ? `got by ${s.last.got.map(esc).join(', ')}` : 'nobody got it!'}</h2>${sketch(s.last.strokes, 'last', '18rem')}`,
+  },
+  telephone: {
+    art: '📞', bg: 'linear-gradient(135deg,#6bcb77,#4d96ff)',
+    tstart: s => `<div class="kicker rise">Round ${s.round}</div><h1 class="pop">Write something to draw</h1>
+      <h2 class="rise">It gets passed down the line, drawn and described in turn. Check your phone!</h2>${strip(s)}${skip()}`,
+    tdraw: s => `<div class="kicker rise">Step ${s.step + 1} of ${s.steps}</div><h1 class="pop">Draw what you read</h1>${strip(s)}${skip()}`,
+    tguess: s => `<div class="kicker rise">Step ${s.step + 1} of ${s.steps}</div><h1 class="pop">Describe what you see</h1>${strip(s)}${skip()}`,
+    tshow: s => `<div class="kicker rise">Chain ${s.show + 1} of ${s.chainCount}</div>${chainView(s.chain, 's' + s.show)}${skip('Next ▶')}`,
+    tvote: s => `<div class="kicker rise">Vote on your phone</div><h1 class="pop">Which chain was funniest?</h1>${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">Funniest chain · ${plural(s.last.votes, 'vote')}</h1>${chainView(s.last.chain, 'best')}`,
   },
   oddone: {
     art: '🎭', bg: 'linear-gradient(135deg,#a78bfa,#3ee6b5)',
@@ -419,7 +434,7 @@ function render(s, force) {
   const M = MODES[s.game] || {};
   const html = s.phase === 'menu' ? menu(s) : s.phase === 'lobby' ? lobby(s) : s.phase === 'gamevote' ? gamevote(s) : s.phase === 'results' || s.phase === 'scores' ? results(s) : (M[s.phase] || (() => `<h1>${s.phase}</h1>`))(s);
   // same screen: only swap the live bits so entrance animations don't replay on every update
-  const key = [s.code, s.phase, s.game, s.round, s.duelNo].join('|');
+  const key = [s.code, s.phase, s.game, s.round, s.duelNo, s.show].join('|');
   if (key === lastKey && !force) {
     const t = document.createElement('template'); t.innerHTML = html;
     for (const el of t.content.querySelectorAll('[data-live]')) {
