@@ -48,7 +48,8 @@ function confetti(n = 140) {
 let actx, sfxVol = 1;
 try { sfxVol = localStorage.sfxVol != null ? Number(localStorage.sfxVol) : localStorage.muted === '1' ? 0 : 1; } catch {}
 function wakeAudio() { try { actx ??= new AudioContext(); if (actx.state !== 'running') actx.resume(); } catch {} }
-if (window.partyApp) wakeAudio();
+// (not on Linux: there the web view's sound setup can stall the page at load; a key or controller press wakes it instead)
+if (window.partyApp && !/Linux/.test(navigator.userAgent)) wakeAudio();
 for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, wakeAudio, { capture: true });
 function tone(freq, t0, dur, type = 'sine', vol = .2, slide = 0) {
   const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + t0;
