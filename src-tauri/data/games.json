@@ -1052,5 +1052,174 @@
     "a very angry cloud"
    ]
   }
+ },
+ "receipts": {
+  "meta": {
+   "id": "receipts",
+   "name": "Receipts",
+   "min": 4,
+   "art": "🧾",
+   "tag": "Confessions · 10 min",
+   "desc": "Everyone confesses something small and true. Work out who wrote what, and stay hard to read yourself.",
+   "settings": []
+  },
+  "data": {
+   "PROMPTS": [
+    "What's the most useless thing you're weirdly proud of?",
+    "What lie did you tell as a kid that went way too far?",
+    "What's your most irrational fear?",
+    "What's the strangest thing you've Googled this month?",
+    "What's a food crime you commit regularly?",
+    "What's the pettiest reason you've stopped liking someone?",
+    "What app do you open when you should be sleeping?",
+    "What's the dumbest way you've been injured?",
+    "What's a skill you pretend to have?",
+    "What do you do when you're home alone that nobody knows about?",
+    "What's the worst gift you've ever re-gifted?",
+    "What song do you secretly know every word to?",
+    "What's a movie you've lied about seeing?",
+    "What do you always blame on someone else?",
+    "What's the longest you've gone without doing laundry?",
+    "What's your most embarrassing autocorrect fail?",
+    "What tiny thing makes you unreasonably angry?",
+    "What's a trend you were way too into?",
+    "What's the worst haircut you've ever had?",
+    "What would your search history say about you this week?",
+    "What's the most childish thing you still do?",
+    "What's a rule you break every single day?",
+    "What did you get in trouble for at school?",
+    "What's the weirdest thing you've eaten on a dare?"
+   ],
+   "FINAL": [
+    "What's the most shocking thing you've never told this group?",
+    "What's the worst thing you've done and gotten away with?",
+    "What's the biggest lie you're still keeping up?",
+    "What's the most embarrassing thing that happened to you in public?",
+    "What's something you did that you'd deny if anyone asked?",
+    "What was your most chaotic night out?",
+    "What's the pettiest revenge you've ever taken?",
+    "What's the most money you've wasted on something stupid?"
+   ],
+   "BOT": [
+    "I still sleep with a nightlight",
+    "I eat cereal with orange juice",
+    "I googled \"can fish get lonely\"",
+    "I told everyone I was allergic to grass",
+    "I've never seen Star Wars",
+    "I talk to my plants by name",
+    "I cried at a car commercial",
+    "I pretend to know how to fix cars",
+    "I put ketchup on pasta",
+    "I practice acceptance speeches in the shower"
+   ]
+  }
+ },
+ "objection": {
+  "meta": {
+   "id": "objection",
+   "name": "Objection!",
+   "min": 4,
+   "art": "⚖️",
+   "tag": "Courtroom · 15 min",
+   "desc": "Put friends on trial for tiny crimes. Argue out loud with your evidence cards, then let the jury decide.",
+   "settings": [
+    {
+     "key": "pack",
+     "label": "Crimes",
+     "options": [
+      [
+       "classic",
+       "Classic"
+      ],
+      [
+       "cyber",
+       "Cyber & Law Society"
+      ]
+     ]
+    }
+   ]
+  },
+  "data": {
+   "CRIMES": {
+    "classic": [
+     "Eating the last slice of pizza without asking",
+     "Replying \"k\" to a long, emotional text",
+     "Stealing the group chat's joke",
+     "Leaving 1 second on the microwave",
+     "Liking an ex's post from 2014",
+     "Reclining a seat on a 1-hour flight",
+     "Using a hotel towel to clean shoes",
+     "Spoiling a movie \"by accident\"",
+     "Clapping when the plane landed",
+     "Fraud: claiming to have \"read the terms and conditions\"",
+     "Putting an empty carton back in the fridge",
+     "Double-dipping at a party",
+     "Saying \"on my way\" while still in bed",
+     "Taking the armrest in the middle seat",
+     "Leaving someone on read for a week",
+     "Chewing loudly in a quiet office",
+     "Reheating fish in the office microwave",
+     "Changing the TV channel during the best part",
+     "Not returning a borrowed hoodie",
+     "Using speakerphone in public",
+     "Hogging the aux cord all road trip",
+     "Starting the next episode without your partner"
+    ],
+    "cyber": [
+     "Weak password: password123",
+     "Phishing the group chat",
+     "Clicking \"Remind me later\" on updates for 3 years",
+     "Sharing the Wi-Fi password with the whole street",
+     "Using the same password for everything",
+     "Leaving a laptop unlocked in the library",
+     "Forwarding a chain message \"just in case\"",
+     "Plugging in a USB stick found in the car park",
+     "Posting a boarding pass on social media",
+     "Writing the PIN on the back of the card",
+     "Accepting every cookie on every website",
+     "Screenshotting a private conversation"
+    ]
+   },
+   "SUPREME": [
+    "Ruining the group holiday",
+    "Never paying back the group for that dinner",
+    "Leaving the group chat on mute for a year",
+    "Causing the board game argument of the century",
+    "Eating everything at the last party",
+    "Forgetting a friend's birthday, together"
+   ],
+   "EVIDENCE": [
+    "A rubber duck",
+    "A suspicious receipt",
+    "A tearful voicemail",
+    "An alibi from a dog",
+    "A blurry photo",
+    "A half-eaten sandwich",
+    "A very long group chat",
+    "A sticky note that says \"sorry\"",
+    "A security camera that only filmed the ceiling",
+    "A pinky promise",
+    "Grandma's testimony",
+    "An expired coupon",
+    "A muddy footprint",
+    "A Spotify playlist titled \"revenge\"",
+    "A fingerprint on the remote",
+    "A diary with one page torn out",
+    "A suspiciously clean kitchen",
+    "A parking ticket",
+    "A cat who saw everything",
+    "An unread email",
+    "A horoscope that predicted it",
+    "A lie detector made of cardboard",
+    "Three witnesses who were asleep",
+    "A crumb trail",
+    "A shopping list with one item crossed out",
+    "A text sent at 3:07 am",
+    "A broken umbrella",
+    "A dramatic interpretive dance",
+    "A Venmo note",
+    "A sworn statement from a parrot"
+   ]
+  }
  }
 }

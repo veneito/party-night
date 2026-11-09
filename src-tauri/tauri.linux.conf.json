@@ -1,0 +1,6 @@
+{
+  "bundle": {
+    "resources": { "espeak/": "espeak/" },
+    "linux": { "appimage": { "bundleMediaFramework": true } }
+  }
+}

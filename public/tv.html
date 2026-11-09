@@ -162,6 +162,16 @@
   .toast{position:fixed;right:1.5rem;bottom:1.5rem;z-index:50;display:grid;gap:.4rem;width:24rem;animation:pop .35s}
   .toast b{font-size:1.3rem} .toast span{color:var(--mute)} .toast .row{margin:.6rem 0 0;justify-content:flex-end}
   .pad :focus{outline:.3rem solid var(--gold);outline-offset:.25rem}
+  /* Receipts and Objection! */
+  .quote{font-style:italic} .quote::before{content:'“'} .quote::after{content:'”'}
+  .roles{display:flex;gap:1.2rem;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+  .roles .who{font-size:1.3rem} .roles small{color:var(--mute);margin-right:.3rem}
+  .evid{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+  .evid div{background:#fff;color:#1b1e22;border-radius:.9rem;padding:.9rem 1.2rem;font-weight:800;font-size:1.3rem;max-width:15rem;box-shadow:0 .4rem 0 #0005;rotate:var(--tilt,0deg)}
+  .evid .used{opacity:.55;text-decoration:line-through}
+  .stamp{display:inline-block;font-size:5rem;font-weight:900;letter-spacing:.05em;border:.5rem solid currentColor;border-radius:1rem;padding:.1rem 1.4rem;transform:rotate(-6deg);animation:pop .5s}
+  .objection{position:fixed;left:50%;top:22%;translate:-50% 0;z-index:40;background:var(--coral);color:#fff;font-size:3.4rem;font-weight:900;padding:.6rem 2.4rem;border-radius:1.2rem;box-shadow:0 .6rem 0 #0006;animation:pop .35s}
+  .objection small{display:block;font-size:1.2rem;font-weight:700;text-align:center}
   .panel .done{display:flex;gap:.6rem;justify-content:flex-end}
 </style></head><body><div class="stage"></div>
 <header><div class="brand">🎉 Party <i>Night</i></div><div id="room"></div><div class="botctl" id="bots"></div><button class="mute" id="home" onclick="send('menu')" aria-label="Home" title="Home" hidden>🏠</button><button class="mute" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="timer" id="timer" hidden><b></b></div></header>
@@ -213,13 +223,25 @@ let voice;
 const pickVoice = () => { const vs = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
   voice = vs.find(v => /natural|online/i.test(v.name)) || vs.find(v => /google/i.test(v.name)) || vs[0]; };
 if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+// Linux has no built-in voices, so the desktop app reads lines out with its own eSpeak (one short WAV per line)
+let espeak = false, ttsQueue = [], ttsAudio = null;
+if (window.partyApp) fetch('/tts').then(r => espeak = r.status === 204).catch(() => {});
 function say(...lines) {
+  if (espeak && !voice) { const idle = !ttsAudio && !ttsQueue.length; ttsQueue.push(...lines); if (idle) nextLine(); return; }
   if (!window.speechSynthesis) return;
   for (const t of lines) { const u = new SpeechSynthesisUtterance(t); if (voice) u.voice = voice; u.rate = 1.05; u.volume = voiceVol; speechSynthesis.speak(u); }
 }
+function nextLine() {
+  const t = ttsQueue.shift();
+  if (!t) return ttsAudio = null;
+  const a = ttsAudio = new Audio('/tts?text=' + encodeURIComponent(t));
+  a.volume = voiceVol;
+  a.onended = a.onerror = () => { if (ttsAudio === a) nextLine(); };
+  a.play().catch(a.onerror);
+}
+function hush() { window.speechSynthesis?.cancel(); ttsQueue = []; ttsAudio?.pause(); ttsAudio = null; }
 function narrate(s) {
-  if (!window.speechSynthesis) return;
-  speechSynthesis.cancel();
+  hush();
   if (s.settings.voice === 'off') return;
   const top = [...s.players].sort((a, b) => b.score - a.score)[0];
   const lines = {
@@ -244,6 +266,18 @@ function narrate(s) {
     draw: () => [`${s.players.find(p => p.id === s.drawer)?.name ?? 'Someone'} is drawing. Guess on your phone!`],
     vote: () => ['Time to vote for the best answer!'],
     gamevote: () => ["What's next? Vote on your phone!"],
+    confess: () => [...(s.lastRound ? ['Final round. Most Wanted.'] : []), s.prompt, 'Confess on your phone.'],
+    guess: () => [`Confession ${s.entryNo}.`, s.entry.text, 'Who wrote it?'],
+    ...(s.game === 'receipts' && { reveal: () => s.reveal.pleaded ? ['They pleaded the Fifth!'] : [`It was ${who(s, s.entry.by).name}!`] }),
+    wanted: () => ['Which confession is the most shocking? Vote now!'],
+    crime: () => [s.trial.supreme ? 'The Supreme Court is now in session.' : 'Order in the court!', `The charge: ${s.trial.crime}.`],
+    speak: () => { const n = who(s, s.trial.turn.id).name;
+      return [{ prosecution: `${n}, for the prosecution.`, defense: `${n}, for the defense.`, witness: `The court calls ${n} as a witness.`,
+        surprise: `Surprise witness! ${n}, defend the accused.`, plea: `${n}, how do you plead?` }[s.trial.turn.role]]; },
+    verdict: () => ['Jury, how do you find the defendant?'],
+    ruling: () => ['The judge is deliberating.'],
+    rank: () => ['The judge will now sentence everyone.'],
+    sentence: () => s.last.supreme ? ['The sentences are in!'] : [s.last.guilty ? 'Guilty!' : 'Not guilty!'],
     scores: () => top ? [`End of round ${s.round}. ${top.name} is in the lead with ${top.score} points!`] : [],
     results: () => top ? [`${top.name} wins the game with ${top.score} points!`] : [],
   }[s.phase];
@@ -413,8 +447,65 @@ const MODES = {
       <div class="answers">${s.last.clues.map((c, i) => `<div class="answer rise ${c.odd ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(c.text)}
         <small>${esc(c.name)} · ${plural(c.votes, 'vote')}</small></div></div>`).join('')}</div>`,
   },
+  receipts: {
+    art: '🧾', bg: 'linear-gradient(135deg,#a78bfa,#ff5e7e)',
+    confess: s => `<div class="kicker rise">${s.lastRound ? 'Final round · Most Wanted' : `Round ${s.round}`} · Keep it true!</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
+      <h2 class="rise">Confess on your phone. Nobody will know it's you… probably.</h2>${strip(s)}${skip()}`,
+    guess: s => `<div class="kicker rise">Confession ${s.entryNo} of ${s.entryCount}</div><div class="prompt pop"><h1 class="quote">${esc(s.entry.text)}</h1></div>
+      <h2 class="rise">Who wrote this? Pick on your phone</h2>${strip(s)}${skip()}`,
+    reveal: s => { const r = s.reveal, by = who(s, s.entry.by), fr = r.framed && who(s, r.framed);
+      return `<div class="kicker rise">Confession ${s.entryNo} of ${s.entryCount}</div><h1 class="quote" style="font-size:2.4rem;margin:.2rem 0">${esc(s.entry.text)}</h1>
+      ${r.pleaded ? `<div class="bigword pop">🤐</div><h2>They pleaded the Fifth! Nobody scores.</h2>` :
+        `<div class="spot pop">${avatar(by, 'xl')}${esc(by.name)} wrote it!</div>
+        ${fr ? `<h2 class="rise">🎭 ${esc(by.name)} tried to frame ${esc(fr.name)}${r.frameWorked ? ' and it worked! Double points.' : '… nobody bought it.'}</h2>` : ''}
+        <div class="rest">${r.guesses.map(x => `<div class="who rise">${avatar(who(s, x.id))}${esc(who(s, x.id).name)} → ${esc(who(s, x.pick).name)} ${x.ok ? '✓' : '✗'}</div>`).join('')}</div>`}
+      ${skip('Next ▶')}`; },
+    wanted: s => `<div class="kicker rise">Most Wanted</div><h1 class="pop">Which confession is the most shocking?</h1>
+      <div class="answers">${s.list.map((e, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span><span class="quote">${esc(e.text)}</span></div>`).join('')}</div>
+      ${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.prompt)}</h1>
+      ${s.last.wanted ? `<h2 class="rise">🏆 Most Wanted: <span class="quote">${esc(s.last.wanted.text)}</span> · ${esc(s.last.wanted.name)}${s.last.wanted.bonus ? ' got away with it! +300' : ''}</h2>` : ''}
+      <div class="answers">${s.last.entries.map((e, i) => `<div class="answer rise" style="animation-delay:${i * 60}ms"><div class="stack"><span class="quote">${esc(e.text)}</span>
+        <small>${e.pleaded ? '🤐 Pleaded the Fifth' : `${esc(e.name)} · ${e.right} of ${plural(e.guesses, 'guess')} right${e.framed ? ` · framed ${esc(e.framed)}${e.frameWorked ? ' ✓' : ''}` : ''}`}</small></div></div>`).join('')}</div>`,
+  },
+  objection: {
+    art: '⚖️', bg: 'linear-gradient(135deg,#c49a6c,#5fb6e8)',
+    crime: s => { const t = s.trial;
+      return `<div class="kicker rise">${t.supreme ? 'Final round · The Supreme Court' : `Round ${s.round} · Order in the court!`}</div>
+      <div class="prompt pop"><div class="kicker">The charge</div><h1>${esc(t.crime)}</h1></div>
+      <div class="roles rise">${role(s, t.judge, '⚖️ Judge')}${t.supreme ? '<h2 style="margin:0">Everyone else is on trial!</h2>' : role(s, t.pros, '👉 Prosecution') + role(s, t.def, '🛡️ Defense')}</div>
+      <h2 class="rise">${esc(who(s, t.judge).name)}, open court on your phone when everyone's ready.</h2>${skip('Begin ▶')}`; },
+    speak: s => { const t = s.trial, sp = who(s, t.turn.id), cards = t.cards[t.turn.id] || [], marked = t.marked[t.turn.id] || [];
+      const head = { prosecution: 'For the prosecution', defense: 'For the defense', witness: 'Witness: tell the court what you saw',
+        surprise: 'Surprise witness! Defend the accused with this evidence', plea: `How do you plead? Defend yourself with this evidence` }[t.turn.role];
+      return `<div class="kicker rise">${esc(t.crime)} · speaker ${t.turnNo} of ${t.turnCount}</div><div class="spot pop">${avatar(sp, 'xl')}${esc(sp.name)}</div>
+      <h1 class="rise" style="font-size:2.4rem;margin:.3rem 0">${head}</h1>
+      <div class="evid" data-live="evid">${cards.map((c, i) => `<div class="${marked[i] ? 'used' : ''}" style="--tilt:${[-2, 1.5, -1][i % 3]}deg">${esc(c)}${marked[i] ? ' ✓' : ''}</div>`).join('')}</div>
+      <div data-live="obj">${objBanner(s)}</div>${skip('Next speaker ▶')}`; },
+    verdict: s => `<div class="kicker rise">${esc(s.trial.crime)}</div><h1 class="pop">Jury: guilty or not guilty?</h1>
+      <h2 class="rise">Vote on your phone</h2>${strip(s)}${skip()}`,
+    ruling: s => `<div class="kicker rise">The jury says ${s.tally.majority == null ? `it's a tie` : s.tally.majority ? '<b style="color:var(--coral)">guilty</b>' : '<b style="color:var(--mint)">not guilty</b>'} · ${s.tally.guilty}–${s.tally.not}</div>
+      <h1 class="pop">The judge is deliberating…</h1><div class="roles">${role(s, s.trial.judge, '⚖️')}</div>${skip()}`,
+    rank: s => `<div class="kicker rise">${esc(s.trial.crime)}</div><h1 class="pop">The judge is ranking the accused…</h1>
+      <h2 class="rise">From most innocent to most guilty</h2><div class="roles">${role(s, s.trial.judge, '⚖️')}</div>${skip()}`,
+    sentence: s => `${verdictView(s)}${skip('Next ▶')}`,
+    results: s => verdictView(s),
+  },
 };
 MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg,#5ab0ff,#5fb6e8)' };
+const who = (s, id) => s.players.find(p => p.id === id) || { av: 0, name: '(left)' };
+const role = (s, id, label) => `<div class="who"><small>${label}</small>${avatar(who(s, id))}${esc(who(s, id).name)}</div>`;
+const objBanner = s => { const o = s.trial.objection; if (!o) return '';
+  return `<div class="objection">OBJECTION!<small>${esc(who(s, o.by).name)} · ${o.sustained == null ? 'the judge is ruling…' : o.sustained ? 'Sustained! +100' : 'Overruled!'}</small></div>`; };
+function verdictView(s) {
+  const l = s.last; if (!l) return '';
+  if (l.supreme) return `<div class="kicker">The Supreme Court rules on: ${esc(l.crime)}</div><h1 class="pop" style="margin:.2rem 0">Sentencing</h1>
+    <div class="answers">${l.ranking.map((p, i) => `<div class="answer rise ${i === 0 ? 'win' : ''}" style="animation-delay:${i * 150}ms"><span class="n">${i + 1}</span>${avatar(who(s, p.id))}
+      <div class="stack">${esc(p.name)}<small>${['Free to go · +300', 'Community service · +200', 'A stern warning · +100'][i] || 'Guilty as charged'}</small></div></div>`).join('')}</div>`;
+  return `<div class="kicker">${esc(l.crime)}</div><div class="stamp" style="color:var(${l.guilty ? '--coral' : '--mint'})">${l.guilty ? 'GUILTY' : 'NOT GUILTY'}</div>
+    <h2 class="rise">${l.overruled ? `⚖️ ${esc(l.judge)} overruled the jury! ` : ''}${l.guilty ? `${esc(l.pros)} wins for the prosecution` : `${esc(l.def)} wins for the defense`} · +200</h2>
+    ${l.favourite ? `<h2 class="rise" style="margin:0">Judge's favourite argument: ${esc(l.favourite)} · +100</h2>` : ''}`;
+}
 
 function duel(s) {
   const [a, b] = s.duel, rev = s.phase === 'reveal', w = rev ? (a.votes > b.votes ? 0 : b.votes > a.votes ? 1 : -1) : -1;
@@ -494,10 +585,12 @@ function playSounds(s) {
   const ids = new Set(p.players.map(x => x.id));
   if (s.players.some(x => !ids.has(x.id))) sfx('join');
   else if (s.players.length < p.players.length) sfx('leave');
-  if (s.phase !== p.phase || s.duelNo !== p.duelNo) {
+  if (s.trial?.objection && !p.trial?.objection) { sfx('airhorn'); say('Objection!'); }
+  if (s.phase !== p.phase || s.duelNo !== p.duelNo || s.entryNo !== p.entryNo || s.trial?.turnNo !== p.trial?.turnNo) {
     if (s.phase === 'results') sfx('fanfare');
     else if (s.phase === 'scores') sfx('reveal');
-    else if (s.phase === 'reveal') sfx(s.duel.some(j => j.votes) ? 'reveal' : 'sad');
+    else if (s.phase === 'reveal' && s.duel) sfx(s.duel.some(j => j.votes) ? 'reveal' : 'sad');
+    else if (s.phase === 'reveal' || s.phase === 'sentence') sfx('drumroll');
     else if (s.phase === 'lobby' || s.phase === 'menu') sfx('whoosh');
     else sfx('go');
     narrate(s);
@@ -512,7 +605,7 @@ function render(s, force) {
   // scan-to-join stays up during games too; late joiners get in when the round ends
   if (roomEl.dataset.k !== s.code + url) roomEl.dataset.k = s.code + url, roomEl.innerHTML = `<img class="qr mini" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}"><span class="where"><small>Scan or join at</small>${esc(url.replace('http://', ''))}</span><b>${s.code}</b>`;
   voiceOn.checked = s.settings.voice !== 'off';
-  if (s.settings.voice === 'off' && prev && prev.settings.voice !== 'off') speechSynthesis?.cancel();
+  if (s.settings.voice === 'off' && prev && prev.settings.voice !== 'off') hush();
   // bots can be added or removed at any time; mid-round additions wait for the next round
   const nb = s.players.filter(p => p.bot).length;
   document.getElementById('bots').innerHTML = `<span>🤖 Bots <b>${nb}</b>${s.pendingBots ? ` <small>(+${s.pendingBots} next round)</small>` : ''}</span>
@@ -520,7 +613,7 @@ function render(s, force) {
   const M = MODES[s.game] || {};
   const html = s.phase === 'menu' ? menu(s) : s.phase === 'lobby' ? lobby(s) : s.phase === 'gamevote' ? gamevote(s) : s.phase === 'results' || s.phase === 'scores' ? results(s) : (M[s.phase] || (() => `<h1>${s.phase}</h1>`))(s);
   // same screen: only swap the live bits so entrance animations don't replay on every update
-  const key = [s.code, s.phase, s.game, s.round, s.duelNo, s.show].join('|');
+  const key = [s.code, s.phase, s.game, s.round, s.duelNo, s.show, s.entryNo, s.trial?.turnNo].join('|');
   if (key === lastKey && !force) {
     const t = document.createElement('template'); t.innerHTML = html;
     const live = [...t.content.querySelectorAll('[data-live]')].map(el => [el, app.querySelector(`[data-live="${el.dataset.live}"]`)]);
@@ -534,7 +627,7 @@ function render(s, force) {
   swap(app, html, () => {
     fit();
     if (s.phase !== 'reveal') playChips(app); // reveal repeats the duel jokes, no need to replay
-    if (s.phase === 'results' || s.phase === 'scores' || (s.phase === 'reveal' && s.duel.some(j => j.votes))) confetti(s.phase === 'reveal' ? 90 : s.phase === 'scores' ? 120 : 260);
+    if (s.phase === 'results' || s.phase === 'scores' || (s.phase === 'reveal' && s.duel?.some(j => j.votes))) confetti(s.phase === 'reveal' ? 90 : s.phase === 'scores' ? 120 : 260);
   });
 }
 // Everything is sized in rem, so shrinking the root font scales the whole screen down until nothing overflows.
@@ -600,6 +693,7 @@ function pad() {
     const now = performance.now();
     for (const [k, on] of Object.entries(input)) {
       if (!on) { delete held[k]; continue; }
+      if (!held[k]) wakeAudio(); // a button press counts as the "click" that lets sound play
       const repeat = ['left', 'right', 'up', 'down'].includes(k);
       if (held[k] && (!repeat || now < held[k])) continue;
       held[k] = held[k] ? now + 120 : now + 380; // first repeat waits a bit longer

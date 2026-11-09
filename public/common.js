@@ -42,11 +42,15 @@ function confetti(n = 140) {
 }
 
 // Sound effects, synthesized with Web Audio so there are no files to load.
-// Browsers only allow sound after a tap/click on the page, so the context starts on the first one.
+// Browsers only allow sound after a tap/click/key press on the page, so the context starts on the first one.
+// The desktop app allows sound straight away, and a controller never clicks, so it also tries on load.
 // sfxVol is 0..1, kept per device; older installs saved a plain mute flag
 let actx, sfxVol = 1;
 try { sfxVol = localStorage.sfxVol != null ? Number(localStorage.sfxVol) : localStorage.muted === '1' ? 0 : 1; } catch {}
-addEventListener('pointerdown', () => { actx ??= new AudioContext(); actx.resume(); }, { capture: true });
+function wakeAudio() { try { actx ??= new AudioContext(); if (actx.state !== 'running') actx.resume(); } catch {} }
+// (not on Linux: there the web view's sound setup can stall the page at load; a key or controller press wakes it instead)
+if (window.partyApp && !/Linux/.test(navigator.userAgent)) wakeAudio();
+for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, wakeAudio, { capture: true });
 function tone(freq, t0, dur, type = 'sine', vol = .2, slide = 0) {
   const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + t0;
   o.type = type; o.frequency.setValueAtTime(freq, t);

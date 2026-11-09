@@ -46,6 +46,7 @@ pub async fn run(listener: TcpListener) {
         .route("/ip", get(|| async { lan_url() }))
         .route("/qr.svg", get(qr))
         .route("/app/{cmd}", get(app_cmd))
+        .route("/tts", get(tts))
         .fallback(page)
         .layer(DefaultBodyLimit::max(40_000));
     axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
@@ -97,6 +98,24 @@ async fn qr(Query(q): Query<HashMap<String, String>>) -> Response {
 async fn app_cmd(ConnectInfo(from): ConnectInfo<SocketAddr>, Path(cmd): Path<String>) -> Response {
     match APP_CMD.get() {
         Some(f) if from.ip().is_loopback() => f(&cmd).into_response(),
+        _ => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+// Linux web views have no speech voices, so the TV's voice-over comes from eSpeak instead: the copy bundled
+// in the AppImage (set by the app), else one installed on the system. No text = "is it there?" (204 or 404).
+pub static ESPEAK: OnceLock<std::path::PathBuf> = OnceLock::new();
+async fn tts(ConnectInfo(from): ConnectInfo<SocketAddr>, Query(q): Query<HashMap<String, String>>) -> Response {
+    if !cfg!(target_os = "linux") || !from.ip().is_loopback() { return StatusCode::NOT_FOUND.into_response() }
+    let text: String = q.get("text").map_or("", |t| t).chars().take(400).collect();
+    let mut cmd = match ESPEAK.get() {
+        Some(dir) => { let mut c = tokio::process::Command::new(dir.join("bin/espeak-ng")); c.arg(format!("--path={}", dir.display())).env("LD_LIBRARY_PATH", dir.join("lib")); c }
+        None => tokio::process::Command::new("espeak-ng"),
+    };
+    if text.trim().is_empty() { cmd.arg("--version") } else { cmd.args(["-v", "en-us", "-s", "165", "--stdout", "--", &text]) };
+    match cmd.output().await {
+        Ok(o) if o.status.success() && text.trim().is_empty() => StatusCode::NO_CONTENT.into_response(),
+        Ok(o) if o.status.success() => ([(header::CONTENT_TYPE, "audio/wav")], o.stdout).into_response(),
         _ => StatusCode::NOT_FOUND.into_response(),
     }
 }

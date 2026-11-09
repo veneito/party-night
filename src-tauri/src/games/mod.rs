@@ -10,9 +10,11 @@ pub mod elemix;
 pub mod fakeout;
 pub mod hottake;
 pub mod loneclue;
+pub mod objection;
 pub mod oddone;
 pub mod punchline;
 pub mod quickwit;
+pub mod receipts;
 pub mod telephone;
 
 pub trait Game: Send + Sync {
@@ -33,9 +35,11 @@ pub static GAMES: LazyLock<Vec<Box<dyn Game>>> = LazyLock::new(|| vec![
     Box::new(fakeout::FakeOut),
     Box::new(hottake::HotTake),
     Box::new(loneclue::LoneClue),
+    Box::new(objection::Objection),
     Box::new(oddone::OddOne),
     Box::new(punchline::Punchline),
     Box::new(quickwit::QuickWit("quickwit")),
+    Box::new(receipts::Receipts),
     Box::new(telephone::Telephone),
 ]);
 
@@ -50,8 +54,10 @@ pub enum Data {
     Fake(fakeout::D),
     Hot(hottake::D),
     Lone(loneclue::D),
+    Obj(objection::D),
     Odd(oddone::D),
     Punch(punchline::D),
+    Receipts(receipts::D),
     Tel(telephone::D),
 }
 // this game's round state; only used once the game's start() has run

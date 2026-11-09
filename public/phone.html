@@ -94,6 +94,8 @@
   .tpop div{font-size:64px;font-weight:800;line-height:.95;text-align:center;color:#231a08;background:var(--gold);padding:28px 36px;border-radius:28px;box-shadow:0 8px 0 #a8761c;animation:pop .4s cubic-bezier(.2,1.6,.4,1)}
   @keyframes tpop{0%,70%{opacity:1}100%{opacity:0;visibility:hidden}}
   #c{text-transform:uppercase;letter-spacing:.4em;font-weight:800;text-align:center;font-size:26px}
+  .quote{font-style:italic} .quote::before{content:'“'} .quote::after{content:'”'}
+  select{width:100%;font:inherit;font-size:17px;padding:14px;border-radius:14px;border:0;margin:6px 0 12px}
 </style></head><body><div class="stage"></div>
 <div class="top" id="top"></div><div id="app"></div><div id="hostp"></div><div class="err" id="err" role="alert"></div>
 <script src="/common.js"></script>
@@ -262,8 +264,61 @@ const MODES = {
     tvote: (s, me) => me.done ? wait(me, 'Vote cast!') :
       `<div class="kicker">Vote</div><h2>Funniest chain?</h2>${s.firsts.map((t, i) => `<button class="opt" onclick="send('tvote',{chain:${i}})">${esc(t)}</button>`).join('')}`,
   },
+  receipts: {
+    confess: (s, me) => me.done ? wait(me, 'Confession locked in!', 'Act natural…') :
+      `<div class="kicker">${s.lastRound ? 'Most Wanted · final round' : `Round ${s.round}`} · keep it true</div><h2>${esc(s.prompt)}</h2>
+       <input id="a" maxlength="120" placeholder="Your confession" autocomplete="off">
+       ${s.framesUsed.includes(id) ? '' : `<label for="fr">🎭 Frame Job (once per game): write it in someone else's style instead</label>
+       <select id="fr"><option value="">No, this one's really mine</option>${s.players.filter(p => p.id !== id).map(p => `<option value="${esc(p.id)}">Frame ${esc(p.name)}</option>`).join('')}</select>`}
+       <button class="btn" onclick="send('confess',{text:a.value,frame:window.fr?.value || ''})">Confess</button>`,
+    guess: (s, me) => s.entry.by === id ? wait(me, "That one's yours!", 'Keep a straight face…') + (s.pleasUsed.includes(id) ? '' :
+        `<button class="btn ghost" onclick="send('plead')">🤐 Plead the Fifth (once per game)</button><p>Your name stays secret on this one, and nobody scores on it.</p>`) :
+      me.done ? wait(me, 'Guess locked!') :
+      `<div class="kicker">Confession ${s.entryNo} of ${s.entryCount}</div><h2 class="quote">${esc(s.entry.text)}</h2><p>Who wrote it?</p>
+       ${s.players.filter(p => p.id !== id).map(p => `<button class="opt" data-id="${esc(p.id)}" onclick="send('guess',{who:this.dataset.id})">${avatar(p)} ${esc(p.name)}</button>`).join('')}`,
+    wanted: (s, me) => me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">Most Wanted</div><h2>Which confession is the most shocking?</h2>${s.list.map((e, i) => e.by === id ? '' :
+        `<button class="opt" onclick="send('wanted',{index:${i}})">${esc(e.text)}</button>`).join('')}`,
+  },
+  objection: {
+    crime: (s, me) => { const t = s.trial;
+      if (t.judge === id) return `<div class="kicker">You're the Judge ⚖️</div><h2>${esc(t.crime)}</h2><p>You run the court: rule on objections, then decide the case. Open court when everyone's ready.</p>
+        <button class="btn" onclick="send('open')">🔨 Open court</button>`;
+      const mine = t.cards[id];
+      const job = t.supreme ? "You're on trial! Defend yourself with this evidence when it's your turn." : t.pros === id ? "You're the Prosecution 👉 Prove they did it, and work in all your evidence." :
+        t.def === id ? "You're the Defense 🛡️ Get them off, and work in all your evidence." : "You're on the jury. You might get called as a witness!";
+      return `<div class="kicker">The charge</div><h2>${esc(t.crime)}</h2><p>${job}</p>${mine ? evidence(mine) : ''}`; },
+    speak: (s, me) => { const t = s.trial, sp = t.turn.id, o = t.objection;
+      if (sp === id) return `<div class="kicker">${{ prosecution: 'Prosecution', defense: 'Defense', witness: 'Witness', surprise: 'Surprise witness!', plea: 'On trial' }[t.turn.role]}</div>
+        <h2>You're up! Talk to the room.</h2><p>${t.cards[id] ? 'Tap each piece of evidence once you\'ve worked it in.' : 'Tell the court what you saw.'}</p>
+        ${t.cards[id] ? evidence(t.cards[id], t.marked[id], true) : ''}<button class="btn" onclick="send('rest')">I rest my case</button>`;
+      if (t.judge === id) return o && o.sustained == null ? `<div class="kicker">Objection!</div><h2>${esc(who(s, o.by).name)} objects to ${esc(who(s, o.against).name)}</h2>
+        <div class="duo"><button class="opt" onclick="send('rule',{sustain:true})">✅ <b>Sustained</b></button><button class="opt" onclick="send('rule',{sustain:false})">❌ <b>Overruled</b></button></div>` :
+        wait(me, 'Keep order in court ⚖️', `${esc(who(s, sp).name)} has the floor.`);
+      if (o && o.sustained == null) return wait(me, 'Objection!', 'The judge is ruling…');
+      return t.objected.includes(id) ? wait(me, 'Listen closely 👂', 'You used your objection this game.') :
+        `<div class="kicker">${esc(who(s, sp).name)} has the floor</div><h2>Hear something outrageous?</h2>
+         <button class="btn" style="background:var(--coral);font-size:28px;padding:28px" onclick="send('object')">OBJECTION!</button><p>Once per game. The judge decides if it stands.</p>`; },
+    verdict: (s, me) => !s.trial.jurors.includes(id) ? wait(me, 'The jury is out', 'Eyes on the TV!') : me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">You're on the jury</div><h2>${esc(s.trial.crime)}</h2><div class="duo"><button class="opt" onclick="send('vote',{guilty:true})">🔨 <b>Guilty</b></button>
+       <button class="opt" onclick="send('vote',{guilty:false})">🕊️ <b>Not guilty</b></button></div>`,
+    ruling: (s, me) => s.trial.judge !== id || me.done ? wait(me, 'The judge is deliberating…') :
+      `<div class="kicker">Your ruling, Judge</div><h2>The jury says ${s.tally.majority == null ? "it's a tie (not guilty)" : s.tally.majority ? 'guilty' : 'not guilty'} · ${s.tally.guilty}–${s.tally.not}</h2>
+       ${s.trial.canOverrule ? `<label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="ov" style="width:24px;height:24px;margin:0"> Overrule the jury (once per game)</label>` : ''}
+       <label>Your favourite argument (+100)</label>${s.trial.turns.map((t, i) => `<button class="opt" onclick="choose(${i})">${avatar(who(s, t.id))} ${esc(who(s, t.id).name)} <small>${t.role}</small></button>`).join('')}
+       <button class="btn" onclick="chosen < 0 ? errEl.textContent = 'Pick a favourite' : send('ruling',{overrule:!!window.ov?.checked,fav:S.trial.turns[chosen].id})">🔨 Rule</button>`,
+    rank: (s, me) => s.trial.judge !== id || me.done ? wait(me, 'The judge is sentencing…') :
+      `<div class="kicker">Sentencing</div><h2>Tap everyone from most innocent to most guilty</h2><div id="rk">${rankList(s)}</div>
+       <div class="row"><button class="btn ghost" onclick="ranked = []; rk.innerHTML = rankList(S)">Start over</button><button class="btn" onclick="send('rank',{order:ranked})">🔨 Sentence them</button></div>`,
+    sentence: (s, me) => wait(me, s.last.supreme ? 'Sentences are in!' : s.last.guilty ? 'GUILTY!' : 'NOT GUILTY!'),
+  },
 };
 MODES.caption = MODES.quickwit;
+const who = (s, pid) => s.players.find(p => p.id === pid) || { av: 0, name: '(left)' };
+const evidence = (cards, marked = [], tap) => cards.map((c, i) => `<button class="opt ${marked[i] ? 'on' : ''}" ${tap ? `onclick="send('mark',{index:${i}})"` : 'disabled'}>🗂️ ${esc(c)}${marked[i] ? ' ✓' : ''}</button>`).join('');
+let ranked = [], S; // S: the latest state, for buttons that need it after the screen is drawn
+const rankList = s => s.trial.turns.map(t => { const n = ranked.indexOf(t.id);
+  return `<button class="opt ${n >= 0 ? 'on' : ''}" data-id="${esc(t.id)}" onclick="if (!ranked.includes(this.dataset.id)) { ranked.push(this.dataset.id); rk.innerHTML = rankList(S) }">${n >= 0 ? `<b>${n + 1}.</b> ` : ''}${avatar(who(s, t.id))} ${esc(who(s, t.id).name)}</button>`; }).join('');
 const padHtml = `<canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
   <div class="row">${['#231a08', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" class="pv ${c === '#231a08' ? 'on' : ''}" onclick="padPick(this,'c','${c}')"></button>`).join('')}</div>
   <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost ${w === 10 ? 'on' : ''}" onclick="padPick(this,'w',${w})">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
@@ -340,7 +395,7 @@ function watch() {
     if (alive === false) leave(); else setTimeout(() => room && watch(), alive ? 500 : 2000);
   };
   es.onmessage = e => {
-    const s = JSON.parse(e.data), me = s.players.find(p => p.id === id);
+    const s = S = JSON.parse(e.data), me = s.players.find(p => p.id === id);
     if (!me) return leave(); // removed from the room
     hostPanel(s, me);
     topEl.innerHTML = `<div class="me">${avatar(me)}${esc(me.name)}${s.host === id ? ' 👑' : ''}</div><div class="pts">${me.score} pts</div><div class="timer" id="timer" hidden><b></b></div>`;
@@ -348,8 +403,8 @@ function watch() {
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
-    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
-    if (key === last) return paintPad(s); last = key; chosen = -1;
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
+    if (key === last) return paintPad(s); last = key; chosen = -1; ranked = [];
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
     let html; document.body.classList.remove('myturn'); // Elemix turns it back on while it's your turn

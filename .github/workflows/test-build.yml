@@ -20,13 +20,20 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf espeak-ng gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+          bash .github/espeak-bundle.sh
       - name: Build
         working-directory: src-tauri
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         run: npx --yes @tauri-apps/cli@2 build
+      - name: Check the AppImage has its sound plugins
+        if: runner.os == 'Linux'
+        run: |
+          cd "$RUNNER_TEMP" && "$GITHUB_WORKSPACE"/src-tauri/target/release/bundle/appimage/*.AppImage --appimage-extract > /dev/null
+          find squashfs-root -name 'libgstapp.so' -o -name 'libgstautodetect.so' -o -name 'libgstcoreelements.so' | sed 's|.*/||'
+          test -n "$(find squashfs-root -name 'libgstapp.so')" && test -n "$(find squashfs-root -name 'libgstautodetect.so')"
       - uses: actions/upload-artifact@v4
         with:
           name: party-night-${{ runner.os }}
