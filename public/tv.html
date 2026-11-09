@@ -199,6 +199,7 @@ if (window.partyApp) {
     else if (u.state === 'installing') updPopMsg.textContent = 'Installing. Party Night will reopen in a moment.';
     else if (u.state === 'error') { updMsg.textContent = updPopMsg.textContent = `Couldn't update: ${u.message}`; updGo.disabled = false; }
   });
+  partyApp.check(); // on open, so the popup shows without anyone asking
 }
 function checkUpdate() { updMsg.textContent = 'Checking…'; partyApp.check(); }
 function startUpdate() { updGo.disabled = true; updPop.hidden = false; updPopMsg.textContent = 'Starting download…'; partyApp.download(); }

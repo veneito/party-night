@@ -65,6 +65,5 @@ function setupUpdates() {
   autoUpdater.on('error', e => tell({ state: 'error', message: e.message.split('\n')[0] }));
   ipcMain.on('update:check', () => autoUpdater.checkForUpdates().catch(() => {}));
   ipcMain.on('update:download', () => autoUpdater.downloadUpdate().catch(() => {}));
-  // check once shortly after opening, so the popup shows without anyone asking
-  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 5000);
+  // the TV page asks for the startup check once it's listening (a timer here could fire before the page loads)
 }
