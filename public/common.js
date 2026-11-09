@@ -105,6 +105,15 @@ async function roomAlive(room) {
 // Swap a screen's HTML with a quick crossfade where the browser supports View Transitions.
 // `after` runs once the new HTML is in place (focus, confetti, sizing...).
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
+// drawing strokes as SVG; data-live so new strokes swap in on the TV without replaying animations
+const sketch = (strokes, k, size) => `<svg data-live="sk-${k}" viewBox="0 0 1000 1000" style="width:${size};aspect-ratio:1;max-width:100%;background:#fff;border-radius:1rem;flex:none">${strokes.map(t =>
+  `<polyline points="${t.p.join(' ')}" fill="none" stroke="${esc(t.c)}" stroke-width="${t.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</svg>`;
+// Elemix cards: element colour, a big tilted element mark, value in the middle and both corners
+const ELEM = [['🔥', 'Fire'], ['💧', 'Water'], ['🌿', 'Leaf'], ['🌙', 'Moon'], ['✦', 'Wild']];
+const CARD_FACE = { freeze: ['❄', 'Freeze'], twist: ['⇄', 'Twist'], gift: ['+2', 'Gift'], prism: ['✦', 'Prism'], storm: ['+4', 'Storm'] };
+const ecard = (c, attrs = '', cls = '') => { const [face, label] = CARD_FACE[c.v] || [c.v, ELEM[c.e][1]];
+  return `<button class="ecard e${c.e} ${cls}" ${attrs} aria-label="${label} ${ELEM[c.e][1]}"><i class="mark">${ELEM[c.e][0]}</i>
+    <span class="cn tl">${face}</span><b>${face}</b><small>${label}</small><span class="cn br">${face}</span></button>`; };
 function swap(el, html, after) {
   const go = () => { el.innerHTML = html; countUp(el); after?.(); };
   if (document.startViewTransition && !calm.matches && !document.hidden) document.startViewTransition(go); else go();
@@ -117,3 +126,6 @@ function countUp(root) {
     (function tick(t) { const k = Math.min(1, (t - t0) / 1100); el.textContent = Math.round(end * (1 - (1 - k) ** 3)) + suffix; if (k < 1) requestAnimationFrame(tick); })(t0);
   }
 }
+
+// casino-chip accents for game cards (TV menu and phone pickers)
+const CHIPS = ['#c8202f', '#1f5fbf', '#178a4a', '#24282d', '#d9a21b'];

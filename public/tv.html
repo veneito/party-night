@@ -4,7 +4,8 @@
 <style>
   html{font-size:clamp(9px,min(1.15vw,2vh),30px)}
   body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-  header{display:flex;align-items:center;gap:1.5rem;padding:.8rem 2.4rem;height:7rem;flex:none}
+  /* top padding clears the wooden rail drawn over the screen edge */
+  header{display:flex;align-items:center;gap:1.5rem;padding:1.6rem 2.8rem .6rem;min-height:8rem;flex:none}
   /* header items keep their space when hidden so nothing shifts between screens */
   #timer[hidden]{display:grid!important;visibility:hidden} #room[hidden]{display:flex!important;visibility:hidden}
   .brand{font-weight:800;font-size:1.6rem;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem}
@@ -15,7 +16,7 @@
   .qr.mini{width:4.6rem;height:4.6rem;border-radius:.75rem;padding:.2rem}
   .roompill .where{display:flex;flex-direction:column;line-height:1.2;font-size:.95rem}
   .roompill .where small{font-size:.75rem;text-transform:uppercase;letter-spacing:.14em;color:var(--gold);font-weight:700}
-  .roompill b{background:var(--gold);color:#1a1230;border-radius:999px;padding:.3rem 1rem;letter-spacing:.15em;font-size:1.4rem}
+  .roompill b{background:var(--gold);color:#231a08;border-radius:999px;padding:.3rem 1rem;letter-spacing:.15em;font-size:1.4rem}
   .botctl{display:flex;align-items:center;gap:.5rem;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.35rem;font-size:1.05rem;color:var(--mute)}
   .botctl span{padding:0 .4rem 0 .7rem} .botctl b{color:var(--ink)}
   .botctl button{width:2.3rem;height:2.3rem;border-radius:50%;background:var(--card2);font-size:1.3rem;font-weight:800;line-height:1}
@@ -38,6 +39,21 @@
   .mode p{margin:0 0 .8rem;color:var(--mute);font-size:1rem;line-height:1.4}
   .joinrow{display:flex;align-items:center;gap:1.2rem;text-align:left}
   .joinrow .qr{width:6.5rem;height:6.5rem}
+  /* game menu: cream playing cards dealt onto the felt, one accent colour each */
+  .modes.deal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.6rem 1.4rem;max-width:100rem;width:100%;margin:1.4rem 0 1.4rem}
+  .deal .mode{width:auto;background:#ffffff;color:#1b1e22;border-radius:1.2rem;padding:1.1rem 1.2rem 1.2rem;rotate:var(--tilt);border-top:.55rem solid var(--acc);box-shadow:0 .45rem 0 #0006;transition:transform .2s,rotate .2s}
+  .deal .mode:hover,.deal .mode:focus-visible{rotate:0deg;transform:translateY(-.5rem)}
+  .deal .art{width:3.8rem;height:3.8rem;border-radius:50%;background:var(--acc);border:.28rem dashed #ffffffb3;outline:.2rem solid var(--acc);font-size:2.1rem;margin-bottom:.7rem;box-shadow:inset 0 -.25rem 0 #0002}
+  .deal .body{padding:0;flex:1;display:flex;flex-direction:column}
+  .deal h3{font-size:1.6rem} .deal p{color:#5c6670;flex:1}
+  .deal .chip{background:#1b1e220f;color:#3a424b;white-space:nowrap;font-weight:600}
+  .deal .chips{display:flex;flex-wrap:wrap;gap:.4rem} .deal .chips .chip{margin:0}
+  .deal .mode{position:relative;box-shadow:inset 0 0 0 .45rem #ffffff,inset 0 0 0 .55rem #1b1e2214,0 .45rem 0 #0006,0 1.2rem 1.6rem #0005}
+  .deal .pip{position:absolute;right:.9rem;bottom:.7rem;font-size:1.3rem;rotate:180deg;opacity:.55}
+  .deal .mode:hover,.deal .mode:focus-visible{box-shadow:inset 0 0 0 .45rem #ffffff,inset 0 0 0 .55rem #1b1e2214,0 .8rem 0 #0006,0 2rem 2.4rem #0006}
+  /* the TV is the table: wooden rail round the edge, felt darkening toward it */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;box-shadow:inset 0 0 0 .8rem #5a3820,inset 0 0 0 1.05rem #8a5a35,inset 0 0 0 1.2rem #2e1c10,inset 0 0 10rem 3rem #000a}
+  @media (max-width:1100px){.modes.deal{grid-template-columns:repeat(3,minmax(0,1fr))}}
   .chip{display:inline-block;padding:.3rem .8rem;border-radius:999px;background:#ffffff14;font-size:.95rem;margin-right:.4rem}
 
   /* lobby */
@@ -48,13 +64,13 @@
   .qr{width:10.5rem;height:10.5rem;border-radius:1rem;background:#fff;padding:.4rem;flex:none}
   .join .joinurl{font-size:1.1rem} .join .joinurl b{font-size:1.35rem}
   .tiles{display:flex;gap:.4rem;margin:.7rem 0 0}
-  .tiles span{flex:1;aspect-ratio:1;display:grid;place-items:center;background:var(--gold);color:#1a1230;border-radius:1rem;font-size:2.4rem;font-weight:800;box-shadow:0 .4rem 0 #b8901a}
+  .tiles span{flex:1;aspect-ratio:1;display:grid;place-items:center;background:var(--gold);color:#231a08;border-radius:1rem;font-size:2.4rem;font-weight:800;box-shadow:0 .4rem 0 #a8761c}
   .settings{margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:.7rem 1rem}
   .setting{display:flex;flex-direction:column;gap:.45rem}
   .setting label{font-size:.85rem;color:var(--mute);text-transform:uppercase;letter-spacing:.12em}
   .seg{display:flex;background:var(--bg2);border-radius:999px;padding:.25rem}
   .seg button{flex:1;background:transparent;border-radius:999px;padding:.5rem .3rem;font-size:.95rem;white-space:nowrap;font-weight:700;color:var(--mute)}
-  .seg button.on{background:var(--ink);color:#1a1230}
+  .seg button.on{background:var(--ink);color:#231a08}
   .players-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1rem}
   .players-head h2{color:var(--ink);font-weight:800;margin:0}
   .count{font-size:1.6rem;color:var(--mute)} .count b{color:var(--gold)}
@@ -82,14 +98,14 @@
   .answer{background:var(--card);border-radius:1.3rem;padding:.9rem 1.2rem;font-size:1.3rem;font-weight:700;text-align:left;display:flex;gap:.8rem;align-items:flex-start}
   .answer .n{color:var(--gold);flex:none}
   .answer small{display:flex;align-items:center;gap:.5rem;margin-top:.6rem;font-size:1rem;color:var(--mute);font-weight:500}
-  .answer.win{background:var(--gold);color:#1a1230} .answer.win small{color:#1a1230}
+  .answer.win{background:var(--gold);color:#231a08} .answer.win small{color:#231a08}
   .stack{display:flex;flex-direction:column}
   .answers.top3{grid-template-columns:repeat(3,minmax(0,1fr));max-width:90rem;margin-top:1rem} .top3 .answer{font-size:1.3rem;padding:1rem 1.2rem}
 
   .jokes{display:grid;grid-template-columns:1fr auto 1fr;gap:2rem;align-items:stretch;width:100%;max-width:110rem;margin-top:1.5rem}
   .joke{background:var(--card);border-radius:2rem;padding:2.4rem;font-size:2.1rem;text-align:left;line-height:1.25;position:relative;transition:transform .4s,background .4s}
   .joke .punch{color:var(--gold);font-weight:800;margin-top:.7em}
-  .joke.win{background:linear-gradient(160deg,#3d2a7a,#5a2a5f);transform:scale(1.04);box-shadow:0 0 0 4px var(--gold)}
+  .joke.win{background:linear-gradient(160deg,#2c4a37,#4a3f1c);transform:scale(1.04);outline:4px solid var(--gold)}
   .joke.lose{opacity:.55;transform:scale(.97)}
   .joke .by{display:flex;align-items:center;gap:.7rem;margin-top:1.4rem;font-size:1.3rem;font-weight:700;color:var(--ink)}
   .bar{height:1rem;border-radius:999px;background:#ffffff14;margin-top:1rem;overflow:hidden}
@@ -98,6 +114,28 @@
   @keyframes grow-up{from{transform:scaleY(0)}}
   .answers .answer{transition:transform .25s} .vs{animation:vs-pulse 1.4s ease-in-out infinite}
   @keyframes vs-pulse{50%{transform:rotate(-8deg) scale(1.15)}}
+  /* Lone Clue: clue cards on a table; face-down = waiting or cancelled */
+  .table{display:flex;flex-wrap:wrap;justify-content:center;gap:1.4rem;margin:1.2rem 0;max-width:110rem}
+  .ccard{perspective:60rem;width:13rem;height:8.5rem;rotate:var(--tilt,0deg)}
+  .ccard .in{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,1.4,.5,1)}
+  .ccard.down .in{transform:rotateY(180deg)}
+  .ccard .face,.ccard .back{position:absolute;inset:0;backface-visibility:hidden;border-radius:1rem;display:grid;place-items:center;box-shadow:0 .4rem 0 #0006}
+  .ccard .face{background:#ffffff;color:#1b1e22;font:700 2.2rem/1.1 'Segoe Print','Bradley Hand','Comic Sans MS',cursive;padding:.5rem;overflow-wrap:anywhere}
+  .ccard .face small{position:absolute;bottom:.4rem;font:500 .85rem system-ui;color:#5c6670}
+  .ccard .back{transform:rotateY(180deg);background:repeating-linear-gradient(45deg,var(--card2) 0 .7rem,var(--card) .7rem 1.4rem);font-size:2.6rem}
+  .ccard.flip .in{animation:flip-up .7s cubic-bezier(.3,1.4,.5,1) both}
+  @keyframes flip-up{from{transform:rotateY(180deg)}}
+  .ccard.flipdown .in{animation:flip-down .7s cubic-bezier(.3,1.4,.5,1) both}
+  @keyframes flip-down{from{transform:rotateY(0)}}
+  .ccard.wait .face{font:600 1.1rem/1.3 system-ui;color:#5c6670;align-content:center} .ccard.wait .av{font-size:1.1rem;margin:0 auto .2rem}
+  .ccard.x .back{color:var(--coral)} .ccard.x .face{color:#9aa3ab;text-decoration:line-through var(--coral) .2rem}
+  .pairs{display:flex;flex-wrap:wrap;justify-content:center;gap:1rem 2.4rem}
+  .pair{display:flex;align-items:center;gap:.6rem;font-size:2rem;color:var(--coral)}
+  .spot{display:flex;flex-direction:column;align-items:center;gap:.3rem;font-size:1.6rem;font-weight:700}
+  .spot{margin-top:2.2rem} .spot .av{font-size:4.5rem;animation:think 2.4s ease-in-out infinite}
+  @keyframes think{50%{transform:scale(1.08) rotate(-4deg)}}
+  .bigword{font-size:5rem;font-weight:800;letter-spacing:-.03em;margin:.1em 0}
+  @media (prefers-reduced-motion:reduce){.ccard .in,.ccard.flip .in,.spot .av{transition:none;animation:none}}
   .vs{align-self:center;font-size:3.5rem;font-weight:800;color:var(--coral);transform:rotate(-8deg)}
   .bonus{position:absolute;top:-1.2rem;right:1.5rem;background:var(--coral);border-radius:999px;padding:.3rem 1rem;font-size:1.1rem;font-weight:800}
 
@@ -107,7 +145,7 @@
   .step{display:flex;flex-direction:column;align-items:center;gap:.35rem;width:14rem}
   .step .av.xl{font-size:2em}
   .step .name{font-size:1.4rem;font-weight:800} .step .pts{color:var(--mute);font-size:1.1rem}
-  .step .block{transform-origin:bottom;animation:grow-up .8s cubic-bezier(.2,1.3,.4,1) both;animation-delay:inherit;width:100%;border-radius:1.2rem 1.2rem 0 0;display:grid;place-items:start center;padding-top:.4rem;font-size:2.4rem;font-weight:800;color:#1a1230}
+  .step .block{transform-origin:bottom;animation:grow-up .8s cubic-bezier(.2,1.3,.4,1) both;animation-delay:inherit;width:100%;border-radius:1.2rem 1.2rem 0 0;display:grid;place-items:start center;padding-top:.4rem;font-size:2.4rem;font-weight:800;color:#231a08}
   .rest{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;max-width:100rem}
   .rest .who{font-size:.95rem;padding:.2rem .8rem .2rem .2rem}
   .rest .who{opacity:1}
@@ -193,6 +231,14 @@ function narrate(s) {
     take: () => [s.take, 'Agree or disagree?'],
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
+    ...(s.game === 'loneclue' && { clue: () => ['Write a one-word clue. Matching clues cancel out!'], guess: () => ['Here are the clues. What is the word?'] }),
+    turn: () => ['Elemix! Match the element or the number. Your hand is on your phone.'],
+    tstart: () => ['Write something for the next player to draw!'],
+    tdraw: () => ['Draw what you read!'],
+    tguess: () => ['Now describe what you see!'],
+    tshow: () => [`Chain ${s.show + 1}. It started with: ${s.chain[0].text}`],
+    tvote: () => ['Which chain was the funniest? Vote now!'],
+    draw: () => [`${s.players.find(p => p.id === s.drawer)?.name ?? 'Someone'} is drawing. Guess on your phone!`],
     vote: () => ['Time to vote for the best answer!'],
     gamevote: () => ["What's next? Vote on your phone!"],
     scores: () => top ? [`End of round ${s.round}. ${top.name} is in the lead with ${top.score} points!`] : [],
@@ -220,6 +266,10 @@ const hostTag = s => { const h = s.players.find(p => p.id === s.host); return h 
 // done chips bounce once per screen, not on every refresh
 const dk = (s, p) => ['d', s.phase, s.round, s.duelNo, p.id].join('|');
 // players pop in once, not every time the screen refreshes
+const once = (k, cls) => seen.has(k) ? '' : (seen.add(k), cls);
+// Lone Clue: a tilted clue card (face, back) and the guesser in the spotlight
+const ccard = (face, back, cls, i) => `<div class="ccard ${cls}" style="--tilt:${[-3, 2, -1, 3, -2, 1][i % 6]}deg;animation-delay:${i * 80}ms"><div class="in" style="animation-delay:${i * 120}ms">${face}<span class="back">${back}</span></div></div>`;
+const spot = s => { const p = s.players.find(x => x.id === s.guesser) || { av: 0, name: '?' }; return `<div class="spot rise">${avatar(p)}${esc(p.name)} is guessing</div>`; };
 const popOnce = id => seen.has(id) ? '' : (seen.add(id), 'pop');
 // ✕ on a player removes them, for someone who wandered off mid-game
 const kickBtn = p => `<button class="kick" data-id="${esc(p.id)}" data-name="${esc(p.name)}" aria-label="Remove ${esc(p.name)}" onclick="kick(this)">✕</button>`;
@@ -239,11 +289,27 @@ function kick(el) {
 }
 const strip = s => `<div class="strip" data-live="strip">${s.players.map(p =>
   `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)} ${p.done && !seen.has(dk(s, p)) ? (seen.add(dk(s, p)), 'justdone') : ''}">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>`;
+// Elemix table: felt tilted away in perspective, piles in the middle, players seated around the rim (seats stay upright to read)
+function tableView(s) {
+  const n = s.order.length, spin = (c, k) => ((s.turnNo - k) * 47 + (c.e * 13)) % 34 - 17; // stable messy-pile angles
+  const seats = s.order.map((pid, i) => {
+    const p = s.players.find(x => x.id === pid), a = Math.PI / 2 + i * 2 * Math.PI / n, cards = s.hands[pid].length, fan = Math.min(cards, 9);
+    return `<div class="seat ${pid === s.cur ? 'now' : ''}" style="left:${50 + 47 * Math.cos(a)}%;top:${50 + 42 * Math.sin(a)}%">
+      <div class="fan">${Array.from({ length: fan }, (_, k) => `<i style="--r:${(k - (fan - 1) / 2) * 9}deg"></i>`).join('')}</div>
+      ${avatar(p)}<span>${esc(p.name)}<b>${cards}</b></span></div>`; }).join('');
+  return `<div class="felt">
+      <div class="pile stock"><div class="ecard back"></div><div class="ecard back"></div><div class="ecard back"></div></div>
+      <div class="pile discard">${s.recent.map((c, k, all) => ecard(c, `disabled style="--r:${k === all.length - 1 ? 0 : spin(c, all.length - k)}deg"`)).join('')}
+</div></div>${seats}`;
+}
+// Telephone Sketch: a chain reads left to right, alternating words and drawings, each popping in one after another
+const chainView = (chain, k) => `<div class="answers">${chain.map((e, i) => `<div class="answer rise" style="animation-delay:${i * 900}ms"><div class="stack">${e.strokes
+  ? sketch(e.strokes, `${k}-${i}`, '11rem') : esc(e.text)}<small>${esc(e.name)}</small></div></div>`).join('')}</div>`;
 const skip = (label = 'Time\'s up') => `<div class="footer-actions">${btn('skip', label, 'ghost')}</div>`;
 
 const MODES = {
   punchline: {
-    art: '🎤', bg: 'linear-gradient(135deg,#ff5e7e,#a78bfa)',
+    art: '🎤', bg: 'linear-gradient(135deg,#ff5e7e,#5fb6e8)',
     words: s => `<div class="kicker rise">Round ${s.round} · Step 1 of 3</div><h1 class="pop">Give us some words!</h1>
       <h2 class="rise">Check your phone. Your words become other people's jokes.</h2>${strip(s)}${skip()}`,
     write: s => `<div class="kicker rise">Step 2 of 3</div><h1 class="pop">Write your jokes</h1>
@@ -251,7 +317,7 @@ const MODES = {
     duel: s => duel(s), reveal: s => duel(s),
   },
   quickwit: {
-    art: '⚡', bg: 'linear-gradient(135deg,#3ee6b5,#5ab0ff)',
+    art: '⚡', bg: 'linear-gradient(135deg,#8fd16a,#5ab0ff)',
     answer: s => `<div class="kicker rise">Round ${s.round}</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
       <h2 class="rise">Answer on your phone!</h2>${strip(s)}${skip()}`,
     vote: s => `<div class="kicker rise">Vote for the best</div><h1 class="pop" style="font-size:2.6rem">${esc(s.prompt)}</h1>
@@ -266,7 +332,7 @@ const MODES = {
     },
   },
   fakeout: {
-    art: '🕵️', bg: 'linear-gradient(135deg,#ffd23f,#ff5e7e)',
+    art: '🕵️', bg: 'linear-gradient(135deg,#f2b33d,#ff5e7e)',
     lie: s => `<div class="kicker rise">Round ${s.round} · Fill the blank</div><div class="prompt pop"><h1>${esc(s.fact)}</h1></div>
       <h2 class="rise">Write a believable fake on your phone</h2>${strip(s)}${skip()}`,
     pick: s => `<div class="kicker rise">One of these is real</div><h1 class="pop" style="font-size:2.6rem">${esc(s.fact)}</h1>
@@ -285,8 +351,54 @@ const MODES = {
       <div class="rest" style="margin-top:1rem">${[...s.last.list].sort((a, b) => Math.abs(a.guess - s.last.pct) - Math.abs(b.guess - s.last.pct)).map(p =>
         `<div class="who rise">${avatar(p)}${esc(p.name)} ${p.agree ? '👍' : '👎'} guessed ${p.guess}%</div>`).join('')}</div>`,
   },
+  draw: {
+    art: '🎨', bg: 'linear-gradient(135deg,#4d96ff,#ef5b45)',
+    draw: s => { const d = s.players.find(p => p.id === s.drawer) || { av: 0, name: '?' };
+      return `<div class="kicker rise">Round ${s.round} · ${avatar(d)} ${esc(d.name)} is drawing</div>
+      <div style="display:flex;gap:2rem;align-items:flex-start;justify-content:center">${sketch(s.strokes, 'live', '30rem')}
+      <div data-live="feed" style="min-width:16rem;text-align:left"><h2 style="letter-spacing:.3em">${esc(s.hint)}</h2><p>${plural(s.got, 'player')} got it</p>${s.feed.map(f => { const p = s.players.find(x => x.id === f.id) || { av: 0, name: '?' };
+        return `<div class="who">${avatar(p)}${esc(p.name)} ${f.ok ? '<b style="color:var(--gold)">got it! 🎉</b>' : esc(f.text)}</div>`; }).join('')}</div></div>${strip(s)}${skip()}`; },
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">It was <b style="color:var(--gold)">${esc(s.last.word)}</b></h1>
+      <h2 style="margin:.2rem 0">${esc(s.last.drawer)}'s drawing · ${s.last.got.length ? `got by ${s.last.got.map(esc).join(', ')}` : 'nobody got it!'}</h2>${sketch(s.last.strokes, 'last', '18rem')}`,
+  },
+  elemix: {
+    art: '🃏', bg: 'linear-gradient(135deg,#ff7a45,#8fd16a)',
+    turn: s => `<div class="kicker rise">Round ${s.round}</div><div class="table3d" data-live="table">${tableView(s)}</div>
+      <h2 data-live="log" class="rise" style="margin:.4rem 0">${esc(s.log) || 'First card is down. Go!'}<br><small style="font-size:.6em;color:var(--mute)">Now: ${ELEM[s.elem][0]} ${ELEM[s.elem][1]} · ${s.dir > 0 ? '↻ Clockwise' : '↺ Counter-clockwise'} · ${s.stock} cards left</small></h2>${skip('Skip turn')}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">${esc(s.last.winner)} emptied their hand!</h1>
+      <h2 style="margin:.2rem 0">+${s.last.won} points from cards left: ${s.last.left.map(p => `${esc(p.name)} ${p.n}`).join(' · ')}</h2>`,
+  },
+  telephone: {
+    art: '📞', bg: 'linear-gradient(135deg,#6bcb77,#4d96ff)',
+    tstart: s => `<div class="kicker rise">Round ${s.round}</div><h1 class="pop">Write something to draw</h1>
+      <h2 class="rise">It gets passed down the line, drawn and described in turn. Check your phone!</h2>${strip(s)}${skip()}`,
+    tdraw: s => `<div class="kicker rise">Step ${s.step + 1} of ${s.steps}</div><h1 class="pop">Draw what you read</h1>${strip(s)}${skip()}`,
+    tguess: s => `<div class="kicker rise">Step ${s.step + 1} of ${s.steps}</div><h1 class="pop">Describe what you see</h1>${strip(s)}${skip()}`,
+    tshow: s => `<div class="kicker rise">Chain ${s.show + 1} of ${s.chainCount}</div>${chainView(s.chain, 's' + s.show)}${skip('Next ▶')}`,
+    tvote: s => `<div class="kicker rise">Vote on your phone</div><h1 class="pop">Which chain was funniest?</h1>${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">Funniest chain · ${plural(s.last.votes, 'vote')}</h1>${chainView(s.last.chain, 'best')}`,
+  },
+  loneclue: {
+    art: '🔍', bg: 'linear-gradient(135deg,#ffd93d,#4d96ff)',
+    // clue: a card per writer, flips face-down when their clue is in, so the guesser can't read it
+    clue: s => `<div class="kicker rise">Round ${s.round} · Matching clues cancel out!</div>${spot(s)}
+      <div class="table" data-live="lc-table">${s.players.filter(p => p.id !== s.guesser).map((p, i) => p.done ?
+        ccard(`<span class="face"></span>`, `✓`, 'down ' + once(`lcd${s.round}${p.id}`, 'flipdown'), i) :
+        ccard(`<span class="face">${avatar(p)}${esc(p.name)}<br>writing…</span>`, '', 'wait', i)).join('')}</div>${skip()}`,
+    guess: s => `<div class="kicker rise">${s.cancelled ? `${plural(s.cancelled, 'clue')} cancelled ✕` : 'No clues cancelled!'}</div>${spot(s)}
+      <div class="table">${s.kept.map((c, i) => ccard(`<span class="face">${esc(c.text)}</span>`, '', 'flip', i)).join('')}
+      ${Array.from({ length: s.cancelled }, (_, i) => ccard('<span class="face"></span>', '✕', 'down x', s.kept.length + i)).join('')}</div>
+      ${s.kept.length ? '' : `<h2>${s.cancelled ? 'Every clue got cancelled!' : 'Nobody wrote a clue!'} Good luck…</h2>`}${skip()}`,
+    results: s => { if (!s.last) return '';
+      const dup = {}; for (const c of s.last.clues) if (c.out) (dup[c.k] ||= []).push(c);
+      return `<h2 class="rise" style="margin:0">${s.last.correct ? `${esc(s.last.guesser)} got it! 🎉` : `${esc(s.last.guesser)} ${s.last.answer ? `guessed “${esc(s.last.answer)}”` : 'ran out of time'}`}</h2>
+      <div class="bigword pop" style="color:var(${s.last.correct ? '--mint' : '--coral'})">${esc(s.last.word)}</div>
+      <div class="table" style="margin:.4rem 0">${s.last.clues.filter(c => !c.out).map((c, i) => ccard(`<span class="face">${esc(c.text)}<small>${esc(c.name)}</small></span>`, '', '', i)).join('')}</div>
+      ${Object.keys(dup).length ? `<div class="pairs">${Object.values(dup).map(g => `<div class="pair rise">${g.map((c, i) =>
+        ccard(`<span class="face">${esc(c.text)}<small>${esc(c.name)}</small></span>`, '✕', 'x flip', i)).join('<b>=</b>')}✕</div>`).join('')}</div>` : ''}`; },
+  },
   oddone: {
-    art: '🎭', bg: 'linear-gradient(135deg,#a78bfa,#3ee6b5)',
+    art: '🎭', bg: 'linear-gradient(135deg,#5fb6e8,#8fd16a)',
     clue: s => `<div class="kicker rise">Round ${s.round}</div><h1 class="pop">Everyone has the same secret word…</h1>
       <h2 class="rise">…except one of you. Give a one-word clue on your phone.</h2>${strip(s)}${skip()}`,
     accuse: s => `<div class="kicker rise">Vote on your phone</div><h1 class="pop">Who's the odd one out?</h1>
@@ -299,7 +411,7 @@ const MODES = {
         <small>${esc(c.name)} · ${plural(c.votes, 'vote')}</small></div></div>`).join('')}</div>`,
   },
 };
-MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg,#5ab0ff,#a78bfa)' };
+MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg,#5ab0ff,#5fb6e8)' };
 
 function duel(s) {
   const [a, b] = s.duel, rev = s.phase === 'reveal', w = rev ? (a.votes > b.votes ? 0 : b.votes > a.votes ? 1 : -1) : -1;
@@ -317,10 +429,10 @@ function duel(s) {
 
 function menu(s) {
   return `<p class="kicker rise">Pick a game</p><h1 class="hero pop">Party <span>Night</span></h1>
-    <div class="modes">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 100}ms" onclick='send("pick",{game:"${g.id}"})'>
-      <div class="art" style="background:${MODES[g.id]?.bg || 'var(--card2)'}"><span>${MODES[g.id]?.art || '🎲'}</span></div>
-      <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></button>`).join('')}</div>
-    <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${hostTag(s)} <button class="btn ghost recode" onclick="recode(this)">↻ New code</button>${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${s.settings.home === 'menu' ? '' : btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
+    <div class="modes deal">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 70}ms;--acc:${CHIPS[(i + Math.floor(i / 5) * 2) % 5]};--tilt:${[-1.2, .8, -.4, 1.2, -.8][i % 5]}deg" onclick='send("pick",{game:"${g.id}"})'>
+      <div class="art"><span>${MODES[g.id]?.art || '🎲'}</span></div>
+      <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><div class="chips"><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></div><span class="pip" aria-hidden="true">${MODES[g.id]?.art || '🎲'}</span></button>`).join('')}</div>
+    <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${hostTag(s)} <button class="btn ghost recode" onclick="recode(this)">↻ New code</button>${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
 </div>`;
 }
 
@@ -405,14 +517,15 @@ function render(s, force) {
   const M = MODES[s.game] || {};
   const html = s.phase === 'menu' ? menu(s) : s.phase === 'lobby' ? lobby(s) : s.phase === 'gamevote' ? gamevote(s) : s.phase === 'results' || s.phase === 'scores' ? results(s) : (M[s.phase] || (() => `<h1>${s.phase}</h1>`))(s);
   // same screen: only swap the live bits so entrance animations don't replay on every update
-  const key = [s.code, s.phase, s.game, s.round, s.duelNo].join('|');
+  const key = [s.code, s.phase, s.game, s.round, s.duelNo, s.show].join('|');
   if (key === lastKey && !force) {
     const t = document.createElement('template'); t.innerHTML = html;
-    for (const el of t.content.querySelectorAll('[data-live]')) {
-      const cur = app.querySelector(`[data-live="${el.dataset.live}"]`);
-      if (cur && cur.innerHTML !== el.innerHTML) cur.innerHTML = el.innerHTML;
+    const live = [...t.content.querySelectorAll('[data-live]')].map(el => [el, app.querySelector(`[data-live="${el.dataset.live}"]`)]);
+    // a missing piece means the screen change is still animating in; redraw in full so this update isn't lost
+    if (live.every(([, cur]) => cur)) {
+      for (const [el, cur] of live) if (cur.innerHTML !== el.innerHTML) cur.innerHTML = el.innerHTML;
+      fit(); return;
     }
-    fit(); return;
   }
   lastKey = key;
   swap(app, html, () => {

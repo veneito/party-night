@@ -107,7 +107,7 @@ function tally(g) {
 }
 
 return {
-  id: 'quickwit', name: 'Quick Wit', min: 2,
+  id: 'quickwit', name: 'Quick Wit', min: 2, art: '⚡',
   desc: 'One prompt, everyone answers, everyone votes. Fast and simple.',
   tag: 'Quick · 3 min',
   settings: [{ key: 'pack', label: 'Prompts', options: [['spicy', 'Spicy 18+'], ['family', 'Family']] }, { key: 'points', label: 'Points per vote', options: [[100, '100'], [250, '250'], [500, '500']] }],

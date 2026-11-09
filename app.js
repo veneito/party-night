@@ -21,7 +21,7 @@ app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
   win = new BrowserWindow({
     width: 1600, height: 900, minWidth: 960, minHeight: 540,
-    title: 'Party Night', backgroundColor: '#0f0b1e', autoHideMenuBar: true, show: false,
+    title: 'Party Night', backgroundColor: '#0e1f1a', autoHideMenuBar: true, show: false,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   win.loadURL(`http://localhost:${port}/tv`);

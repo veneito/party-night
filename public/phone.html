@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Party Night</title>
-<meta name="theme-color" content="#0f0b1e">
+<meta name="theme-color" content="#0e1f1a">
 <link rel="stylesheet" href="/style.css">
 <style>
   body{padding:0 16px 24px;font-size:17px}
@@ -17,12 +17,18 @@
   input:focus{border-color:var(--gold);outline:0}
   input::placeholder{color:#ffffff59}
   .btn{width:100%;font-size:19px;margin-top:18px;padding:16px}
-  .opt{display:block;width:100%;text-align:left;background:var(--card);border-radius:16px;padding:16px 18px;margin:10px 0;font-size:17px;line-height:1.35;
-    border:2px solid transparent;transition:transform .1s,border-color .15s}
+  /* answers, votes and game picks are white cards, like the TV's */
+  .opt{display:block;width:100%;text-align:left;background:#fff;color:#1b1e22;border-radius:18px;padding:16px 18px;margin:12px 0;font-size:17px;line-height:1.35;font-weight:600;
+    box-shadow:0 4px 0 #0006;transition:transform .1s,box-shadow .1s}
   #app .opt{animation:rise .4s ease-out both} #app .opt:nth-of-type(2){animation-delay:.05s} #app .opt:nth-of-type(3){animation-delay:.1s} #app .opt:nth-of-type(4){animation-delay:.15s} #app .opt:nth-of-type(n+5){animation-delay:.2s}
-  .opt.on{animation:done-pop .35s cubic-bezier(.2,1.6,.4,1)}
-  .opt:active{transform:scale(.98)} .opt.on{border-color:var(--gold);background:var(--card2)}
-  .opt b{color:var(--gold)}
+  .opt:active{transform:translateY(3px);box-shadow:0 1px 0 #0006}
+  .opt.on{animation:done-pop .35s cubic-bezier(.2,1.6,.4,1);outline:4px solid var(--gold);outline-offset:3px}
+  .opt b{color:#1b1e22;font-weight:800}
+  .opt .av{vertical-align:middle;margin-right:4px}
+  /* game picker: poker-chip badge, name, short description */
+  .opt.game{display:grid;grid-template-columns:52px 1fr;gap:4px 14px;align-items:center;border-top:6px solid var(--acc);padding:14px 16px}
+  .opt.game .chipb{grid-row:span 2;width:52px;height:52px;border-radius:50%;background:var(--acc);border:3px dashed #ffffffb3;outline:2px solid var(--acc);display:grid;place-items:center;font-size:24px}
+  .opt.game b{font-size:19px;letter-spacing:-.01em} .opt.game small{color:#5c6670;font-size:14px;line-height:1.35;font-weight:500}
   .err{color:var(--coral);min-height:22px;font-weight:700;text-align:center;margin-top:10px}
   .wait{text-align:center;padding-top:8vh}
   .wait .av{font-size:44px;animation:bob 2.4s ease-in-out infinite}
@@ -31,7 +37,7 @@
   .sndbar{display:flex;gap:8px;margin-top:8px}
   .sndbar select{flex:1;font:inherit;padding:10px 12px;border-radius:12px;border:0;background:var(--card);color:var(--ink)}
   .sndbar .pv{padding:0 16px;border-radius:12px;background:var(--card2);font-weight:800}
-  .sndbar .add{background:var(--sky);color:#0b1a30}
+  .sndbar .add{background:var(--sky);color:#0c1f2b}
   .avs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:10px 0 4px}
   .avs button,.avs .up{aspect-ratio:1;min-width:0;margin:0;padding:0;border-radius:16px;background:var(--card);border:2px solid transparent;
     display:grid;place-items:center;font-size:clamp(22px,7.5vw,32px);line-height:1;transition:transform .15s cubic-bezier(.2,1.6,.4,1),background .15s}
@@ -42,18 +48,37 @@
   .avs .up{background:var(--card2);border:2px dashed #ffffff40;cursor:pointer;overflow:hidden;text-transform:none;letter-spacing:0;color:var(--mute)}
   .avs .up small{display:block;font-size:10px;font-weight:800;margin-top:2px}
   .avs .up.on{border:2px solid var(--gold)} .avs .up img{width:100%;height:100%;object-fit:cover}
-  #hostp{max-width:480px;margin:12px auto;border-bottom:1px solid var(--line);padding-bottom:10px}
-  #app+#hostp{border-bottom:0;border-top:1px solid var(--line);margin-top:28px;padding-top:6px}
+  /* host controls sit in their own tray so they never get mixed up with the game */
+  #hostp{max-width:480px;margin:8px auto 18px;background:var(--bg2);border:1px solid var(--line);border-radius:22px;padding:14px 14px 8px;box-shadow:0 6px 0 #0004}
+  #app+#hostp{margin-top:28px}
+  #hostp>.kicker{display:flex;align-items:center;gap:6px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
   #hostp:empty{display:none}
   #hostp .row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
   #hostp .row .btn{flex:1;width:auto;margin:0;padding:12px 14px;font-size:16px;min-width:40%}
+  #hostp .row .btn.ghost{flex:1 1 auto;min-width:0;padding:12px 10px;white-space:nowrap}
   #hostp .seg{display:flex;background:var(--bg2);border-radius:999px;padding:3px;margin-bottom:6px}
   #hostp .seg button{flex:1;background:transparent;border-radius:999px;padding:9px 4px;font-weight:700;color:var(--mute);font-size:14px}
-  #hostp .seg button.on{background:var(--ink);color:#1a1230}
-  #hostp summary{cursor:pointer;font-weight:800;padding:10px 0}
+  #hostp .seg button.on{background:var(--ink);color:#231a08}
+  #hostp summary{cursor:pointer;font-weight:800;padding:12px 0 6px;border-top:1px dashed var(--line);margin-top:6px}
   #hostp .pl{display:flex;align-items:center;gap:8px;padding:6px 0;font-weight:700}
   #hostp .pl .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #hostp .pl button{background:var(--card);border-radius:10px;padding:8px 10px}
+  /* Elemix: whose turn it is should be impossible to miss */
+  body.myturn::after{content:'';position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 0 6px var(--gold);animation:frame 1.6s ease-in-out infinite;z-index:40}
+  @keyframes frame{50%{opacity:.45}}
+  .eturn{text-align:center;font-size:24px;font-weight:800;padding:14px;border-radius:18px;background:var(--card);margin:4px 0 12px}
+  .eturn .av{font-size:15px;vertical-align:middle;margin-right:4px}
+  .eturn small{display:block;font-size:14px;font-weight:600;color:var(--mute);margin-top:4px}
+  .eturn.mine{background:var(--gold);color:#231a08;font-size:28px;box-shadow:0 4px 0 #a8761c} .eturn.mine small{color:#231a08b3}
+  .eorder{display:flex;align-items:center;gap:4px;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:none}
+  .eorder span{display:flex;align-items:center;gap:4px;padding:4px 8px 4px 4px;border-radius:999px;background:var(--card);font-size:13px;flex:none;opacity:.7}
+  .eorder span.now{background:var(--ink);color:#231a08;opacity:1;transform:scale(1.1)} .eorder span.me{outline:2px solid var(--gold)}
+  .eorder i{color:var(--mute);font-style:normal;flex:none}
+  .etable{display:flex;align-items:center;gap:16px;background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:14px;font-size:16px}
+  .etable p{margin:2px 0;font-size:14px} .eneed{font-size:26px;font-weight:800} .elog{color:var(--ink)!important;opacity:.8}
+  .tpop{position:fixed;inset:0;display:grid;place-items:center;z-index:60;pointer-events:none;background:#0e1f1acc;animation:tpop 1.6s ease-in forwards}
+  .tpop div{font-size:64px;font-weight:800;line-height:.95;text-align:center;color:#231a08;background:var(--gold);padding:28px 36px;border-radius:28px;box-shadow:0 8px 0 #a8761c;animation:pop .4s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes tpop{0%,70%{opacity:1}100%{opacity:0;visibility:hidden}}
   #c{text-transform:uppercase;letter-spacing:.4em;font-weight:800;text-align:center;font-size:26px}
 </style></head><body><div class="stage"></div>
 <div class="top" id="top"></div><div id="app"></div><div id="hostp"></div><div class="err" id="err" role="alert"></div>
@@ -180,11 +205,91 @@ const MODES = {
       `<div class="kicker">Vote</div><h2>Who's the odd one out?</h2>${s.clues.filter(c => c.id !== id).map(c => { const p = s.players.find(x => x.id === c.id) || { av: 0, name: '?' };
         return `<button class="opt" data-id="${esc(c.id)}" onclick="send('accuse',{who:this.dataset.id})">${avatar(p)} ${esc(p.name)}: <b>${esc(c.text)}</b></button>`; }).join('')}`,
   },
+  loneclue: {
+    clue: (s, me) => s.guesser === id ? wait(me, "You're guessing!", 'Everyone is writing you a clue. No peeking at their phones!') :
+      me.done ? wait(me, 'Clue sent!', 'Hope nobody wrote the same thing…') :
+      `<div class="kicker">The secret word</div><h2 style="font-size:40px;color:var(--gold)">${esc(s.word)}</h2><p>Write a one-word clue. If someone writes the same clue, both are cancelled!</p>
+       <input id="a" maxlength="20" placeholder="One-word clue" autocomplete="off"><button class="btn" onclick="send('clue',{text:a.value})">Send clue</button>`,
+    guess: (s, me) => s.guesser !== id ? wait(me, 'Fingers crossed!', 'The guesser gets one try') :
+      `<div class="kicker">Your clues</div><h2>${s.kept.length ? s.kept.map(c => esc(c.text)).join(' · ') : 'Every clue got cancelled!'}</h2>
+       <p>One guess. What's the word?</p><input id="a" maxlength="30" placeholder="Your guess" autocomplete="off"><button class="btn" onclick="send('guess',{text:a.value})">Guess</button>`,
+  },
+  draw: {
+    draw: (s, me) => s.drawer === id ?
+      `<div class="kicker">You're drawing</div><h2 style="font-size:34px;color:var(--gold);margin:0">${esc(s.word)}</h2><p>No letters or numbers!</p>${padHtml}` :
+      me.done ? wait(me, 'You got it! 🎉', 'Watch the others guess') :
+      `<div class="kicker">Watch the TV</div><h2>What's being drawn?</h2><p style="font-size:28px;letter-spacing:4px">${esc(s.hint)}</p>
+       <input id="a" maxlength="30" placeholder="Your guess" autocomplete="off" onkeydown="if (event.key === 'Enter') guess()"><button class="btn" onclick="guess()">Guess</button>`,
+  },
+  elemix: {
+    turn: (s, me) => { const mine = s.cur === id, hand = s.hands[id] || [], order = s.order, n = order.length;
+      const next = order[(order.indexOf(s.cur) + s.dir + n) % n], curP = s.players.find(p => p.id === s.cur) || { av: 0, name: '?' };
+      const ping = turnPing(s, mine);
+      return `${ping}<div class="eturn ${mine ? 'mine' : ''}">${mine ? '🎴 Your turn!' : `${avatar(curP)} ${esc(curP.name)} is playing`}
+          <small>${mine ? (s.playable[id].some(Boolean) ? 'Tap a bright card, or draw one' : 'Nothing matches, draw a card') : next === id ? "You're up next, get ready!" : 'Wait for your turn'}</small></div>
+        <div class="eorder">${order.map(pid => { const p = s.players.find(x => x.id === pid); return p ? `<span class="${pid === s.cur ? 'now' : ''} ${pid === id ? 'me' : ''}">${avatar(p)}<b>${(s.hands[pid] || []).length}</b></span>` : ''; }).join(`<i>${s.dir > 0 ? '→' : '←'}</i>`)}</div>
+        <div class="etable">${ecard(s.top, 'disabled')}<div><div class="kicker">Play</div><div class="eneed">${ELEM[s.elem][0]} ${ELEM[s.elem][1]}</div>
+          <p>or a matching ${CARD_FACE[s.top.v]?.[1] ?? s.top.v}</p><p class="elog">${esc(s.log)}</p></div></div>
+        <div id="wild"></div>
+        <label>Your hand · ${plural(hand.length, 'card')}</label>
+        <div class="hand">${hand.map((c, i) => mine && s.playable[id][i] ? ecard(c, `onclick="playCard(${i},${c.e === 4})"`, 'yes') : ecard(c, 'disabled', mine ? 'no' : '')).join('')}</div>
+        ${mine ? `<button class="btn ghost" onclick="send('draw')">Draw a card</button>` : ''}`; },
+  },
+  telephone: {
+    tstart: (s, me) => me.done ? wait(me, 'Sent down the line!') :
+      `<div class="kicker">Start a chain</div><h2>Write something for the next player to draw</h2>
+       <input id="a" maxlength="60" placeholder="A dog doing taxes" autocomplete="off"><button class="btn" onclick="send('entry',{text:a.value})">Send</button>`,
+    tdraw: (s, me) => me.done ? wait(me, 'Drawing sent!', 'Waiting for the others…') :
+      `<div class="kicker">Step ${s.step + 1} of ${s.steps} · Draw this</div><h2 style="color:var(--gold);margin:0">${esc(s.task[id].text)}</h2>${padHtml}
+       <button class="btn" onclick="send('entry')">Done drawing</button>`,
+    tguess: (s, me) => me.done ? wait(me, 'Sent down the line!') :
+      `<div class="kicker">Step ${s.step + 1} of ${s.steps} · What is this?</div>${sketch(s.task[id].strokes, 'task', '100%')}
+       <input id="a" maxlength="60" placeholder="Describe the drawing" autocomplete="off"><button class="btn" onclick="send('entry',{text:a.value})">Send</button>`,
+    tvote: (s, me) => me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">Vote</div><h2>Funniest chain?</h2>${s.firsts.map((t, i) => `<button class="opt" onclick="send('tvote',{chain:${i}})">${esc(t)}</button>`).join('')}`,
+  },
 };
 MODES.caption = MODES.quickwit;
+const padHtml = `<canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
+  <div class="row">${['#231a08', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button class="pv" aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" onclick="pad.c='${c}'"></button>`).join('')}</div>
+  <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost" onclick="pad.w=${w}">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
+  <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div>`;
+let pingTurn = -1;
+function turnPing(s, mine) {
+  document.body.classList.toggle('myturn', mine);
+  if (!mine || pingTurn === s.turnNo) return '';
+  pingTurn = s.turnNo; try { navigator.vibrate?.([120, 60, 120]); } catch {}
+  // on <body>, not inside #app, so it covers the host tray too; removes itself once faded
+  const el = document.createElement('div'); el.className = 'tpop'; el.setAttribute('role', 'alert'); el.innerHTML = '<div>YOUR<br>TURN</div>';
+  document.body.append(el); setTimeout(() => el.remove(), 1700);
+  return '';
+}
+function playCard(i, wild) {
+  if (!wild) return send('play', { i });
+  document.getElementById('wild').innerHTML = `<label>Pick the new element</label><div class="row">${ELEM.slice(0, 4).map(([m, n], e) =>
+    `<button class="btn ghost" onclick="send('play',{i:${i},elem:${e}})">${m} ${n}</button>`).join('')}</div>`;
+}
+function guess() { const el = document.getElementById('a'); send('guess', { text: el.value }); el.value = ''; el.focus(); }
+// drawing pad: each finished stroke is sent as points scaled to 0-1000, and the TV redraws them all
+const pad = { c: '#231a08', w: 10 };
+function initPad(cv) {
+  const x = cv.getContext('2d'); let pts = null;
+  const at = e => { const r = cv.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / r.width * 1000), Math.round((e.clientY - r.top) / r.height * 1000)]; };
+  cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); pts = at(e); x.strokeStyle = pad.c; x.lineWidth = pad.w; x.lineCap = x.lineJoin = 'round'; x.beginPath(); x.moveTo(...pts); };
+  cv.onpointermove = e => { if (!pts || pts.length >= 1200) return; const p = at(e); pts.push(...p); x.lineTo(...p); x.stroke(); };
+  cv.onpointerup = cv.onpointercancel = () => { if (pts) { if (pts.length === 2) pts.push(pts[0] + 1, pts[1]); send('stroke', { p: pts, c: pad.c, w: pad.w }); } pts = null; };
+}
+// undo / clear come back from the server, so the drawer's pad redraws from the shared strokes
+function paintPad(s) {
+  const cv = app.querySelector('canvas.pad'), strokes = s.pads ? s.pads[id] || [] : s.strokes; if (!cv || !strokes) return;
+  if (cv.dataset.n === String(strokes.length) || cv.matches(':active')) return; cv.dataset.n = strokes.length;
+  const x = cv.getContext('2d'); x.clearRect(0, 0, 1000, 1000); x.lineCap = x.lineJoin = 'round';
+  for (const k of strokes) { x.strokeStyle = k.c; x.lineWidth = k.w; x.beginPath(); x.moveTo(k.p[0], k.p[1]); for (let i = 2; i < k.p.length; i += 2) x.lineTo(k.p[i], k.p[i + 1]); x.stroke(); }
+}
 
 // The host's phone gets the TV's controls, so nobody needs a mouse on the TV.
 // It lives outside #app and redraws on every update; it has no text boxes, so nothing typed gets wiped.
+const gameOpt = (g, i, js) => `<button class="opt game" style="--acc:${CHIPS[i % 5]}" onclick="${js}"><span class="chipb">${g.art || '🎲'}</span><b>${esc(g.name)}</b><small>${esc(g.desc)}</small></button>`;
 function hostPanel(s, me) {
   const el = document.getElementById('hostp');
   if (s.host !== id) return el.innerHTML = '';
@@ -193,7 +298,7 @@ function hostPanel(s, me) {
   const open = el.querySelector('details')?.open, G = s.games.find(x => x.id === s.game), n = s.players.length, nb = s.players.filter(p => p.bot).length;
   const b = (label, js, cls = '') => `<button class="btn ${cls}" onclick="${js}">${label}</button>`;
   let h = `<div class="kicker">👑 You're the host</div>`;
-  if (s.phase === 'menu') h += `${s.settings.home === 'menu' ? '' : `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}</div>`}<label>Pick a game</label>${s.games.map(g => `<button class="opt" onclick="send('pick',{game:'${g.id}'})"><b>${esc(g.name)}</b><br>${esc(g.desc)}</button>`).join('')}`;
+  if (s.phase === 'menu') h += `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}</div><label>Pick a game</label>${s.games.map((g, i) => gameOpt(g, i, `send('pick',{game:'${g.id}'})`)).join('')}`;
   else if (s.phase === 'lobby') h += G.settings.map(def => `<label>${esc(def.label)}</label><div class="seg">${def.options.map(([v, l]) =>
       `<button class="${s.settings[def.key] === v ? 'on' : ''}" onclick='send("set",{key:"${def.key}",value:${JSON.stringify(v)}})'>${esc(l)}</button>`).join('')}</div>`).join('')
     + `<div class="row">${n + s.pendingBots >= G.min ? b('▶ Start game', "send('start')") : `<p>Need ${G.min - n} more player${G.min - n === 1 ? '' : 's'}</p>`}</div>`;
@@ -227,23 +332,23 @@ function watch() {
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
-    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
-    if (key === last) return; last = key; chosen = -1;
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
+    if (key === last) return paintPad(s); last = key; chosen = -1;
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
-    let html;
+    let html; document.body.classList.remove('myturn'); // Elemix turns it back on while it's your turn
     if (s.phase === 'menu') html = wait(me, `You're in, ${esc(me.name)}!`, s.host === id ? 'You pick the game, above.' : 'The host is picking a game.');
     else if (s.phase === 'lobby') html = wait(me, esc(G.name), 'Get ready. The host will start soon.');
     else if (s.phase === 'scores') html = wait(me, `#${rank} with ${me.score} pts`, `Round ${s.round + 1} of ${s.rounds} is coming up!`);
     else if (s.phase === 'gamevote') html = me.done ? wait(me, 'Vote cast!', 'Eyes on the TV!') :
-      `<div class="kicker">What's next?</div><h2>Vote for the next game</h2>${G ? `<button class="opt" onclick="send('gvote',{game:'replay'})">↻ <b>Play ${esc(G.name)} again</b></button>` : ''}${s.games.filter(g => g.id !== s.game).map(g =>
-        `<button class="opt" onclick="send('gvote',{game:'${g.id}'})"><b>${esc(g.name)}</b><br>${esc(g.desc)}</button>`).join('')}`;
+      `<div class="kicker">What's next?</div><h2>Vote for the next game</h2>${G ? `<button class="opt" onclick="send('gvote',{game:'replay'})">↻ <b>Play ${esc(G.name)} again</b></button>` : ''}${s.games.filter(g => g.id !== s.game).map((g, i) =>
+        gameOpt(g, i, `send('gvote',{game:'${g.id}'})`)).join('')}`;
     else if (s.phase === 'results') html = wait(me, `#${rank} with ${me.score} pts`, rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!');
     else html = screen ? screen(s, me) : wait(me, 'Watch the TV');
     // between games players can swap avatars
     if (between) html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
       <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv', me.ph)}`;
-    swap(app, html, () => { app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); });
+    swap(app, html, () => { app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } });
   };
 }
 if (room && q.get('auto') && q.get('name')) send('join', { text: q.get('name') }).then(ok => { if (ok) { store('room', room); watch(); } else joinScreen(); });
