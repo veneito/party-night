@@ -19,6 +19,8 @@
   .btn{width:100%;font-size:19px;margin-top:18px;padding:16px}
   .opt{display:block;width:100%;text-align:left;background:var(--card);border-radius:16px;padding:16px 18px;margin:10px 0;font-size:17px;line-height:1.35;
     border:2px solid transparent;transition:transform .1s,border-color .15s}
+  #app .opt{animation:rise .4s ease-out both} #app .opt:nth-of-type(2){animation-delay:.05s} #app .opt:nth-of-type(3){animation-delay:.1s} #app .opt:nth-of-type(4){animation-delay:.15s} #app .opt:nth-of-type(n+5){animation-delay:.2s}
+  .opt.on{animation:done-pop .35s cubic-bezier(.2,1.6,.4,1)}
   .opt:active{transform:scale(.98)} .opt.on{border-color:var(--gold);background:var(--card2)}
   .opt b{color:var(--gold)}
   .err{color:var(--coral);min-height:22px;font-weight:700;text-align:center;margin-top:10px}
@@ -57,10 +59,12 @@ const q = new URLSearchParams(location.search), ns = q.get('p') || '';
 const store = (k, v) => v === undefined ? localStorage[k + ns] : (localStorage[k + ns] = v);
 // id survives refresh so a phone that reloads keeps its seat
 const id = store('pid') || store('pid', Math.random().toString(36).slice(2));
+let drawnAt = 0;
 let room = q.get('room') || store('room') || '', es, last = '', chosen = -1;
 async function send(type, extra = {}) {
   const r = await fetch('/action', { method: 'POST', body: JSON.stringify({ id, room, type, ...extra }) });
   errEl.textContent = r.ok ? '' : (await r.json()).error;
+  if (!r.ok) { errEl.classList.remove('shake'); void errEl.offsetWidth; errEl.classList.add('shake'); }
   if (r.ok) { sfx('tap'); navigator.vibrate?.(15); } else sfx('leave');
   return r.ok;
 }
@@ -82,12 +86,17 @@ async function join() {
 const avGrid = (cur, taken, fn) => `<div class="avs">${AV_EMOJI.map((e, i) =>
   `<button class="${i === cur ? 'on' : ''}" style="${i === cur ? `background:${AV_COLOR[i]}` : ''}" aria-label="Avatar ${i + 1}" ${taken.includes(i) ? 'disabled' : ''} onclick="${fn}(${i})">${e}</button>`).join('')}</div>`;
 function pickAv(i) { store('av', i); document.querySelectorAll('.avs button').forEach((b, j) => { b.classList.toggle('on', j === i); b.style.background = j === i ? AV_COLOR[i] : ''; }); }
+async function rename() { const v = nm.value.trim(); if (v && await send('join', { text: v })) store('name', v); }
 async function changeAv(i) { if (await send('avatar', { av: i })) store('av', i); }
 // Enter / "Go" on the phone keyboard: jump to the next empty box, or press the screen's main button.
 // (Never return false from a key handler here: that blocks typing.)
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
   e.preventDefault();
+  // A held or double-tapped Enter used to submit the next screen too (e.g. the second joke, blank).
+  // So: ignore Enter right after a new screen appears, and never submit from an empty box.
+  if (e.repeat || Date.now() - drawnAt < 1000 || !e.target.value.trim()) return;
+  if (e.target.id === 'nm') return rename();
   const empty = [...app.querySelectorAll('input')].find(i => !i.value.trim() && i !== e.target);
   if (empty) empty.focus(); else app.querySelector('.btn')?.click();
 });
@@ -192,21 +201,23 @@ function watch() {
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
-    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken : ''}`;
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken + ':' + me.name : ''}`;
     if (key === last) return; last = key; chosen = -1;
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
-    if (s.phase === 'menu') app.innerHTML = wait(me, `You're in, ${esc(me.name)}!`, s.host === id ? 'You pick the game, above.' : 'The host is picking a game.');
-    else if (s.phase === 'lobby') app.innerHTML = wait(me, esc(G.name), 'Get ready. The host will start soon.');
-    else if (s.phase === 'scores') app.innerHTML = wait(me, `#${rank} with ${me.score} pts`, `Round ${s.round + 1} of ${s.rounds} is coming up!`);
-    else if (s.phase === 'gamevote') app.innerHTML = me.done ? wait(me, 'Vote cast!', 'Eyes on the TV!') :
+    let html;
+    if (s.phase === 'menu') html = wait(me, `You're in, ${esc(me.name)}!`, s.host === id ? 'You pick the game, above.' : 'The host is picking a game.');
+    else if (s.phase === 'lobby') html = wait(me, esc(G.name), 'Get ready. The host will start soon.');
+    else if (s.phase === 'scores') html = wait(me, `#${rank} with ${me.score} pts`, `Round ${s.round + 1} of ${s.rounds} is coming up!`);
+    else if (s.phase === 'gamevote') html = me.done ? wait(me, 'Vote cast!', 'Eyes on the TV!') :
       `<div class="kicker">What's next?</div><h2>Vote for the next game</h2>${G ? `<button class="opt" onclick="send('gvote',{game:'replay'})">↻ <b>Play ${esc(G.name)} again</b></button>` : ''}${s.games.filter(g => g.id !== s.game).map(g =>
         `<button class="opt" onclick="send('gvote',{game:'${g.id}'})"><b>${esc(g.name)}</b><br>${esc(g.desc)}</button>`).join('')}`;
-    else if (s.phase === 'results') app.innerHTML = wait(me, `#${rank} with ${me.score} pts`, rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!');
-    else app.innerHTML = screen ? screen(s, me) : wait(me, 'Watch the TV');
+    else if (s.phase === 'results') html = wait(me, `#${rank} with ${me.score} pts`, rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!');
+    else html = screen ? screen(s, me) : wait(me, 'Watch the TV');
     // between games players can swap avatars
-    if (between) app.innerHTML += `<label>Change avatar</label>${avGrid(me.av, taken, 'changeAv')}`;
-    app.querySelector('input')?.focus();
+    if (between) html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
+      <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv')}`;
+    swap(app, html, () => { app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); });
   };
 }
 if (room && q.get('auto') && q.get('name')) send('join', { text: q.get('name') }).then(ok => { if (ok) { store('room', room); watch(); } else joinScreen(); });

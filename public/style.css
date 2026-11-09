@@ -47,3 +47,25 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 /* sound tags inside answers */
 .snd{display:inline-block;padding:0 .45em;margin:0 .1em;border-radius:999px;background:var(--sky);color:#0b1a30;font-size:.8em;font-weight:800;white-space:nowrap;vertical-align:.08em}
 .snd.hit{animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+
+/* ---- motion ---- */
+/* the stage backdrop drifts slowly so the screen never feels frozen */
+.stage{animation:drift 24s ease-in-out infinite alternate}
+@keyframes drift{from{transform:scale(1.08) translate(-1.5%,-1%)}to{transform:scale(1.12) translate(1.5%,1.5%) rotate(1deg)}}
+/* whole-screen crossfade when the view changes (View Transitions; browsers without it just swap) */
+::view-transition-old(root){animation:vt-out .22s ease-in both}
+::view-transition-new(root){animation:vt-in .35s cubic-bezier(.2,1,.4,1) both}
+@keyframes vt-out{to{opacity:0;transform:scale(.98)}}
+@keyframes vt-in{from{opacity:0;transform:scale(1.02)}}
+/* a player who just finished gets a little bounce and a green flash */
+.justdone{animation:done-pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes done-pop{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+/* winners glow */
+.answer.win{animation:glow 1.8s ease-in-out infinite alternate}
+@keyframes glow{from{box-shadow:0 0 0 0 #ffd23f00}to{box-shadow:0 0 1.6em .2em #ffd23f66}}
+/* buttons feel springy */
+.btn{transition:transform .15s cubic-bezier(.2,1.6,.4,1),box-shadow .1s,filter .15s}
+.btn:hover{filter:brightness(1.08)}
+/* shake for errors */
+.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}

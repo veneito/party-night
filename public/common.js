@@ -99,3 +99,19 @@ async function roomAlive(room) {
     return r.ok ? true : (await r.json()).error !== 'Room not found';
   } catch { return null; }
 }
+
+// Swap a screen's HTML with a quick crossfade where the browser supports View Transitions.
+// `after` runs once the new HTML is in place (focus, confetti, sizing...).
+const calm = matchMedia('(prefers-reduced-motion: reduce)');
+function swap(el, html, after) {
+  const go = () => { el.innerHTML = html; countUp(el); after?.(); };
+  if (document.startViewTransition && !calm.matches && !document.hidden) document.startViewTransition(go); else go();
+}
+// numbers marked data-count="1234" tick up from 0
+function countUp(root) {
+  for (const el of root.querySelectorAll('[data-count]')) {
+    const end = Number(el.dataset.count), t0 = performance.now(), suffix = el.dataset.suffix || '';
+    if (calm.matches || !end) { el.textContent = end + suffix; continue; }
+    (function tick(t) { const k = Math.min(1, (t - t0) / 1100); el.textContent = Math.round(end * (1 - (1 - k) ** 3)) + suffix; if (k < 1) requestAnimationFrame(tick); })(t0);
+  }
+}
