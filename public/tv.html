@@ -600,6 +600,7 @@ function pad() {
     const now = performance.now();
     for (const [k, on] of Object.entries(input)) {
       if (!on) { delete held[k]; continue; }
+      if (!held[k]) wakeAudio(); // a button press counts as the "click" that lets sound play
       const repeat = ['left', 'right', 'up', 'down'].includes(k);
       if (held[k] && (!repeat || now < held[k])) continue;
       held[k] = held[k] ? now + 120 : now + 380; // first repeat waits a bit longer
