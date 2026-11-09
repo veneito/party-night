@@ -116,7 +116,7 @@
   .pairs{display:flex;flex-wrap:wrap;justify-content:center;gap:1rem 2.4rem}
   .pair{display:flex;align-items:center;gap:.6rem;font-size:2rem;color:var(--coral)}
   .spot{display:flex;flex-direction:column;align-items:center;gap:.3rem;font-size:1.6rem;font-weight:700}
-  .spot .av{font-size:4.5rem;animation:think 2.4s ease-in-out infinite}
+  .spot .av{font-size:2.4rem;animation:think 2.4s ease-in-out infinite}
   @keyframes think{50%{transform:scale(1.08) rotate(-4deg)}}
   .bigword{font-size:5rem;font-weight:800;letter-spacing:-.03em;margin:.1em 0}
   @media (prefers-reduced-motion:reduce){.ccard .in,.ccard.flip .in,.spot .av{transition:none;animation:none}}
@@ -371,7 +371,7 @@ const MODES = {
     guess: s => `<div class="kicker rise">${s.cancelled ? `${plural(s.cancelled, 'clue')} cancelled ✕` : 'No clues cancelled!'}</div>${spot(s)}
       <div class="table">${s.kept.map((c, i) => ccard(`<span class="face">${esc(c.text)}</span>`, '', 'flip', i)).join('')}
       ${Array.from({ length: s.cancelled }, (_, i) => ccard('<span class="face"></span>', '✕', 'down x', s.kept.length + i)).join('')}</div>
-      ${s.kept.length ? '' : '<h2>Every clue got cancelled! Good luck…</h2>'}${skip()}`,
+      ${s.kept.length ? '' : `<h2>${s.cancelled ? 'Every clue got cancelled!' : 'Nobody wrote a clue!'} Good luck…</h2>`}${skip()}`,
     results: s => { if (!s.last) return '';
       const dup = {}; for (const c of s.last.clues) if (c.out) (dup[c.k] ||= []).push(c);
       return `<h2 class="rise" style="margin:0">${s.last.correct ? `${esc(s.last.guesser)} got it! 🎉` : `${esc(s.last.guesser)} ${s.last.answer ? `guessed “${esc(s.last.answer)}”` : 'ran out of time'}`}</h2>
