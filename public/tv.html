@@ -193,6 +193,7 @@ function narrate(s) {
     take: () => [s.take, 'Agree or disagree?'],
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
+    ...(s.game === 'loneclue' && { clue: () => ['Write a one-word clue. Matching clues cancel out!'], guess: () => ['Here are the clues. What is the word?'] }),
     turn: () => ['Elemix! Match the element or the number. Your hand is on your phone.'],
     tstart: () => ['Write something for the next player to draw!'],
     tdraw: () => ['Draw what you read!'],
@@ -333,6 +334,17 @@ const MODES = {
     tshow: s => `<div class="kicker rise">Chain ${s.show + 1} of ${s.chainCount}</div>${chainView(s.chain, 's' + s.show)}${skip('Next ▶')}`,
     tvote: s => `<div class="kicker rise">Vote on your phone</div><h1 class="pop">Which chain was funniest?</h1>${strip(s)}${skip()}`,
     results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">Funniest chain · ${plural(s.last.votes, 'vote')}</h1>${chainView(s.last.chain, 'best')}`,
+  },
+  loneclue: {
+    art: '🔍', bg: 'linear-gradient(135deg,#ffd93d,#4d96ff)',
+    clue: s => { const p = s.players.find(x => x.id === s.guesser) || { av: 0, name: '?' };
+      return `<div class="kicker rise">Round ${s.round} · ${avatar(p)} ${esc(p.name)} is guessing</div><h1 class="pop">Everyone else: write a one-word clue</h1>
+      <h2 class="rise">Matching clues cancel out, so be original!</h2>${strip(s)}${skip()}`; },
+    guess: s => `<div class="kicker rise">${plural(s.cancelled, 'clue')} cancelled</div><h1 class="pop">What's the word?</h1>
+      <div class="answers">${s.kept.map((c, i) => `<div class="answer rise" style="animation-delay:${i * 60}ms;font-size:2.4rem;justify-content:center">${esc(c.text)}</div>`).join('') || '<h2>Every clue got cancelled!</h2>'}</div>${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.6rem;margin:0">${s.last.correct ? `${esc(s.last.guesser)} got it!` : `So close… ${esc(s.last.guesser)} ${s.last.answer ? `said “${esc(s.last.answer)}”` : 'ran out of time'}`}</h1>
+      <h2 style="margin:.2rem 0">The word was <b style="color:var(--gold)">${esc(s.last.word)}</b></h2>
+      <div class="answers">${s.last.clues.map((c, i) => `<div class="answer rise" style="animation-delay:${i * 60}ms${c.out ? ';opacity:.45;text-decoration:line-through' : ''}"><div class="stack">${esc(c.text)}<small>${esc(c.name)}</small></div></div>`).join('')}</div>`,
   },
   oddone: {
     art: '🎭', bg: 'linear-gradient(135deg,#a78bfa,#3ee6b5)',

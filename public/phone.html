@@ -180,6 +180,15 @@ const MODES = {
       `<div class="kicker">Vote</div><h2>Who's the odd one out?</h2>${s.clues.filter(c => c.id !== id).map(c => { const p = s.players.find(x => x.id === c.id) || { av: 0, name: '?' };
         return `<button class="opt" data-id="${esc(c.id)}" onclick="send('accuse',{who:this.dataset.id})">${avatar(p)} ${esc(p.name)}: <b>${esc(c.text)}</b></button>`; }).join('')}`,
   },
+  loneclue: {
+    clue: (s, me) => s.guesser === id ? wait(me, "You're guessing!", 'Everyone is writing you a clue. No peeking at their phones!') :
+      me.done ? wait(me, 'Clue sent!', 'Hope nobody wrote the same thing…') :
+      `<div class="kicker">The secret word</div><h2 style="font-size:40px;color:var(--gold)">${esc(s.word)}</h2><p>Write a one-word clue. If someone writes the same clue, both are cancelled!</p>
+       <input id="a" maxlength="20" placeholder="One-word clue" autocomplete="off"><button class="btn" onclick="send('clue',{text:a.value})">Send clue</button>`,
+    guess: (s, me) => s.guesser !== id ? wait(me, 'Fingers crossed!', 'The guesser gets one try') :
+      `<div class="kicker">Your clues</div><h2>${s.kept.length ? s.kept.map(c => esc(c.text)).join(' · ') : 'Every clue got cancelled!'}</h2>
+       <p>One guess. What's the word?</p><input id="a" maxlength="30" placeholder="Your guess" autocomplete="off"><button class="btn" onclick="send('guess',{text:a.value})">Guess</button>`,
+  },
   draw: {
     draw: (s, me) => s.drawer === id ?
       `<div class="kicker">You're drawing</div><h2 style="font-size:34px;color:var(--gold);margin:0">${esc(s.word)}</h2><p>No letters or numbers!</p>${padHtml}` :
