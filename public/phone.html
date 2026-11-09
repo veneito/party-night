@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Party Night</title>
+<meta name="theme-color" content="#0f0b1e">
+<link rel="stylesheet" href="/style.css">
+<style>
+  body{padding:0 16px 24px;font-size:17px}
+  .top{display:flex;align-items:center;gap:10px;padding:14px 0;min-height:64px}
+  .top .me{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+  .top .pts{margin-left:auto;color:var(--mute);font-weight:700}
+  .top .timer{font-size:9px;margin-left:10px}
+  #app{max-width:480px;margin:0 auto}
+  h2{font-size:28px;line-height:1.1;letter-spacing:-.02em;margin:12px 0 18px;text-wrap:balance}
+  p{color:var(--mute);margin:6px 0 16px}
+  .kicker{font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--gold);font-weight:700}
+  label{display:block;margin:16px 0 6px;font-weight:700;color:var(--mute);font-size:14px;text-transform:uppercase;letter-spacing:.1em}
+  input{width:100%;font:inherit;font-size:19px;padding:15px 16px;border-radius:14px;border:2px solid transparent;background:var(--card);color:var(--ink)}
+  input:focus{border-color:var(--gold);outline:0}
+  input::placeholder{color:#ffffff59}
+  .btn{width:100%;font-size:19px;margin-top:18px;padding:16px}
+  .opt{display:block;width:100%;text-align:left;background:var(--card);border-radius:16px;padding:16px 18px;margin:10px 0;font-size:17px;line-height:1.35;
+    border:2px solid transparent;transition:transform .1s,border-color .15s}
+  .opt:active{transform:scale(.98)} .opt.on{border-color:var(--gold);background:var(--card2)}
+  .opt b{color:var(--gold)}
+  .err{color:var(--coral);min-height:22px;font-weight:700;text-align:center;margin-top:10px}
+  .wait{text-align:center;padding-top:8vh}
+  .wait .av{font-size:44px;animation:bob 2.4s ease-in-out infinite}
+  .logo{font-size:44px;font-weight:800;letter-spacing:-.04em;text-align:center;margin:8vh 0 6px}
+  .logo span{color:var(--gold)}
+  .avs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:8px 0}
+  .avs button{aspect-ratio:1;border-radius:14px;background:var(--card);font-size:26px;border:2px solid transparent;padding:0}
+  .avs button.on{border-color:var(--gold);background:var(--card2)}
+  .avs button:disabled{opacity:.2}
+  #c{text-transform:uppercase;letter-spacing:.4em;font-weight:800;text-align:center;font-size:26px}
+</style></head><body><div class="stage"></div>
+<div class="top" id="top"></div><div id="app"></div><div class="err" id="err" role="alert"></div>
+<script src="/common.js"></script>
+<script>
+const app = document.getElementById('app'), errEl = document.getElementById('err'), topEl = document.getElementById('top');
+// ?p=2 gives each test phone its own identity in one browser; ?room=&name= prefill, &auto=1 joins straight away
+const q = new URLSearchParams(location.search), ns = q.get('p') || '';
+const store = (k, v) => v === undefined ? localStorage[k + ns] : (localStorage[k + ns] = v);
+// id survives refresh so a phone that reloads keeps its seat
+const id = store('pid') || store('pid', Math.random().toString(36).slice(2));
+let room = q.get('room') || store('room') || '', es, last = '', chosen = -1;
+async function send(type, extra = {}) {
+  const r = await fetch('/action', { method: 'POST', body: JSON.stringify({ id, room, type, ...extra }) });
+  errEl.textContent = r.ok ? '' : (await r.json()).error;
+  if (r.ok) { sfx('tap'); navigator.vibrate?.(15); } else sfx('leave');
+  return r.ok;
+}
+
+function joinScreen() {
+  es?.close(); last = ''; topEl.innerHTML = '';
+  app.innerHTML = `<div class="logo pop">Party <span>Night</span></div><p style="text-align:center">Enter the code on the TV</p>
+    <label for="c">Room code</label><input id="c" maxlength="4" placeholder="ABCD" value="${esc(room)}" autocapitalize="characters" autocomplete="off">
+    <label for="n">Your name</label><input id="n" maxlength="16" placeholder="Name" value="${esc(q.get('name') || store('name') || '')}" autocomplete="nickname">
+    <label>Pick your avatar</label>${avGrid(Number(store('av') ?? -1), [], 'pickAv')}
+    <button class="btn" onclick="join()">Let's go!</button>`;
+}
+async function join() {
+  room = c.value.trim().toUpperCase(); store('name', n.value);
+  const av = Number(store('av') ?? -1);
+  if (await send('join', { text: n.value, av })) { store('room', room); watch(); }
+}
+// avatar grid; `taken` are greyed out, `fn` handles a tap
+const avGrid = (cur, taken, fn) => `<div class="avs">${AV_EMOJI.map((e, i) =>
+  `<button class="${i === cur ? 'on' : ''}" style="${i === cur ? `background:${AV_COLOR[i]}` : ''}" aria-label="Avatar ${i + 1}" ${taken.includes(i) ? 'disabled' : ''} onclick="${fn}(${i})">${e}</button>`).join('')}</div>`;
+function pickAv(i) { store('av', i); document.querySelectorAll('.avs button').forEach((b, j) => { b.classList.toggle('on', j === i); b.style.background = j === i ? AV_COLOR[i] : ''; }); }
+async function changeAv(i) { if (await send('avatar', { av: i })) store('av', i); }
+// Enter / "Go" on the phone keyboard: jump to the next empty box, or press the screen's main button.
+// (Never return false from a key handler here: that blocks typing.)
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const empty = [...app.querySelectorAll('input')].find(i => !i.value.trim() && i !== e.target);
+  if (empty) empty.focus(); else app.querySelector('.btn')?.click();
+});
+function leave() { room = ''; store('room', ''); joinScreen(); }
+function choose(i) { chosen = i; document.querySelectorAll('.opt').forEach((b, j) => b.classList.toggle('on', j === i)); document.getElementById('p')?.focus(); }
+const sendWords = () => send('words', { words: [...document.querySelectorAll('.w')].map(i => i.value) });
+const wait = (me, title, msg = 'Eyes on the TV!') => `<div class="wait">${avatar(me, 'xl')}<h2 class="pop">${title}</h2><p>${msg}</p></div>`;
+
+// one screen builder per game mode and phase
+const MODES = {
+  punchline: {
+    words: (s, me) => me.done ? wait(me, 'Words sent!', 'Waiting for the others…') :
+      `<div class="kicker">Step 1 of 3</div><h2>Give us some words</h2>${s.cats[id].map((c, i) =>
+        `<label for="w${i}">${esc(c)}</label><input id="w${i}" class="w" maxlength="30" autocomplete="off">`).join('')}<button class="btn" onclick="sendWords()">Send words</button>`,
+    write: (s, me) => me.done || !s.opts[id] ? wait(me, 'Jokes written!', 'Waiting for the others…') :
+      `<div class="kicker">Step 2 of 3</div><h2>Pick a setup</h2>${s.opts[id].map((o, i) => `<button class="opt" onclick="choose(${i})">${esc(o)}…</button>`).join('')}
+       <label for="p">Punchline</label><input id="p" maxlength="100" placeholder="…and that's why" autocomplete="off"><button class="btn" onclick="send('joke',{pick:chosen,text:p.value})">Tell it</button>`,
+    duel: (s, me) => me.done ? wait(me, s.duel ? 'Vote locked' : 'Waiting…', 'Eyes on the TV!') :
+      `<div class="kicker">Joke-off ${s.duelNo} of ${s.duelCount}</div><h2>Which is funnier?</h2>${s.duel.map((j, i) =>
+        `<button class="opt" onclick="send('vote',{index:${i}})">${esc(j.setup)} <b>${esc(j.punch)}</b></button>`).join('')}`,
+  },
+  quickwit: {
+    answer: (s, me) => me.done ? wait(me, 'Answer locked in!') :
+      `<div class="kicker">Round ${s.round}</div><h2>${esc(s.prompt)}</h2><input id="a" maxlength="80" placeholder="Your answer" autocomplete="off">
+       <button class="btn" onclick="send('answer',{text:a.value})">Send</button>`,
+    vote: (s, me) => me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">Vote</div><h2>Pick the best answer</h2>${s.list.map((a, i) => `<button class="opt" onclick="send('vote',{index:${i}})">${esc(a.text)}</button>`).join('')}`,
+  },
+};
+
+function watch() {
+  es = new EventSource('/events?room=' + room);
+  es.onerror = async () => {
+    if (es.readyState !== 2) return; // the browser is already retrying by itself
+    const alive = await roomAlive(room);
+    if (alive === false) leave(); else setTimeout(() => room && watch(), alive ? 500 : 2000);
+  };
+  es.onmessage = e => {
+    const s = JSON.parse(e.data), me = s.players.find(p => p.id === id);
+    if (!me) return leave(); // removed from the room
+    topEl.innerHTML = `<div class="me">${avatar(me)}${esc(me.name)}</div><div class="pts">${me.score} pts</div><div class="timer" id="timer" hidden><b></b></div>`;
+    setTimerFrom(s, document.getElementById('timer'));
+    // only redraw when my view changes, so typing isn't wiped by other players' updates
+    const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
+    const taken = s.players.filter(p => p.id !== id).map(p => p.av);
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${between ? me.av + ':' + taken : ''}`;
+    if (key === last) return; last = key; chosen = -1;
+    const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
+    const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
+    if (s.phase === 'menu') app.innerHTML = wait(me, `You're in, ${esc(me.name)}!`, 'The host is picking a game.');
+    else if (s.phase === 'lobby') app.innerHTML = wait(me, esc(G.name), 'Get ready. The host will start soon.');
+    else if (s.phase === 'scores') app.innerHTML = wait(me, `#${rank} with ${me.score} pts`, `Round ${s.round + 1} of ${s.rounds} is coming up!`);
+    else if (s.phase === 'results') app.innerHTML = wait(me, `#${rank} with ${me.score} pts`, rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!');
+    else app.innerHTML = screen ? screen(s, me) : wait(me, 'Watch the TV');
+    // between games players can swap avatars
+    if (between) app.innerHTML += `<label>Change avatar</label>${avGrid(me.av, taken, 'changeAv')}`;
+    app.querySelector('input')?.focus();
+  };
+}
+if (room && q.get('auto') && q.get('name')) send('join', { text: q.get('name') }).then(ok => { if (ok) { store('room', room); watch(); } else joinScreen(); });
+else room && store('room') === room ? watch() : joinScreen();
+</script></body></html>

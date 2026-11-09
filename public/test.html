@@ -1,0 +1,58 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Party Test Bench</title>
+<style>
+  body{margin:0;background:#0d080b;color:#fff;font-family:system-ui,sans-serif;display:flex;flex-direction:column;height:100vh}
+  header{display:flex;gap:12px;align-items:center;padding:8px 12px;font-size:14px;flex-wrap:wrap}
+  header button{padding:6px 12px;border:0;border-radius:8px;background:#ffb627;font-weight:700;cursor:pointer}
+  header button.on{background:#2a9d8f;color:#fff}
+  main{flex:1;display:flex;gap:8px;padding:0 8px 8px;min-height:0}
+  #tv{flex:1;border:2px solid #333;border-radius:8px;min-width:0}
+  #phones{display:grid;grid-template-columns:repeat(var(--cols,2),260px);gap:8px;overflow:auto}
+  .phone{display:flex;flex-direction:column;font-size:12px}
+  .phone iframe{width:260px;height:460px;border:2px solid #333;border-radius:14px}
+</style></head><body>
+<header>
+  <b>Test bench</b>
+  <span>Phones: <a href="?n=1" style="color:#ffb627">1</a> · <a href="?n=2" style="color:#ffb627">2</a> · <a href="?n=3" style="color:#ffb627">3</a> · <a href="?n=4" style="color:#ffb627">4</a></span>
+  <span>For big games, press <b>+ Add 5 bots</b> in the lobby (up to 20 players).</span>
+  <button id="bots" onclick="toggleBots()">Auto-play phones: off</button>
+  <button onclick="newRoom()">New room</button>
+  <span id="info"></span>
+</header>
+<main><iframe id="tv" src="/tv"></iframe><div id="phones"></div></main>
+<script>
+// browsers allow ~6 live connections per site; TV + 4 phones fits, more frames would freeze
+const n = Math.min(4, Number(new URLSearchParams(location.search).get('n')) || 4);
+const NAMES = ['Ana', 'Ben', 'Cleo', 'Dev', 'Eli', 'Fay', 'Gus', 'Hana'];
+const WORDS = ['a llama', 'pizza', 'a dentist', 'Paris', 'a toaster', 'a wizard', 'knitting', 'my uncle', 'a cactus', 'tacos'];
+const PUNCH = ['it was all a dream', 'and then the llama sued', 'I still have the receipt', 'nobody clapped', 'it tasted like regret'];
+const pick = a => a[Math.floor(Math.random() * a.length)];
+let room = '', bots = null;
+
+// the TV iframe tells us its room code; (re)load phones into that room
+addEventListener('message', e => {
+  if (e.origin !== location.origin || !e.data?.room || e.data.room === room) return;
+  room = e.data.room;
+  document.getElementById('info').textContent = `Room ${room}. Real phones can join too.`;
+  document.getElementById('phones').innerHTML = Array.from({ length: n }, (_, i) =>
+    `<div class="phone">${NAMES[i]}<iframe src="/?p=${i + 1}&room=${room}&name=${NAMES[i]}&auto=1"></iframe></div>`).join('');
+});
+function newRoom() { sessionStorage.removeItem('room'); document.getElementById('tv').src = '/tv'; }
+
+// fills in whatever each phone is showing, so you can watch a whole game play out alone
+function botTick() {
+  for (const f of document.querySelectorAll('.phone iframe')) {
+    const d = f.contentDocument; if (!d) continue;
+    const inputs = [...d.querySelectorAll('input:not(#c):not(#n)')], opts = [...d.querySelectorAll('.opt')];
+    const sendBtn = [...d.querySelectorAll('button:not(.opt)')].pop();
+    inputs.forEach(i => { if (!i.value) i.value = i.id === 'p' ? pick(PUNCH) : pick(WORDS); });
+    if (opts.length && inputs.length) { pick(opts).click(); sendBtn?.click(); }
+    else if (opts.length) pick(opts).click(); // a vote; if it was their own, next tick picks again
+    else if (inputs.length) sendBtn?.click();
+  }
+}
+function toggleBots() {
+  bots = bots ? (clearInterval(bots), null) : setInterval(botTick, 1200);
+  const b = document.getElementById('bots'); b.textContent = `Auto-play phones: ${bots ? 'on' : 'off'}`; b.classList.toggle('on', !!bots);
+}
+</script></body></html>

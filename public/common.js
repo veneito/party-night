@@ -1,0 +1,78 @@
+// Shared by TV and phone: avatars, escaping, countdown, confetti.
+const AV_EMOJI = ['🦊', '🐸', '🐙', '🦄', '🐼', '🐯', '🦉', '🐵', '🐧', '🦖', '🐨', '🦁', '🐰', '🐳', '🦜', '🐢', '🦔', '🐝', '🦩', '🐲'];
+const AV_COLOR = ['#ff6b6b', '#4ecdc4', '#ffd93d', '#a78bfa', '#6bcb77', '#ff9f43', '#4d96ff', '#f472b6', '#2dd4bf', '#facc15',
+  '#fb7185', '#60a5fa', '#c084fc', '#34d399', '#f97316', '#38bdf8', '#e879f9', '#a3e635', '#fda4af', '#fbbf24'];
+const avColor = p => AV_COLOR[p.av % AV_COLOR.length];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const avatar = (p, size = '') => `<span class="av ${size}" style="--c:${avColor(p)}">${AV_EMOJI[p.av % AV_EMOJI.length]}</span>`;
+
+// countdown ring: server sends seconds left; we tick locally between updates
+const timer = { left: 0, total: 0, el: null };
+function setTimerFrom(s, el) {
+  timer.el = el;
+  if (s.left > timer.left + 1 || !s.left) timer.total = s.left; // a new countdown started
+  timer.left = s.left; drawTimer();
+}
+function drawTimer() {
+  const { el, left, total } = timer; if (!el) return;
+  el.hidden = !left;
+  el.classList.toggle('low', left > 0 && left <= 10);
+  el.style.setProperty('--p', total ? left / total : 0);
+  el.querySelector('b').textContent = left;
+}
+setInterval(() => { if (timer.left > 0) { timer.left--; if (timer.left && timer.left <= 5) sfx('tick'); drawTimer(); } }, 1000);
+
+// small dependency-free confetti burst
+function confetti(n = 140) {
+  const c = document.createElement('canvas'), x = c.getContext('2d');
+  c.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99';
+  c.width = innerWidth; c.height = innerHeight; document.body.appendChild(c);
+  const bits = Array.from({ length: n }, () => ({ x: c.width / 2, y: c.height / 3, vx: (Math.random() - .5) * 18, vy: Math.random() * -16 - 4,
+    r: Math.random() * 6 + 4, c: AV_COLOR[Math.floor(Math.random() * AV_COLOR.length)], a: Math.random() * 6 }));
+  let t = 0;
+  (function f() {
+    x.clearRect(0, 0, c.width, c.height);
+    for (const b of bits) { b.vy += .45; b.x += b.vx; b.y += b.vy; b.a += .1; x.fillStyle = b.c;
+      x.save(); x.translate(b.x, b.y); x.rotate(b.a); x.fillRect(-b.r, -b.r / 2, b.r * 2, b.r); x.restore(); }
+    if (++t < 160) requestAnimationFrame(f); else c.remove();
+  })();
+}
+
+// Sound effects, synthesized with Web Audio so there are no files to load.
+// Browsers only allow sound after a tap/click on the page, so the context starts on the first one.
+// sfxVol is 0..1, kept per device; older installs saved a plain mute flag
+let actx, sfxVol = 1;
+try { sfxVol = localStorage.sfxVol != null ? Number(localStorage.sfxVol) : localStorage.muted === '1' ? 0 : 1; } catch {}
+addEventListener('pointerdown', () => { actx ??= new AudioContext(); actx.resume(); }, { capture: true });
+function tone(freq, t0, dur, type = 'sine', vol = .2, slide = 0) {
+  const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + t0;
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol * sfxVol, t + .01); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + .05);
+}
+const SFX = {
+  tap: () => tone(660, 0, .08, 'triangle', .15),
+  join: () => { tone(520, 0, .12, 'triangle'); tone(780, .08, .18, 'triangle'); },
+  leave: () => tone(400, 0, .25, 'sine', .15, .5),
+  go: () => [392, 523, 659, 784].forEach((f, i) => tone(f, i * .09, .25, 'square', .08)),
+  tick: () => tone(1200, 0, .05, 'square', .06),
+  done: () => tone(880, 0, .1, 'sine', .12),
+  whoosh: () => tone(200, 0, .35, 'sawtooth', .07, 4),
+  reveal: () => { for (let i = 0; i < 10; i++) tone(140 + i * 8, i * .05, .06, 'square', .05); [523, 659, 784, 1047].forEach((f, i) => tone(f, .55 + i * .07, .4, 'triangle', .15)); },
+  fanfare: () => [[523, 0], [523, .15], [523, .3], [659, .45], [784, .75], [659, 1], [784, 1.15], [1047, 1.3]].forEach(([f, t]) => tone(f, t, .35, 'square', .08)),
+  sad: () => [392, 370, 349, 330].forEach((f, i) => tone(f, i * .3, .35, 'triangle', .12)),
+};
+function sfx(name) { if (!sfxVol || !actx || actx.state !== 'running') return; try { SFX[name]?.(); } catch {} }
+function setSfxVol(v) { sfxVol = v; try { localStorage.sfxVol = v; } catch {} }
+
+// When the live connection drops, find out why before acting: true = room still there (just reconnect),
+// false = room is gone (server restarted), null = server unreachable right now (try again shortly).
+// Without this, a plain page reload looked like "room gone" and phones/TV forgot their room.
+async function roomAlive(room) {
+  try {
+    const r = await fetch('/action', { method: 'POST', body: JSON.stringify({ type: 'ping', room }) });
+    return r.ok ? true : (await r.json()).error !== 'Room not found';
+  } catch { return null; }
+}

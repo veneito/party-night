@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Party Night</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  html{font-size:clamp(9px,min(1.15vw,2vh),30px)}
+  body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  header{display:flex;align-items:center;gap:1.5rem;padding:.8rem 2.4rem;min-height:5rem}
+  .brand{font-weight:800;font-size:1.6rem;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem}
+  .brand i{font-style:normal;color:var(--gold)}
+  .roompill{margin-left:auto;display:flex;align-items:center;gap:1rem;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.5rem .6rem .5rem 1.4rem;font-size:1.1rem;color:var(--mute)}
+  .roompill b{background:var(--gold);color:#1a1230;border-radius:999px;padding:.3rem 1rem;letter-spacing:.15em;font-size:1.4rem}
+  .botctl{display:flex;align-items:center;gap:.5rem;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.35rem;font-size:1.05rem;color:var(--mute)}
+  .botctl span{padding:0 .4rem 0 .7rem} .botctl b{color:var(--ink)}
+  .botctl button{width:2.3rem;height:2.3rem;border-radius:50%;background:var(--card2);font-size:1.3rem;font-weight:800;line-height:1}
+  #room:not([hidden])+.botctl{margin-left:0} .botctl{margin-left:auto}
+  .mute{width:3rem;height:3rem;border-radius:50%;background:var(--bg2);border:1px solid var(--line);font-size:1.3rem}
+  main{flex:1;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:safe center;padding:0 3rem 1rem;min-height:0;text-align:center}
+  h1{font-size:3.6rem;line-height:1.05;letter-spacing:-.03em;margin:.2em 0;max-width:22em;text-wrap:balance}
+  h2{font-size:2rem;margin:.3em 0;color:var(--mute);font-weight:500}
+  .kicker{font-size:1.1rem;text-transform:uppercase;letter-spacing:.2em;color:var(--gold);font-weight:700}
+
+  /* menu */
+  .hero{font-size:6rem;font-weight:800;letter-spacing:-.05em;line-height:.9;margin:0}
+  .hero span{color:var(--gold)}
+  .modes{display:flex;gap:2rem;margin:2.2rem 0 1.5rem;flex-wrap:wrap;justify-content:center}
+  .mode{width:26rem;text-align:left;border-radius:2rem;padding:0;overflow:hidden;background:var(--card);box-shadow:0 .5rem 0 #0006;transition:transform .2s}
+  .mode:hover,.mode:focus-visible{transform:translateY(-.5rem) rotate(-.6deg)}
+  .mode .art{height:8rem;display:grid;place-items:center;font-size:4.8rem}
+  .mode .art span{animation:bob 3s ease-in-out infinite}
+  .mode .body{padding:1.5rem 1.8rem 1.8rem}
+  .mode h3{margin:0 0 .3rem;font-size:2.2rem;letter-spacing:-.02em}
+  .mode p{margin:0 0 1rem;color:var(--mute);font-size:1.15rem;line-height:1.4}
+  .joinrow{display:flex;align-items:center;gap:1.2rem;text-align:left}
+  .joinrow .qr{width:6.5rem;height:6.5rem}
+  .chip{display:inline-block;padding:.3rem .8rem;border-radius:999px;background:#ffffff14;font-size:.95rem;margin-right:.4rem}
+
+  /* lobby */
+  .lobby{display:grid;grid-template-columns:minmax(0,38rem) minmax(0,1fr);gap:2.5rem;width:100%;max-width:110rem;text-align:left;align-items:start}
+  .panel{background:var(--card);border-radius:1.8rem;padding:1.5rem}
+  .joinurl{font-size:1.4rem;color:var(--mute)} .joinurl b{color:var(--ink);display:block;font-size:1.7rem}
+  .join{display:flex;gap:1.2rem;align-items:center;margin-top:.8rem}
+  .qr{width:10.5rem;height:10.5rem;border-radius:1rem;background:#fff;padding:.4rem;flex:none}
+  .join .joinurl{font-size:1.1rem} .join .joinurl b{font-size:1.35rem}
+  .tiles{display:flex;gap:.4rem;margin:.7rem 0 0}
+  .tiles span{flex:1;aspect-ratio:1;display:grid;place-items:center;background:var(--gold);color:#1a1230;border-radius:1rem;font-size:2.4rem;font-weight:800;box-shadow:0 .4rem 0 #b8901a}
+  .settings{margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:.7rem 1rem}
+  .setting{display:flex;flex-direction:column;gap:.45rem}
+  .setting label{font-size:.85rem;color:var(--mute);text-transform:uppercase;letter-spacing:.12em}
+  .seg{display:flex;background:var(--bg2);border-radius:999px;padding:.25rem}
+  .seg button{flex:1;background:transparent;border-radius:999px;padding:.5rem .3rem;font-size:.95rem;white-space:nowrap;font-weight:700;color:var(--mute)}
+  .seg button.on{background:var(--ink);color:#1a1230}
+  .players-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1rem}
+  .players-head h2{color:var(--ink);font-weight:800;margin:0}
+  .count{font-size:1.6rem;color:var(--mute)} .count b{color:var(--gold)}
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:1rem}
+  .pslot{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.6rem .4rem;border-radius:1.2rem;background:var(--card);font-weight:700;font-size:1.15rem;min-width:0}
+  .pslot .name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pslot.empty{background:transparent;border:2px dashed var(--line);color:#ffffff40;justify-content:center;min-height:5.8rem}
+  .actions{display:flex;gap:1rem;margin-top:1.2rem;align-items:center;flex-wrap:wrap}
+  .actions .btn{font-size:1.4rem}
+  .hint{color:var(--mute);font-size:1.1rem}
+
+  /* in-game */
+  .prompt{background:var(--card);border-radius:2rem;padding:2.5rem 3.5rem;box-shadow:0 .6rem 0 #0005;max-width:70rem}
+  .strip{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;max-width:110rem;margin-top:1.8rem}
+  .who{display:flex;align-items:center;gap:.5rem;padding:.35rem 1rem .35rem .35rem;border-radius:999px;background:var(--card);font-weight:700;font-size:1.05rem;transition:background .3s,opacity .3s;opacity:.55}
+  .who.done{background:var(--mint);color:#0b2a22;opacity:1}
+  .who.done::after{content:'✓';font-weight:800}
+  .answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:.8rem;width:100%;max-width:115rem;margin-top:1rem}
+  .answer{background:var(--card);border-radius:1.3rem;padding:.9rem 1.2rem;font-size:1.3rem;font-weight:700;text-align:left;display:flex;gap:.8rem;align-items:flex-start}
+  .answer .n{color:var(--gold);flex:none}
+  .answer small{display:flex;align-items:center;gap:.5rem;margin-top:.6rem;font-size:1rem;color:var(--mute);font-weight:500}
+  .answer.win{background:var(--gold);color:#1a1230} .answer.win small{color:#1a1230}
+  .stack{display:flex;flex-direction:column}
+  .answers.top3{grid-template-columns:repeat(3,minmax(0,1fr));max-width:90rem;margin-top:1rem} .top3 .answer{font-size:1.3rem;padding:1rem 1.2rem}
+
+  .jokes{display:grid;grid-template-columns:1fr auto 1fr;gap:2rem;align-items:stretch;width:100%;max-width:110rem;margin-top:1.5rem}
+  .joke{background:var(--card);border-radius:2rem;padding:2.4rem;font-size:2.1rem;text-align:left;line-height:1.25;position:relative;transition:transform .4s,background .4s}
+  .joke .punch{color:var(--gold);font-weight:800;margin-top:.7em}
+  .joke.win{background:linear-gradient(160deg,#3d2a7a,#5a2a5f);transform:scale(1.04);box-shadow:0 0 0 4px var(--gold)}
+  .joke.lose{opacity:.55;transform:scale(.97)}
+  .joke .by{display:flex;align-items:center;gap:.7rem;margin-top:1.4rem;font-size:1.3rem;font-weight:700;color:var(--ink)}
+  .bar{height:1rem;border-radius:999px;background:#ffffff14;margin-top:1rem;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--gold);border-radius:999px;animation:grow 1s ease-out both}
+  @keyframes grow{from{width:0}}
+  .vs{align-self:center;font-size:3.5rem;font-weight:800;color:var(--coral);transform:rotate(-8deg)}
+  .bonus{position:absolute;top:-1.2rem;right:1.5rem;background:var(--coral);border-radius:999px;padding:.3rem 1rem;font-size:1.1rem;font-weight:800}
+
+  /* results */
+  .podium{display:flex;align-items:flex-end;gap:1.5rem;margin:1rem 0 1rem}
+  main:has(.podium){justify-content:flex-start;padding-top:1rem}
+  .step{display:flex;flex-direction:column;align-items:center;gap:.35rem;width:14rem}
+  .step .av.xl{font-size:2em}
+  .step .name{font-size:1.4rem;font-weight:800} .step .pts{color:var(--mute);font-size:1.1rem}
+  .step .block{width:100%;border-radius:1.2rem 1.2rem 0 0;display:grid;place-items:start center;padding-top:.4rem;font-size:2.4rem;font-weight:800;color:#1a1230}
+  .rest{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;max-width:100rem}
+  .rest .who{font-size:.95rem;padding:.2rem .8rem .2rem .2rem}
+  .rest .who{opacity:1}
+  .footer-actions{display:flex;gap:1rem;margin-top:2rem}
+  .footer-actions .btn{font-size:1.4rem}
+  .footer-actions.sticky{margin-top:1.2rem}
+  .panel{background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:1.4rem;padding:1.6rem 1.8rem;box-shadow:0 1.5rem 4rem #0009}
+  dialog.panel{width:min(30rem,92vw)} dialog::backdrop{background:#0008}
+  .panel h3{margin:0 0 .8rem;font-size:1.5rem} .panel h3+.row{margin-top:0}
+  .panel .row{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:.8rem 0;font-size:1.15rem;font-weight:700}
+  .panel input[type=range]{width:12rem;accent-color:var(--gold)} .panel input[type=checkbox]{width:1.5rem;height:1.5rem;accent-color:var(--gold)}
+  .panel p{color:var(--mute);min-height:1.4em;margin:.3rem 0 1rem} .panel .btn{font-size:1.1rem}
+  #upd{border-top:1px solid var(--line);margin-top:1.2rem;padding-top:1.2rem}
+  .toast{position:fixed;right:1.5rem;bottom:1.5rem;z-index:50;display:grid;gap:.4rem;width:24rem;animation:pop .35s}
+  .toast b{font-size:1.3rem} .toast span{color:var(--mute)} .toast .row{margin:.6rem 0 0;justify-content:flex-end}
+</style></head><body><div class="stage"></div>
+<header><div class="brand">🎉 Party <i>Night</i></div><div id="room"></div><div class="botctl" id="bots"></div><button class="mute" onclick="openSettings()" aria-label="Settings">⚙️</button><div class="timer" id="timer" hidden><b></b></div></header>
+<main id="app"><h2>Connecting…</h2></main>
+<dialog id="settings" class="panel">
+  <h3>Settings</h3>
+  <label class="row">Sound effects <input type="range" min="0" max="100" id="sfxVol" oninput="setSfxVol(this.value / 100)" onchange="sfx('done')"></label>
+  <label class="row">Voice-over <input type="checkbox" id="voiceOn" onchange='send("set",{key:"voice",value:this.checked ? "on" : "off"})'></label>
+  <label class="row">Voice volume <input type="range" min="0" max="100" id="voiceVol" oninput="setVoiceVol(this.value / 100)"></label>
+  <div id="upd" hidden><h3>Updates</h3><div class="row"><span id="updVer"></span><button class="btn ghost" onclick="checkUpdate()">Check for updates</button></div><p id="updMsg"></p></div>
+  <button class="btn" onclick="settings.close()">Done</button>
+</dialog>
+<div id="updPop" class="panel toast" role="alert" hidden><b>Update available</b><span id="updPopMsg"></span>
+  <div class="row"><button class="btn ghost" onclick="updPop.hidden = true">Dismiss</button><button class="btn" id="updGo" onclick="startUpdate()">Update</button></div></div>
+<script src="/common.js"></script>
+<script>
+const app = document.getElementById('app'), roomEl = document.getElementById('room');
+let url = '', room = sessionStorage.room, spoken = '', lastKey = '', seen = new Set(), S;
+// Settings: effect and voice volume are per screen; voice-over on/off is a room setting shared with the lobby
+let voiceVol = 1; try { voiceVol = Number(localStorage.voiceVol ?? 1); } catch {}
+function setVoiceVol(v) { voiceVol = v; try { localStorage.voiceVol = v; } catch {} }
+function openSettings() {
+  sfxVolEl.value = sfxVol * 100; voiceVolEl.value = voiceVol * 100; voiceOn.checked = S?.settings.voice !== 'off';
+  settings.showModal();
+}
+const sfxVolEl = document.getElementById('sfxVol'), voiceVolEl = document.getElementById('voiceVol');
+// Updates only exist in the desktop app, which hands this page a small `partyApp` bridge
+const updMsg = document.getElementById('updMsg'), updPopMsg = document.getElementById('updPopMsg');
+if (window.partyApp) {
+  upd.hidden = false;
+  partyApp.version().then(v => updVer.textContent = `Version ${v}`);
+  partyApp.onUpdate(u => {
+    if (u.state === 'available') { updPopMsg.textContent = `Party Night ${u.version} is ready to install.`; updGo.disabled = false; updPop.hidden = false; updMsg.textContent = `Version ${u.version} is available.`; }
+    else if (u.state === 'none') updMsg.textContent = "You're on the latest version.";
+    else if (u.state === 'progress') updPopMsg.textContent = `Downloading… ${u.percent}%`;
+    else if (u.state === 'installing') updPopMsg.textContent = 'Installing. Party Night will reopen in a moment.';
+    else if (u.state === 'error') { updMsg.textContent = updPopMsg.textContent = `Couldn't update: ${u.message}`; updGo.disabled = false; }
+  });
+}
+function checkUpdate() { updMsg.textContent = 'Checking…'; partyApp.check(); }
+function startUpdate() { updGo.disabled = true; updPop.hidden = false; updPopMsg.textContent = 'Starting download…'; partyApp.download(); }
+fetch('/ip').then(r => r.text()).then(u => { url = u; if (S) render(S, true); });
+const send = (type, extra = {}) => fetch('/action', { method: 'POST', body: JSON.stringify({ type, room, ...extra }) });
+const btn = (type, label, cls = '', extra = '') => `<button class="btn ${cls}" onclick='send("${type}"${extra ? ',' + extra : ''})'>${label}</button>`;
+// Narrator. Speech is cancelled on every screen change so it never talks about an old screen.
+let voice;
+const pickVoice = () => { const vs = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+  voice = vs.find(v => /natural|online/i.test(v.name)) || vs.find(v => /google/i.test(v.name)) || vs[0]; };
+if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function say(...lines) {
+  if (!window.speechSynthesis) return;
+  for (const t of lines) { const u = new SpeechSynthesisUtterance(t); if (voice) u.voice = voice; u.rate = 1.05; u.volume = voiceVol; speechSynthesis.speak(u); }
+}
+function narrate(s) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  if (s.settings.voice === 'off') return;
+  const top = [...s.players].sort((a, b) => b.score - a.score)[0];
+  const lines = {
+    lobby: () => [`${s.games.find(g => g.id === s.game)?.name}! Grab your phones and join.`],
+    words: () => ['Give us some words! Check your phone.'],
+    write: () => ['Time to write your jokes. Pick a setup and land the punchline.'],
+    duel: () => { const [a, b] = s.duel; return [`Joke ${s.duelNo}.`, `${a.setup}... ${a.punch}`, 'Or...', `${b.setup}... ${b.punch}`, 'Vote now!']; },
+    reveal: () => { const [a, b] = s.duel; return a.votes === b.votes ? ['It\'s a tie!'] : [`${(a.votes > b.votes ? a : b).name} wins that one!`]; },
+    answer: () => [s.prompt],
+    vote: () => ['Time to vote for the best answer!'],
+    scores: () => top ? [`End of round ${s.round}. ${top.name} is in the lead with ${top.score} points!`] : [],
+    results: () => top ? [`${top.name} wins the game with ${top.score} points!`] : [],
+  }[s.phase];
+  if (lines) say(...lines());
+}
+
+async function connect() {
+  // refresh keeps the same room; a server restart forgets it, so make a new one
+  if (!room) room = sessionStorage.room = (await (await fetch('/action', { method: 'POST', body: '{"type":"create"}' })).json()).code;
+  if (parent !== window) parent.postMessage({ room }, location.origin); // tells /test which room this is
+  const es = new EventSource('/events?room=' + room);
+  es.onerror = async () => {
+    if (es.readyState !== 2) return;
+    const alive = await roomAlive(room);
+    if (alive === false) room = sessionStorage.room = ''; // server restarted: make a fresh room
+    setTimeout(connect, alive ? 500 : 2000);
+  };
+  es.onmessage = e => render(S = JSON.parse(e.data));
+}
+
+// players pop in once, not every time the screen refreshes
+const popOnce = id => seen.has(id) ? '' : (seen.add(id), 'pop');
+const strip = s => `<div class="strip" data-live="strip">${s.players.map(p =>
+  `<div class="who ${p.done ? 'done' : ''} ${popOnce('s' + p.id)}">${avatar(p)}${esc(p.name)}</div>`).join('')}</div>`;
+const skip = (label = 'Time\'s up') => `<div class="footer-actions">${btn('skip', label, 'ghost')}</div>`;
+
+const MODES = {
+  punchline: {
+    art: '🎤', bg: 'linear-gradient(135deg,#ff5e7e,#a78bfa)',
+    words: s => `<div class="kicker rise">Round ${s.round} · Step 1 of 3</div><h1 class="pop">Give us some words!</h1>
+      <h2 class="rise">Check your phone. Your words become other people's jokes.</h2>${strip(s)}${skip()}`,
+    write: s => `<div class="kicker rise">Step 2 of 3</div><h1 class="pop">Write your jokes</h1>
+      <h2 class="rise">Pick a setup, then land the punchline.</h2>${strip(s)}${skip()}`,
+    duel: s => duel(s), reveal: s => duel(s),
+  },
+  quickwit: {
+    art: '⚡', bg: 'linear-gradient(135deg,#3ee6b5,#5ab0ff)',
+    answer: s => `<div class="kicker rise">Round ${s.round}</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
+      <h2 class="rise">Answer on your phone!</h2>${strip(s)}${skip()}`,
+    vote: s => `<div class="kicker rise">Vote for the best</div><h1 class="pop" style="font-size:2.6rem">${esc(s.prompt)}</h1>
+      <div class="answers">${s.list.map((a, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span>${esc(a.text)}</div>`).join('')}</div>
+      ${strip(s)}${skip()}`,
+    results: s => {
+      if (!s.last) return '';
+      const top = Math.max(...s.last.list.map(a => a.votes), 1);
+      return `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.prompt)}</h1><div class="answers top3">${[...s.last.list].sort((a, b) => b.votes - a.votes).slice(0, 3).map((a, i) =>
+        `<div class="answer rise ${a.votes === top ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack">${esc(a.text)}
+        <small>${avatar(s.players.find(p => p.name === a.name) || { av: 0 })}${esc(a.name)} · ${plural(a.votes, 'vote')}</small></div></div>`).join('')}</div>`;
+    },
+  },
+};
+
+function duel(s) {
+  const [a, b] = s.duel, rev = s.phase === 'reveal', w = rev ? (a.votes > b.votes ? 0 : b.votes > a.votes ? 1 : -1) : -1;
+  const total = rev ? Math.max(1, a.votes + b.votes) : 1;
+  const joke = (j, i) => `<div class="joke ${rev ? (w === i ? 'win' : w >= 0 ? 'lose' : '') : 'pop'}" style="animation-delay:${i * 250}ms">
+    ${rev && w === i && j.votes >= 2 && (i ? a : b).votes === 0 ? '<span class="bonus">SWEEP +200</span>' : ''}
+    ${esc(j.setup)}<div class="punch">${esc(j.punch)}</div>
+    ${rev ? `<div class="by">${avatar(s.players.find(p => p.name === j.name) || { av: 0 })}${esc(j.name)} · ${plural(j.votes, 'vote')}</div>
+      <div class="bar"><i style="width:${j.votes / total * 100}%"></i></div>` : ''}</div>`;
+  return `<div class="kicker">Joke-off ${s.duelNo} of ${s.duelCount}</div>
+    <h1 style="font-size:2.8rem">${rev ? (w < 0 ? 'It\'s a tie!' : 'The crowd has spoken!') : 'Which is funnier? Vote on your phone!'}</h1>
+    <div class="jokes">${joke(a, 0)}<div class="vs">VS</div>${joke(b, 1)}</div>
+    ${rev ? '' : strip(s)}${skip(rev ? 'Next' : 'Time\'s up')}`;
+}
+
+function menu(s) {
+  return `<p class="kicker rise">Pick a game</p><h1 class="hero pop">Party <span>Night</span></h1>
+    <div class="modes">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 100}ms" onclick='send("pick",{game:"${g.id}"})'>
+      <div class="art" style="background:${MODES[g.id]?.bg || 'var(--card2)'}"><span>${MODES[g.id]?.art || '🎲'}</span></div>
+      <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></button>`).join('')}</div>
+    <div class="joinrow rise">${s.players.length ? '' : `<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">${s.players.length ? `${plural(s.players.length, 'player')} here: ${s.players.map(p => esc(p.name)).join(', ')}` : `Players can join already at <b>${esc(url)}</b> with code <b>${s.code}</b>`}</div>
+</div>`;
+}
+
+function lobby(s) {
+  const G = s.games.find(x => x.id === s.game), max = s.settings.max || 20, n = s.players.length;
+  const slots = s.players.map(p => `<div class="pslot ${popOnce('l' + p.id)}">${avatar(p, 'lg')}<span class="name">${esc(p.name)}</span></div>`).join('')
+    + Array.from({ length: Math.max(0, Math.min(max, 20) - n) }, () => `<div class="pslot empty">?</div>`).join('');
+  return `<div class="lobby">
+    <div class="panel rise">
+      <div class="kicker">${esc(G.name)}</div>
+      <div class="join">
+        <img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">
+        <div><div class="joinurl">Scan to join, or go to <b>${esc(url.replace('http://', ''))}</b>and enter</div>
+        <div class="tiles">${[...s.code].map(c => `<span>${c}</span>`).join('')}</div></div>
+      </div>
+      <div class="settings" data-live="settings">${G.settings.map(def => `<div class="setting"><label>${esc(def.label)}</label><div class="seg">${def.options.map(([v, l]) =>
+        `<button class="${s.settings[def.key] === v ? 'on' : ''}" onclick='send("set",{key:"${def.key}",value:${JSON.stringify(v)}})'>${esc(l)}</button>`).join('')}</div></div>`).join('')}</div>
+    </div>
+    <div>
+      <div class="players-head"><h2>Players</h2><div class="count" data-live="count"><b>${n}</b> / ${max}</div></div>
+      <div class="pgrid" data-live="slots">${slots}</div>
+      <div class="actions" data-live="actions">
+        ${n >= G.min ? btn('start', '▶ Start game') : `<span class="hint">Need ${G.min - n} more player${G.min - n === 1 ? '' : 's'} to start</span>`}
+        ${btn('menu', '← Menu', 'ghost')}
+        ${n < max ? btn('bots', '+ Add 5 bots', 'ghost', '{n:5}') : ''}${s.players.some(p => p.bot) ? btn('unbot', 'Remove bots', 'ghost') : ''}
+      </div>
+    </div></div>`;
+}
+
+function results(s) {
+  const M = MODES[s.game] || {}, ranked = [...s.players].sort((a, b) => b.score - a.score);
+  const order = [1, 0, 2].filter(i => ranked[i]), H = ['7rem', '5rem', '3.8rem'], C = ['var(--gold)', '#d6dbe6', '#e3a46b'];
+  const final = s.phase === 'results';
+  return `${M.results ? M.results(s) : ''}<div class="kicker" style="margin-top:1rem">${final ? '🏆 Final scores' : `Scores after round ${s.round} of ${s.rounds}`}</div>
+    <div class="podium">${order.map(i => `<div class="step rise" style="animation-delay:${[300, 0, 600][i]}ms">${avatar(ranked[i], 'xl')}
+      <div class="name">${esc(ranked[i].name)}</div><div class="pts">${ranked[i].score} pts</div>
+      <div class="block" style="height:${H[i]};background:${C[i]}">${i + 1}</div></div>`).join('')}</div>
+    <div class="rest">${ranked.slice(3).map((p, i) => `<div class="who rise">${i + 4}. ${avatar(p)}${esc(p.name)} · ${p.score}</div>`).join('')}</div>
+    <div class="footer-actions sticky">${final ? btn('start', '↻ Play again') : btn('skip', `▶ Round ${s.round + 1}`)}${btn('menu', '← Menu', 'ghost')}</div>`;
+}
+
+// sounds follow what changed since the last update
+let prev = null;
+function playSounds(s) {
+  const p = prev; prev = s;
+  if (!p) return;
+  const ids = new Set(p.players.map(x => x.id));
+  if (s.players.some(x => !ids.has(x.id))) sfx('join');
+  else if (s.players.length < p.players.length) sfx('leave');
+  if (s.phase !== p.phase || s.duelNo !== p.duelNo) {
+    if (s.phase === 'results') sfx('fanfare');
+    else if (s.phase === 'scores') sfx('reveal');
+    else if (s.phase === 'reveal') sfx(s.duel.some(j => j.votes) ? 'reveal' : 'sad');
+    else if (s.phase === 'lobby' || s.phase === 'menu') sfx('whoosh');
+    else sfx('go');
+    narrate(s);
+  } else if (s.players.filter(x => x.done).length > p.players.filter(x => x.done).length) sfx('done');
+}
+
+function render(s, force) {
+  if (!force) playSounds(s);
+  setTimerFrom(s, document.getElementById('timer'));
+  roomEl.className = 'roompill'; roomEl.hidden = s.phase === 'menu' || s.phase === 'lobby';
+  roomEl.innerHTML = `${esc(url.replace('http://', ''))}<b>${s.code}</b>`;
+  voiceOn.checked = s.settings.voice !== 'off';
+  if (s.settings.voice === 'off' && prev && prev.settings.voice !== 'off') speechSynthesis?.cancel();
+  // bots can be added or removed at any time; mid-round additions wait for the next round
+  const nb = s.players.filter(p => p.bot).length;
+  document.getElementById('bots').innerHTML = `<span>🤖 Bots <b>${nb}</b>${s.pendingBots ? ` <small>(+${s.pendingBots} next round)</small>` : ''}</span>
+    <button aria-label="Remove a bot" onclick='send("unbot",{n:1})' ${nb + s.pendingBots ? '' : 'disabled'}>−</button><button aria-label="Add a bot" onclick='send("bots",{n:1})'>+</button>`;
+  const M = MODES[s.game] || {};
+  const html = s.phase === 'menu' ? menu(s) : s.phase === 'lobby' ? lobby(s) : s.phase === 'results' || s.phase === 'scores' ? results(s) : (M[s.phase] || (() => `<h1>${s.phase}</h1>`))(s);
+  // same screen: only swap the live bits so entrance animations don't replay on every update
+  const key = [s.phase, s.game, s.round, s.duelNo].join('|');
+  if (key === lastKey && !force) {
+    const t = document.createElement('template'); t.innerHTML = html;
+    for (const el of t.content.querySelectorAll('[data-live]')) {
+      const cur = app.querySelector(`[data-live="${el.dataset.live}"]`);
+      if (cur && cur.innerHTML !== el.innerHTML) cur.innerHTML = el.innerHTML;
+    }
+    return;
+  }
+  lastKey = key; app.innerHTML = html;
+  if (s.phase === 'results' || s.phase === 'scores' || (s.phase === 'reveal' && s.duel.some(j => j.votes))) confetti(s.phase === 'reveal' ? 90 : s.phase === 'scores' ? 120 : 260);
+}
+connect();
+</script></body></html>
