@@ -89,7 +89,8 @@
   .hint{color:var(--mute);font-size:1.1rem}
 
   /* in-game */
-  .gif{display:block;max-width:100%;max-height:45vh;border-radius:1rem;margin:auto}
+  .gif{display:block;height:40vh;width:auto;max-width:85vw;object-fit:contain;border-radius:1rem;margin:auto}
+  .prompt .gif{height:62vh}
   .prompt{background:var(--card);border-radius:2rem;padding:2.5rem 3.5rem;box-shadow:0 .6rem 0 #0005;max-width:70rem}
   .strip{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;max-width:110rem;margin-top:1.8rem}
   .who{display:flex;align-items:center;gap:.5rem;padding:.35rem 1rem .35rem .35rem;border-radius:999px;background:var(--card);font-weight:700;font-size:1.05rem;transition:background .3s,opacity .3s;opacity:.55}
@@ -358,13 +359,13 @@ const MODES = {
     art: '⚡', bg: 'linear-gradient(135deg,#8fd16a,#5ab0ff)',
     answer: s => `<div class="kicker rise">Round ${s.round}</div><div class="prompt pop"><h1>${gif(s, s.prompt)}</h1></div>
       <h2 class="rise">Answer on your phone!</h2>${strip(s)}${skip()}`,
-    vote: s => `<div class="kicker rise">Vote for the best</div><h1 class="pop" style="font-size:2.6rem">${gif(s, s.prompt, '200')}</h1>
+    vote: s => `<div class="kicker rise">Vote for the best</div><h1 class="pop" style="font-size:2.6rem">${gif(s, s.prompt)}</h1>
       <div class="answers">${s.list.map((a, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span><span>${withSounds(a.text)}</span></div>`).join('')}</div>
       ${strip(s)}${skip()}`,
     results: s => {
       if (!s.last) return '';
       const top = Math.max(...s.last.list.map(a => a.votes), 1);
-      return `<h1 class="pop" style="font-size:2.2rem;margin:0">${gif(s, s.last.prompt, '200')}</h1><div class="answers top3">${[...s.last.list].sort((a, b) => b.votes - a.votes).slice(0, 3).map((a, i) =>
+      return `<h1 class="pop" style="font-size:2.2rem;margin:0">${gif(s, s.last.prompt)}</h1><div class="answers top3">${[...s.last.list].sort((a, b) => b.votes - a.votes).slice(0, 3).map((a, i) =>
         `<div class="answer rise ${a.votes === top ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack"><span>${withSounds(a.text)}</span>
         <small>${avatar(s.players.find(p => p.name === a.name) || { av: 0 })}${esc(a.name)} · ${plural(a.votes, 'vote')}</small></div></div>`).join('')}</div>`;
     },
