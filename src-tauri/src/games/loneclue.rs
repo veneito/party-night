@@ -99,6 +99,20 @@ impl Game for LoneClue {
 mod tests {
     use super::*;
     #[test]
+    fn all_clues_in_moves_to_guess() {
+        let mut g = crate::room::test_room(&["a", "b", "c"]);
+        g.round = 1;
+        LoneClue.start(&mut g);
+        let guesser = dr!(g, Lone).guesser.clone().unwrap();
+        for (i, id) in ["a", "b", "c"].iter().enumerate() {
+            if *id == guesser { continue }
+            let t = ["zzq", "qqx", "xxv"][i];
+            assert!(LoneClue.act(&mut g, &json!({ "type": "clue", "text": t }), id).is_ok());
+            if g.players.keys().all(|p| LoneClue.is_done(&g, p)) { LoneClue.advance(g.phase).unwrap()(&mut g) }
+        }
+        assert_eq!(g.phase, "guess");
+    }
+    #[test]
     fn matching_clues_cancel() {
         assert_eq!(norm("Cats!"), "cat");
         assert_eq!(norm("cheeses"), "chees");
