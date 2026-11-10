@@ -110,7 +110,9 @@ const id = store('pid') || store('pid', Math.random().toString(36).slice(2));
 let drawnAt = 0;
 let room = q.get('room') || store('room') || '', es, last = '', chosen = -1;
 async function send(type, extra = {}) {
-  const r = await fetch('/action', { method: 'POST', body: JSON.stringify({ id, room, type, ...extra }) });
+  let r;
+  try { r = await fetch('/action', { method: 'POST', body: JSON.stringify({ id, room, type, ...extra }) }); }
+  catch { errEl.textContent = 'No connection. Your answer is kept, try again.'; reconnect(); return false; }
   errEl.textContent = r.ok ? '' : (await r.json()).error;
   if (!r.ok) { errEl.classList.remove('shake'); void errEl.offsetWidth; errEl.classList.add('shake'); }
   if (r.ok) { sfx('tap'); navigator.vibrate?.(15); } else sfx('leave');
@@ -397,6 +399,17 @@ let heard = Date.now();
 function reconnect() { if (!room || !es) return; es.close(); heard = Date.now(); watch(); }
 setInterval(() => { if (Date.now() - heard > 25000) reconnect(); }, 5000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - heard > 3000) reconnect(); });
+addEventListener('online', reconnect);
+addEventListener('pageshow', e => { if (e.persisted) reconnect(); }); // restored from the back/forward cache with a dead connection
+// typed answers survive a redraw, reconnect or page reload until the screen actually changes
+app.addEventListener('input', e => {
+  if (!e.target.id || e.target.id === 'nm') return;
+  try { const d = JSON.parse(sessionStorage['draft' + ns] || '{}'); sessionStorage['draft' + ns] = JSON.stringify({ ...(d.k === last ? d : {}), k: last, [e.target.id]: e.target.value }); } catch {}
+});
+function restoreDraft() {
+  try { const d = JSON.parse(sessionStorage['draft' + ns] || '{}'); if (d.k !== last) return;
+    for (const [k, v] of Object.entries(d)) { const el = k !== 'k' && document.getElementById(k); if (el && 'value' in el && !el.value) el.value = v; } } catch {}
+}
 function watch() {
   es = new EventSource('/events?room=' + room);
   es.addEventListener('ping', () => heard = Date.now());
@@ -434,7 +447,7 @@ function watch() {
     // between games players can swap avatars
     if (between) html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
       <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv', me.ph)}`;
-    swap(app, html, () => { app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } });
+    swap(app, html, () => { restoreDraft(); app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } });
   };
 }
 if (room && q.get('auto') && q.get('name')) send('join', { text: q.get('name') }).then(ok => { if (ok) { store('room', room); watch(); } else joinScreen(); });
