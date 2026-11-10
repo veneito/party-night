@@ -35,6 +35,7 @@ pub static GAMES: LazyLock<Vec<Box<dyn Game>>> = LazyLock::new(|| vec![
     Box::new(draw::Draw),
     Box::new(elemix::Elemix),
     Box::new(fakeout::FakeOut),
+    Box::new(quickwit::QuickWit("gif")),
     Box::new(hottake::HotTake),
     Box::new(loneclue::LoneClue),
     Box::new(objection::Objection),

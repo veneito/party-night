@@ -94,6 +94,113 @@
    ]
   }
  },
+ "gif": {
+  "meta": {
+   "id": "gif",
+   "name": "GIF It",
+   "desc": "The TV plays a GIF. Write the funniest caption, then vote. Needs internet.",
+   "min": 3,
+   "tag": "Quick · 4 min",
+   "art": "🎞️",
+   "settings": [
+    {
+     "key": "points",
+     "label": "Points per vote",
+     "options": [
+      [
+       100,
+       "100"
+      ],
+      [
+       250,
+       "250"
+      ],
+      [
+       500,
+       "500"
+      ]
+     ]
+    }
+   ]
+  },
+  "data": {
+   "GIFS": [
+    "l0HlBO7eyXzSZkJri",
+    "3o7aCTPPm4OHfRLSH6",
+    "26ufdipQqU2lhNA4g",
+    "xT9IgG50Fb7Mi0prBC",
+    "l3q2K5jinAlChoCLS",
+    "26BRuo6sLetdllPAQ",
+    "xT0xeJpnrWC4XWblEk",
+    "l41lFw057lAJQMwg0",
+    "13CoXDiaCcCoyk",
+    "3o7btPCcdNniyf0ArS",
+    "QMHoU66sBXqqLqYvGO",
+    "l2JehQ2GitHGdVG9y",
+    "26tPplGWjN0xLybiU",
+    "Ju7l5y9osyymQ",
+    "3o85xnoIXebk3xYx4Q",
+    "cXblnKXr2BQOaYnTni",
+    "1BXa2alBjrCXC",
+    "Rhhr8D5mKSX7O",
+    "3oKIPnAiaMCws8nOsE",
+    "xUPGcguWZHRC2HyBRS",
+    "3o7TKSjRrfIPjeiVyM",
+    "26gsjCZpPolPr3sBy",
+    "JIX9t2j0ZTN9S",
+    "l1J9u3TZfpmeDLkD6",
+    "3ohzdIuqJoo8QdKlnW",
+    "YRuFixSNWFVcXaxpmX",
+    "6nWhy3ulBL7GSCvKw6",
+    "9Y5BbDSkSTiY8",
+    "ToMjGpx9F5ktZw8qPUQ",
+    "NaboQwhxK3gMU",
+    "3o7abKhOpu0NwenH3O",
+    "3o7qE1YN7aBOFPRw8E",
+    "26xBI73gWquCBBCDe",
+    "3o7TKMt1VVNkHV2PaE",
+    "l0MYt5jPR6QX5pnqM",
+    "xT5LMHxhOfscxPfIfm",
+    "3o6fJ1BM7R2EBRDnxK",
+    "l0IylOPCNkiqOgMyA",
+    "3oriO0OEd9QIDdllqo",
+    "26u4cqiYI30juCOGY",
+    "3oEjHV0z8S7WM4MwnK",
+    "5VKbvrjxpVJCM",
+    "11sBLVxNs7v6WA",
+    "xT1XGWbE0XiBDX2T8Q",
+    "l3vR85PnGsBwu1PFK",
+    "3o7527pa7qs9kCG78A",
+    "3ohhwytHcusSCXXOUg",
+    "l0HlvtIPzPdt2usKs",
+    "3oEduSbSGpGaRX2Vri",
+    "3o7TKUM3IgJBX2as9O",
+    "3o6ZtpxSZbQRRnwCKQ",
+    "26n6WywJyh39n1pBu",
+    "xT5LMB2WiOdjpB7K4o",
+    "3oEjHAUOqG3lSS0f1C",
+    "l0ExncehJzexFpRHq",
+    "3ohs7KViF6rA4aan5u",
+    "1zSz5MVw4zKg0",
+    "3o84sw9CmwYpAnRRni",
+    "d3mlE7uhX8KFgEmY",
+    "26BRBKqUiq586bRVm",
+    "3o6Zt6KHxJTbXCnSvu",
+    "IwAZ6dvvvaTtdI8SD5",
+    "kHU8W94VS329y",
+    "3NtY188QaxDdC",
+    "xThuWp2hJABbmc20Ew",
+    "4QFAH0qZ0LQnIwVYKT",
+    "3o72FcJmLzIdYJdmDe",
+    "26ufnwz3wDUli7GU0",
+    "3o6UB3VhArvomJHtdK",
+    "26gsspfbt1HfVQ9va",
+    "3oEjI1erPMTMBFmNHi",
+    "BPJmthQ3YRwD6QqcVD",
+    "5xtDarmwsuR9sDRObyU"
+   ]
+  }
+ },
  "draw": {
   "meta": {
    "id": "draw",

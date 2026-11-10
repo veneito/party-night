@@ -3,6 +3,7 @@
 <meta name="theme-color" content="#0e1f1a">
 <link rel="stylesheet" href="/style.css">
 <style>
+  .gif{display:block;max-width:100%;max-height:35vh;border-radius:.8rem;margin:auto}
   body{padding:0 16px 24px;font-size:17px}
   .top{display:flex;align-items:center;gap:10px;padding:14px 0;min-height:64px}
   .top .me{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
@@ -195,7 +196,7 @@ const MODES = {
   },
   quickwit: {
     answer: (s, me) => me.done ? wait(me, 'Answer locked in!') :
-      `<div class="kicker">Round ${s.round}</div><h2>${esc(s.prompt)}</h2><input id="a" maxlength="80" placeholder="Your answer" autocomplete="off">${soundBar('a')}
+      `<div class="kicker">Round ${s.round}</div><h2>${gif(s, s.prompt, '200')}</h2><input id="a" maxlength="80" placeholder="Your answer" autocomplete="off">${soundBar('a')}
        <button class="btn" onclick="send('answer',{text:a.value})">Send</button>`,
     vote: (s, me) => me.done ? wait(me, 'Vote cast!') :
       `<div class="kicker">Vote</div><h2>Pick the best answer</h2>${s.list.map((a, i) => `<button class="opt" onclick="send('vote',{index:${i}})">${withSounds(a.text)}</button>`).join('')}`,
@@ -316,6 +317,7 @@ const MODES = {
   },
 };
 MODES.caption = MODES.quickwit;
+MODES.gif = MODES.quickwit;
 const who = (s, pid) => s.players.find(p => p.id === pid) || { av: 0, name: '(left)' };
 const evidence = (cards, marked = [], tap) => cards.map((c, i) => `<button class="opt ${marked[i] ? 'on' : ''}" ${tap ? `onclick="send('mark',{index:${i}})"` : 'disabled'}>🗂️ ${esc(c)}${marked[i] ? ' ✓' : ''}</button>`).join('');
 let ranked = [], S; // S: the latest state, for buttons that need it after the screen is drawn

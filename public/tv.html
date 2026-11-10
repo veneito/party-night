@@ -89,6 +89,7 @@
   .hint{color:var(--mute);font-size:1.1rem}
 
   /* in-game */
+  .gif{display:block;max-width:100%;max-height:45vh;border-radius:1rem;margin:auto}
   .prompt{background:var(--card);border-radius:2rem;padding:2.5rem 3.5rem;box-shadow:0 .6rem 0 #0005;max-width:70rem}
   .strip{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;max-width:110rem;margin-top:1.8rem}
   .who{display:flex;align-items:center;gap:.5rem;padding:.35rem 1rem .35rem .35rem;border-radius:999px;background:var(--card);font-weight:700;font-size:1.05rem;transition:background .3s,opacity .3s;opacity:.55}
@@ -250,7 +251,7 @@ function narrate(s) {
     write: () => ['Time to write your jokes. Pick a setup and land the punchline.'],
     duel: () => { const [a, b] = s.duel; return [`Joke ${s.duelNo}.`, `${a.setup}... ${noSounds(a.punch)}`, 'Or...', `${b.setup}... ${noSounds(b.punch)}`, 'Vote now!']; },
     reveal: () => { const [a, b] = s.duel; return a.votes === b.votes ? ['It\'s a tie!'] : [`${(a.votes > b.votes ? a : b).name} wins that one!`]; },
-    answer: () => [s.game === 'caption' ? 'Write a caption for this scene!' : s.prompt],
+    answer: () => [s.game === 'caption' ? 'Write a caption for this scene!' : s.game === 'gif' ? 'Write a caption for this GIF!' : s.prompt],
     lie: () => [s.fact.replace('___', 'blank'), 'Write a fake answer!'],
     pick: () => ['Which one is real?'],
     take: () => [s.take, 'Agree or disagree?'],
@@ -355,15 +356,15 @@ const MODES = {
   },
   quickwit: {
     art: '⚡', bg: 'linear-gradient(135deg,#8fd16a,#5ab0ff)',
-    answer: s => `<div class="kicker rise">Round ${s.round}</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
+    answer: s => `<div class="kicker rise">Round ${s.round}</div><div class="prompt pop"><h1>${gif(s, s.prompt)}</h1></div>
       <h2 class="rise">Answer on your phone!</h2>${strip(s)}${skip()}`,
-    vote: s => `<div class="kicker rise">Vote for the best</div><h1 class="pop" style="font-size:2.6rem">${esc(s.prompt)}</h1>
+    vote: s => `<div class="kicker rise">Vote for the best</div><h1 class="pop" style="font-size:2.6rem">${gif(s, s.prompt, '200')}</h1>
       <div class="answers">${s.list.map((a, i) => `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span><span>${withSounds(a.text)}</span></div>`).join('')}</div>
       ${strip(s)}${skip()}`,
     results: s => {
       if (!s.last) return '';
       const top = Math.max(...s.last.list.map(a => a.votes), 1);
-      return `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.prompt)}</h1><div class="answers top3">${[...s.last.list].sort((a, b) => b.votes - a.votes).slice(0, 3).map((a, i) =>
+      return `<h1 class="pop" style="font-size:2.2rem;margin:0">${gif(s, s.last.prompt, '200')}</h1><div class="answers top3">${[...s.last.list].sort((a, b) => b.votes - a.votes).slice(0, 3).map((a, i) =>
         `<div class="answer rise ${a.votes === top ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack"><span>${withSounds(a.text)}</span>
         <small>${avatar(s.players.find(p => p.name === a.name) || { av: 0 })}${esc(a.name)} · ${plural(a.votes, 'vote')}</small></div></div>`).join('')}</div>`;
     },
@@ -493,6 +494,7 @@ const MODES = {
   },
 };
 MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg,#5ab0ff,#5fb6e8)' };
+MODES.gif = { ...MODES.quickwit, art: '🎞️', bg: 'linear-gradient(135deg,#ff7ab6,#8f6aff)' };
 const who = (s, id) => s.players.find(p => p.id === id) || { av: 0, name: '(left)' };
 const role = (s, id, label) => `<div class="who"><small>${label}</small>${avatar(who(s, id))}${esc(who(s, id).name)}</div>`;
 const objBanner = s => { const o = s.trial.objection; if (!o) return '';
