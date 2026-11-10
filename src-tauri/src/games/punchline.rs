@@ -21,6 +21,8 @@ pub struct D {
     opts: IndexMap<String, Vec<Vec<String>>>,
     jokes: Vec<Joke>,
     votes: IndexMap<String, usize>,
+    // the two authors vote too (it doesn't count), so the TV can't give them away by marking them done first
+    bluffed: Vec<String>,
     duels: Vec<Vec<Joke>>,
     di: usize,
 }
@@ -78,6 +80,7 @@ fn next_duel(g: &mut Room) {
     let d = dm!(g, Punch);
     d.di = d.di.wrapping_add(1);
     d.votes.clear();
+    d.bluffed.clear();
     if d.di >= d.duels.len() { return finish(g) }
     g.phase = "duel";
     set_timer(g, 25.0, reveal, false);
@@ -115,7 +118,7 @@ impl Game for Punchline {
         match g.phase {
             "words" => d.words_in.iter().any(|x| x == id),
             "write" => jokes_by(d, id) >= jokes_each(g),
-            "duel" => d.votes.contains_key(id) || d.duels[d.di].iter().any(|j| j.owner == id),
+            "duel" => d.votes.contains_key(id) || d.bluffed.iter().any(|x| x == id),
             _ => false,
         }
     }
@@ -160,8 +163,7 @@ impl Game for Punchline {
             "vote" => {
                 let i = num(a.get("index"));
                 if phase != "duel" || (i != 0.0 && i != 1.0) { return no(NOT_NOW) }
-                if d.duels[d.di].iter().any(|j| j.owner == id) { return no("It's your joke, sit tight") }
-                d.votes.insert(id.into(), i as usize);
+                if d.duels[d.di].iter().any(|j| j.owner == id) { d.bluffed.push(id.into()) } else { d.votes.insert(id.into(), i as usize); }
             }
             _ => return no("Unknown action"),
         }
