@@ -234,7 +234,7 @@ const MODES = {
     draw: (s, me) => s.drawer === id ?
       `<div class="kicker">You're drawing</div><h2 style="font-size:34px;color:var(--gold);margin:0">${esc(s.word)}</h2><p>No letters or numbers!</p>${padHtml}` :
       me.done ? wait(me, 'You got it! 🎉', 'Watch the others guess') :
-      `<div class="kicker">Watch the TV</div><h2>What's being drawn?</h2><p style="font-size:28px;letter-spacing:4px">${esc(s.hint)}</p>
+      `<div class="kicker">Watch the TV</div><h2>What's being drawn?</h2><p id="hint" style="font-size:28px;letter-spacing:4px">${esc(s.hint)}</p>
        <input id="a" maxlength="30" placeholder="Your guess" autocomplete="off" onkeydown="if (event.key === 'Enter') guess()"><button class="btn" onclick="guess()">Guess</button>`,
   },
   elemix: {
@@ -271,9 +271,11 @@ const MODES = {
        ${s.framesUsed.includes(id) ? '' : `<label for="fr">🎭 Frame Job (once per game): write it in someone else's style instead</label>
        <select id="fr"><option value="">No, this one's really mine</option>${s.players.filter(p => p.id !== id).map(p => `<option value="${esc(p.id)}">Frame ${esc(p.name)}</option>`).join('')}</select>`}
        <button class="btn" onclick="send('confess',{text:a.value,frame:window.fr?.value || ''})">Confess</button>`,
-    guess: (s, me) => s.entry.by === id ? wait(me, "That one's yours!", 'Keep a straight face…') + (s.pleasUsed.includes(id) ? '' :
-        `<button class="btn ghost" onclick="send('plead')">🤐 Plead the Fifth (once per game)</button><p>Your name stays secret on this one, and nobody scores on it.</p>`) :
-      me.done ? wait(me, 'Guess locked!') :
+    guess: (s, me) => me.done ? wait(me, 'Guess locked!') : s.entry.by === id ?
+      `<div class="kicker">That one's yours! Keep a straight face</div><h2 class="quote">${esc(s.entry.text)}</h2>
+       <p>Pick someone anyway, so nobody can tell it's you. It doesn't count.</p>
+       ${s.pleasUsed.includes(id) ? '' : `<button class="btn ghost" onclick="send('plead')">🤐 Plead the Fifth (once per game)</button><p>Keeps your name secret on this one, and nobody scores on it.</p>`}
+       ${s.players.filter(p => p.id !== id).map(p => `<button class="opt" data-id="${esc(p.id)}" onclick="send('guess',{who:this.dataset.id})">${avatar(p)} ${esc(p.name)}</button>`).join('')}` :
       `<div class="kicker">Confession ${s.entryNo} of ${s.entryCount}</div><h2 class="quote">${esc(s.entry.text)}</h2><p>Who wrote it?</p>
        ${s.players.filter(p => p.id !== id).map(p => `<button class="opt" data-id="${esc(p.id)}" onclick="send('guess',{who:this.dataset.id})">${avatar(p)} ${esc(p.name)}</button>`).join('')}`,
     wanted: (s, me) => me.done ? wait(me, 'Vote cast!') :
@@ -387,8 +389,16 @@ function hostPanel(s, me) {
   el.innerHTML = h;
 }
 
+// Phones drop the live connection without noticing (screen locked, app in the background, Wi-Fi blip) and then sit
+// on an old screen. The server sends a heartbeat every 10 s; if nothing arrives for 25 s, or the phone wakes up, reconnect.
+let heard = Date.now();
+function reconnect() { if (!room || !es) return; es.close(); heard = Date.now(); watch(); }
+setInterval(() => { if (Date.now() - heard > 25000) reconnect(); }, 5000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - heard > 3000) reconnect(); });
 function watch() {
   es = new EventSource('/events?room=' + room);
+  es.addEventListener('ping', () => heard = Date.now());
+  es.addEventListener('message', () => heard = Date.now());
   es.onerror = async () => {
     if (es.readyState !== 2) return; // the browser is already retrying by itself
     const alive = await roomAlive(room);
@@ -404,7 +414,10 @@ function watch() {
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
     const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
-    if (key === last) return paintPad(s); last = key; chosen = -1; ranked = [];
+    if (key === last) { const h = document.getElementById('hint'); if (h && s.hint) h.textContent = s.hint; return paintPad(s); } // hint letters appear as time runs out
+    last = key; chosen = -1; ranked = [];
+    // a game this page doesn't know means it's an old copy from before an update: reload once to get the new one
+    if (s.game && !MODES[s.game]) { if (sessionStorage.reloadedFor !== s.game) { sessionStorage.reloadedFor = s.game; return location.reload(); } }
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
     const rank = [...s.players].sort((a, b) => b.score - a.score).findIndex(p => p.id === id) + 1;
     let html; document.body.classList.remove('myturn'); // Elemix turns it back on while it's your turn
