@@ -13,7 +13,7 @@ const RIGHT: i64 = 100; // per correct guess
 const FOOLED: i64 = 50; // to the author, per player who guessed wrong
 const WANTED: i64 = 300; // Most Wanted winner, if nobody guessed them
 
-struct Entry { by: String, text: String, framed: Option<String>, guesses: IndexMap<String, String>, pleaded: bool, frame_worked: bool }
+struct Entry { by: String, text: String, framed: Option<String>, guesses: IndexMap<String, String>, pleaded: bool, frame_worked: bool, bluffed: bool }
 #[derive(Default)]
 pub struct D {
     prompt: String,
@@ -34,7 +34,7 @@ fn present(g: &Room, ids: &[String]) -> Value { json!(ids.iter().filter(|i| g.pl
 fn start_guess(g: &mut Room) {
     let d = dm!(g, Receipts);
     let written = std::mem::take(&mut d.written);
-    d.entries = shuffle(written.into_iter().map(|(by, (text, framed))| Entry { by, text, framed, guesses: IndexMap::new(), pleaded: false, frame_worked: false }).collect());
+    d.entries = shuffle(written.into_iter().map(|(by, (text, framed))| Entry { by, text, framed, guesses: IndexMap::new(), pleaded: false, frame_worked: false, bluffed: false }).collect());
     d.cur = 0;
     if d.entries.is_empty() { return finish(g) }
     g.phase = "guess";
@@ -106,7 +106,8 @@ impl Game for Receipts {
         let d = dr!(g, Receipts);
         match g.phase {
             "confess" => d.written.contains_key(id),
-            "guess" => d.entries[d.cur].by == id || d.entries[d.cur].guesses.contains_key(id),
+            // the author "guesses" too (it doesn't count), so the TV can't give them away by marking them done first
+            "guess" => { let e = &d.entries[d.cur]; if e.by == id { e.bluffed } else { e.guesses.contains_key(id) } }
             "wanted" => d.wanted.contains_key(id) || d.entries.iter().all(|e| e.by == id),
             _ => false,
         }
@@ -162,9 +163,8 @@ impl Game for Receipts {
                 if phase != "guess" { return no(NOT_NOW) }
                 let who = clean(a.get("who"), 40);
                 let e = &mut d.entries[d.cur];
-                if e.by == id { return no("That one's yours, keep a straight face") }
                 if !others.contains(&who) { return no("Pick someone else") }
-                e.guesses.insert(id.into(), who);
+                if e.by == id { e.bluffed = true } else { e.guesses.insert(id.into(), who); }
             }
             "plead" => {
                 if phase != "guess" || d.entries[d.cur].by != id { return no(NOT_NOW) }
@@ -224,7 +224,12 @@ mod tests {
         while g.phase == "guess" {
             let by = dr!(g, Receipts).entries[dr!(g, Receipts).cur].by.clone();
             if by == "b" { act(&mut g, "b", json!({ "type": "plead" })).unwrap(); } // b hides theirs
-            else { for v in ["a", "b", "c", "d"] { if v != by { act(&mut g, v, json!({ "type": "guess", "who": if v == "d" { "a" } else { "d" } })).unwrap(); } } }
+            else {
+                // the author has to pick too before the reveal, so the TV can't single them out (their pick doesn't count)
+                for v in ["a", "b", "c", "d"] { if v != by { act(&mut g, v, json!({ "type": "guess", "who": if v == "d" { "a" } else { "d" } })).unwrap(); } }
+                assert_eq!(g.phase, "guess");
+                act(&mut g, &by, json!({ "type": "guess", "who": if by == "a" { "b" } else { "a" } })).unwrap();
+            }
             assert_eq!(g.phase, "reveal");
             next_entry(&mut g);
         }

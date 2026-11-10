@@ -129,7 +129,8 @@ async fn page(uri: Uri) -> Response {
         _ if p.starts_with("/test") => (include_str!("../../public/test.html"), "text/html; charset=utf-8"),
         _ => (include_str!("../../public/phone.html"), "text/html; charset=utf-8"),
     };
-    ([(header::CONTENT_TYPE, kind)], body).into_response()
+    // never let a phone keep an old copy: after an update it wouldn't know the new games
+    ([(header::CONTENT_TYPE, kind), (header::CACHE_CONTROL, "no-store")], body).into_response()
 }
 
 // The address phones should type. Skips virtual adapters (VirtualBox, Hyper-V, WSL, VPNs) that phones can't reach.
