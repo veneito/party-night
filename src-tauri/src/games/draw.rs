@@ -5,10 +5,25 @@ use crate::{dm, dr};
 use serde_json::json;
 
 #[derive(Default)]
-pub struct D { word: String, strokes: Vec<Value>, got: Vec<String>, feed: Vec<Value>, drawer: Option<String> }
+pub struct D {
+    word: String, strokes: Vec<Value>, got: Vec<String>, feed: Vec<Value>, drawer: Option<String>,
+    // letters revealed in the hint as time runs out: positions in reveal order, and how many are shown
+    reveal: Vec<usize>, shown: usize, started: Option<std::time::Instant>, secs: f64,
+}
 pub struct Draw;
 
 fn words() -> Vec<String> { strs(data("draw", "WORDS")) }
+// about one letter per three, so longer words give away more; none for words of three letters or less
+fn max_reveal(word: &str) -> usize { (word.chars().filter(|c| c.is_ascii_lowercase()).count().saturating_sub(1)) / 3 }
+// reveals are spread evenly over the round: with 2 to give, one at 1/3 of the time and one at 2/3
+fn due(d: &D) -> usize {
+    let (Some(t), true) = (d.started, d.secs > 0.0) else { return 0 };
+    let frac = t.elapsed().as_secs_f64() / d.secs;
+    ((frac * (d.reveal.len() + 1) as f64) as usize).min(d.reveal.len())
+}
+fn hint(d: &D) -> String {
+    d.word.chars().enumerate().map(|(i, c)| if !c.is_ascii_lowercase() || d.reveal[..d.shown].contains(&i) { c } else { '_' }).collect()
+}
 fn norm(t: &str) -> String { t.to_lowercase().chars().filter(|c| c.is_ascii_lowercase()).collect() }
 fn correct(g: &mut Room, id: &str) {
     let d = dm!(g, Draw);
@@ -26,8 +41,19 @@ impl Game for Draw {
         // take turns drawing; bots can't draw, so only real players get a turn
         let ids = g.real_ids();
         let drawer = (!ids.is_empty()).then(|| ids[(g.round - 1).max(0) as usize % ids.len()].clone());
-        g.d = Data::Draw(D { word: pick(&words()), drawer, ..Default::default() });
+        let word = pick(&words());
+        let letters: Vec<usize> = word.chars().enumerate().filter(|(_, c)| c.is_ascii_lowercase()).map(|(i, _)| i).collect();
+        let reveal = shuffle(letters).into_iter().take(max_reveal(&word)).collect();
         set_timer(g, 80.0, finish, false);
+        // the round's real length, after the speed setting ("No timer" means no reveals)
+        let secs = g.timer.map_or(0.0, |(t, _)| t.saturating_duration_since(std::time::Instant::now()).as_secs_f64());
+        g.d = Data::Draw(D { word, drawer, reveal, secs, started: Some(std::time::Instant::now()), ..Default::default() });
+    }
+    fn tick(&self, g: &mut Room) -> bool {
+        let Data::Draw(d) = &mut g.d else { return false };
+        if g.phase != "draw" || due(d) == d.shown { return false }
+        d.shown = due(d);
+        true
     }
     fn advance(&self, phase: &str) -> Option<Next> { (phase == "draw").then_some(finish as Next) }
     fn is_done(&self, g: &Room, id: &str) -> bool {
@@ -40,7 +66,7 @@ impl Game for Draw {
             s.insert("drawer".into(), json!(d.drawer));
             s.insert("strokes".into(), json!(d.strokes));
             s.insert("feed".into(), json!(d.feed[d.feed.len().saturating_sub(6)..]));
-            s.insert("hint".into(), json!(d.word.chars().map(|c| if c.is_ascii_lowercase() { '_' } else { c }).collect::<String>()));
+            s.insert("hint".into(), json!(hint(d)));
             s.insert("got".into(), json!(d.got.len()));
             // Note: the word rides in the shared broadcast (a peek in devtools shows it), fine among friends, same as Odd One Out.
             s.insert("word".into(), json!(d.word));
@@ -80,5 +106,22 @@ impl Game for Draw {
         let d = dr!(g, Draw);
         (g.phase == "draw" && !d.got.iter().any(|x| x == id))
             .then(|| json!({ "type": "guess", "text": if rnd() < 0.25 { d.word.clone() } else { pick(&words()) } }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn hint_reveals_more_for_longer_words() {
+        assert_eq!((max_reveal("cat"), max_reveal("pizza"), max_reveal("snowman"), max_reveal("lighthouse"), max_reveal("hot dog")), (0, 1, 2, 3, 1));
+        let mut d = D { word: "hot dog".into(), reveal: vec![4, 1], secs: 90.0, started: Some(std::time::Instant::now()), ..Default::default() };
+        assert_eq!(hint(&d), "___ ___");
+        assert_eq!(due(&d), 0);
+        d.shown = 2;
+        assert_eq!(hint(&d), "_o_ d__");
+        // a third of the way through, the first letter is due
+        d.started = Some(std::time::Instant::now() - std::time::Duration::from_secs(31));
+        assert_eq!(due(&d), 1);
     }
 }

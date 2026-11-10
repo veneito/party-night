@@ -25,6 +25,8 @@ pub trait Game: Send + Sync {
     fn state(&self, g: &Room, s: &mut Map<String, Value>);
     fn act(&self, g: &mut Room, a: &Value, id: &str) -> Res;
     fn bot(&self, g: &Room, id: &str) -> Option<Value>;
+    // called every second during a round; true = something changed on its own (e.g. a hint letter), so send it out
+    fn tick(&self, _g: &mut Room) -> bool { false }
 }
 
 // menu order: alphabetical by id, same as before

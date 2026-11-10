@@ -234,7 +234,7 @@ const MODES = {
     draw: (s, me) => s.drawer === id ?
       `<div class="kicker">You're drawing</div><h2 style="font-size:34px;color:var(--gold);margin:0">${esc(s.word)}</h2><p>No letters or numbers!</p>${padHtml}` :
       me.done ? wait(me, 'You got it! 🎉', 'Watch the others guess') :
-      `<div class="kicker">Watch the TV</div><h2>What's being drawn?</h2><p style="font-size:28px;letter-spacing:4px">${esc(s.hint)}</p>
+      `<div class="kicker">Watch the TV</div><h2>What's being drawn?</h2><p id="hint" style="font-size:28px;letter-spacing:4px">${esc(s.hint)}</p>
        <input id="a" maxlength="30" placeholder="Your guess" autocomplete="off" onkeydown="if (event.key === 'Enter') guess()"><button class="btn" onclick="guess()">Guess</button>`,
   },
   elemix: {
@@ -406,7 +406,8 @@ function watch() {
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
     const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
-    if (key === last) return paintPad(s); last = key; chosen = -1; ranked = [];
+    if (key === last) { const h = document.getElementById('hint'); if (h && s.hint) h.textContent = s.hint; return paintPad(s); } // hint letters appear as time runs out
+    last = key; chosen = -1; ranked = [];
     // a game this page doesn't know means it's an old copy from before an update: reload once to get the new one
     if (s.game && !MODES[s.game]) { if (sessionStorage.reloadedFor !== s.game) { sessionStorage.reloadedFor = s.game; return location.reload(); } }
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
