@@ -1,5 +1,5 @@
 // Quick Wit: everyone answers the same prompt, then votes for the best answer.
-// Caption This is the same flow with emoji scenes instead of prompts (QuickWit("caption")).
+// Caption This is the same flow with emoji scenes instead of prompts (QuickWit("caption")), GIF It with GIPHY GIFs (QuickWit("gif")).
 use super::*;
 use crate::room::*;
 use crate::{dm, dr};
@@ -12,6 +12,7 @@ pub struct QuickWit(pub &'static str);
 
 fn prompts(g: &Room, id: &str) -> Vec<String> {
     if id == "caption" { return strs(data("caption", "SCENES")) }
+    if id == "gif" { return strs(data("gif", "GIFS")) } // GIPHY ids; the TV and phones load them from GIPHY
     let p = data("quickwit", "PROMPTS");
     strs(p.get(g.set_str("pack")).unwrap_or(&p["spicy"]))
 }
@@ -33,7 +34,11 @@ impl Game for QuickWit {
     fn id(&self) -> &'static str { self.0 }
     fn start(&self, g: &mut Room) {
         g.phase = "answer";
-        g.d = Data::Quick(D { prompt: pick(&prompts(g, self.0)), ..Default::default() });
+        let all = prompts(g, self.0);
+        let fresh: Vec<String> = all.iter().filter(|p| !g.used.contains(p)).cloned().collect();
+        let prompt = pick(if fresh.is_empty() { &all } else { &fresh }); // repeats only once every one has been shown
+        g.used.push(prompt.clone());
+        g.d = Data::Quick(D { prompt, ..Default::default() });
         set_timer(g, 60.0, start_vote, false);
     }
     fn advance(&self, phase: &str) -> Option<Next> {

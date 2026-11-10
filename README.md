@@ -4,6 +4,7 @@ Party games for game night. Put it on the TV, everyone joins from their phone. N
 
 ## Games
 
+- **GIF It**: the TV plays a GIF, everyone writes a caption, then votes for the funniest. Needs internet.
 - **Punchline Club**: everyone hands in a few random words, then writes jokes using other people's words. The jokes go head to head and the room votes.
 - **Quick Wit**: everyone answers the same silly prompt, then votes for the best answer.
 

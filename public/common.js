@@ -4,6 +4,8 @@ const AV_EMOJI = ['🦊', '🐸', '🐙', '🦄', '🐼', '🐯', '🦉', '🐵'
 const AV_COLOR = ['#ff6b6b', '#4ecdc4', '#ffd93d', '#a78bfa', '#6bcb77', '#ff9f43', '#4d96ff', '#f472b6', '#2dd4bf', '#facc15',
   '#fb7185', '#60a5fa', '#c084fc', '#34d399', '#f97316', '#38bdf8', '#e879f9', '#a3e635', '#fda4af', '#fbbf24'];
 const avColor = p => AV_COLOR[p.av % AV_COLOR.length];
+// GIF It prompts are GIPHY ids; offline shows a note (a deleted GIF gets GIPHY's own "not available" card)
+const gif = (s, p, w = 'giphy') => s.game === 'gif' ? `<img class="gif" src="https://media.giphy.com/media/${encodeURIComponent(p)}/${w}.gif" alt="GIF" onerror="this.replaceWith('No GIF this time. Caption it anyway!')">` : esc(p);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 // p.ph is the URL of an uploaded photo, if the player added one
