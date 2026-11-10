@@ -389,8 +389,16 @@ function hostPanel(s, me) {
   el.innerHTML = h;
 }
 
+// Phones drop the live connection without noticing (screen locked, app in the background, Wi-Fi blip) and then sit
+// on an old screen. The server sends a heartbeat every 10 s; if nothing arrives for 25 s, or the phone wakes up, reconnect.
+let heard = Date.now();
+function reconnect() { if (!room || !es) return; es.close(); heard = Date.now(); watch(); }
+setInterval(() => { if (Date.now() - heard > 25000) reconnect(); }, 5000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - heard > 3000) reconnect(); });
 function watch() {
   es = new EventSource('/events?room=' + room);
+  es.addEventListener('ping', () => heard = Date.now());
+  es.addEventListener('message', () => heard = Date.now());
   es.onerror = async () => {
     if (es.readyState !== 2) return; // the browser is already retrying by itself
     const alive = await roomAlive(room);

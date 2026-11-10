@@ -58,7 +58,10 @@ async fn events(Query(q): Query<HashMap<String, String>>) -> Response {
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let _ = tx.send(public_state(g).to_string());
     g.clients.push(tx);
-    Sse::new(UnboundedReceiverStream::new(rx).map(|d| Ok::<_, Infallible>(Event::default().data(d)))).into_response()
+    // the heartbeat lets phones notice a dead connection (phone locked, Wi-Fi blip) and reconnect
+    Sse::new(UnboundedReceiverStream::new(rx).map(|d| Ok::<_, Infallible>(Event::default().data(d))))
+        .keep_alive(axum::response::sse::KeepAlive::new().interval(std::time::Duration::from_secs(10)).event(Event::default().event("ping").data("1")))
+        .into_response()
 }
 
 async fn action(body: String) -> Response {
