@@ -264,6 +264,7 @@ function narrate(s) {
     take: () => [s.take, 'Agree or disagree?'],
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
+    putt: () => [`Hole ${s.round}. Drag back on your phone and let go to putt!`],
     ...(s.game === 'loneclue' && { clue: () => ['Write a one-word clue. Matching clues cancel out!'], guess: () => ['Here are the clues. What is the word?'] }),
     turn: () => ['Elemix! Match the element or the number. Your hand is on your phone.'],
     tstart: () => ['Write something for the next player to draw!'],
@@ -455,6 +456,14 @@ const MODES = {
       <div class="answers">${s.last.clues.map((c, i) => `<div class="answer rise ${c.odd ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(c.text)}
         <small>${esc(c.name)} · ${plural(c.votes, 'vote')}</small></div></div>`).join('')}</div>`,
   },
+  golf: {
+    art: '⛳', bg: 'linear-gradient(135deg,#3fa34d,#5fb6e8)',
+    putt: s => `<div class="kicker rise">Hole ${s.round} · up to ${s.maxStrokes} strokes</div><div style="width:min(64rem,100%);margin:0 auto"><canvas id="golf" data-live="golf" width="1000" height="600" style="${GOLF_CSS}"></canvas></div>
+      <div data-live="gsc" class="rest">${s.balls.map(b => { const p = who(s, b.id); return `<div class="who">${avatar(p)}${esc(p.name)} ${b.in ? '⛳' : ''} ${plural(b.n, 'stroke')}</div>`; }).join('')}</div>${strip(s)}${skip()}`,
+    after: golfTV,
+    results: s => !s.balls ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">Hole ${s.round}</h1><div class="answers">${[...s.balls].sort((a, b) => b.in - a.in || a.n - b.n).map((b, i) =>
+      `<div class="answer rise ${b.in && i === 0 ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(who(s, b.id).name)}<small>${b.in ? `in ${plural(b.n, 'stroke')}` : 'missed'}</small></div></div>`).join('')}</div>`,
+  },
   receipts: {
     art: '🧾', bg: 'linear-gradient(135deg,#a78bfa,#ff5e7e)',
     confess: s => `<div class="kicker rise">${s.lastRound ? 'Final round · Most Wanted' : `Round ${s.round}`} · Keep it true!</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
@@ -586,6 +595,17 @@ function results(s) {
     <div class="footer-actions sticky">${final ? btn('start', '↻ Play again') : btn('skip', `▶ Round ${s.round + 1}`)}${btn('menu', s.settings.home === 'menu' ? '← Menu' : '🏠 Vote next game', 'ghost')}</div>`;
 }
 
+// Mini Golf: keeps the TV canvas drawing while the putt phase is up, so shots roll along their paths
+function golfTV(s) {
+  if (s.phase !== 'putt' || golfTV.on) return; golfTV.on = true;
+  requestAnimationFrame(function f() {
+    const cv = document.getElementById('golf');
+    if (!cv || S?.game !== 'golf' || S.phase !== 'putt') return golfTV.on = false;
+    drawCourse(cv, S.hole, golfBalls(S), S.players);
+    requestAnimationFrame(f);
+  });
+}
+
 // sounds follow what changed since the last update
 let prev = null;
 function playSounds(s) {
@@ -629,12 +649,12 @@ function render(s, force) {
     // a missing piece means the screen change is still animating in; redraw in full so this update isn't lost
     if (live.every(([, cur]) => cur)) {
       for (const [el, cur] of live) if (cur.innerHTML !== el.innerHTML) cur.innerHTML = el.innerHTML;
-      fit(); return;
+      fit(); M.after?.(s); return;
     }
   }
   lastKey = key;
   swap(app, html, () => {
-    fit();
+    fit(); M.after?.(s);
     // the narrator plays vote answers' sounds as it reads them
     if (s.phase !== 'reveal' && !(s.phase === 'vote' && s.settings.voice !== 'off')) playChips(app); // reveal repeats the duel jokes, no need to replay
     if (s.phase === 'results' || s.phase === 'scores' || (s.phase === 'reveal' && s.duel?.some(j => j.votes))) confetti(s.phase === 'reveal' ? 90 : s.phase === 'scores' ? 120 : 260);

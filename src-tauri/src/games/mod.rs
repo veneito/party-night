@@ -8,6 +8,7 @@ use std::sync::LazyLock;
 pub mod draw;
 pub mod elemix;
 pub mod fakeout;
+pub mod golf;
 pub mod hottake;
 pub mod loneclue;
 pub mod objection;
@@ -36,6 +37,7 @@ pub static GAMES: LazyLock<Vec<Box<dyn Game>>> = LazyLock::new(|| vec![
     Box::new(elemix::Elemix),
     Box::new(fakeout::FakeOut),
     Box::new(quickwit::QuickWit("gif")),
+    Box::new(golf::Golf),
     Box::new(hottake::HotTake),
     Box::new(loneclue::LoneClue),
     Box::new(objection::Objection),
@@ -55,6 +57,7 @@ pub enum Data {
     Draw(draw::D),
     Elem(elemix::D),
     Fake(fakeout::D),
+    Golf(golf::D),
     Hot(hottake::D),
     Lone(loneclue::D),
     Obj(objection::D),

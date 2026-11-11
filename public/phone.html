@@ -216,6 +216,14 @@ const MODES = {
        <label for="g">How much of the room agrees? <b id="gv" style="color:var(--gold)">50%</b></label><input id="g" type="range" min="0" max="100" step="5" value="50" oninput="gv.textContent = this.value + '%'" style="padding:0;accent-color:var(--gold)">
        <button class="btn" onclick="send('take',{agree:chosen < 0 ? null : chosen === 0, guess:+g.value})">Lock it in</button>`,
   },
+  golf: {
+    putt: (s, me) => { const b = s.balls.find(x => x.id === id);
+      if (!b) return wait(me, 'Next hole is yours!');
+      // finished players keep the course up so they can watch their last shot (and everyone else's) roll
+      return `<div class="kicker">Hole ${s.round} · ${me.done ? (b.in ? `in the hole in ${plural(b.n, 'stroke')}! ⛳` : 'out of strokes') : `stroke ${b.n + 1} of ${s.maxStrokes}`}</div>
+       <canvas class="golfpad" width="1000" height="600" style="${GOLF_CSS}"></canvas>
+       <p>${me.done ? 'Watch the others finish.' : 'Drag back anywhere on the course, let go to putt. Your ball has the white ring.'}</p>`; },
+  },
   oddone: {
     clue: (s, me) => me.done ? wait(me, 'Clue sent!', 'Act natural…') :
       `<div class="kicker">Your secret word</div><h2 style="font-size:40px;color:var(--gold)">${esc(s.secret[id])}</h2><p>Everyone has the same word except one player. Maybe it's you!</p>
@@ -356,6 +364,22 @@ function initPad(cv) {
   cv.onpointermove = e => { if (!pts || pts.length >= 1200) return; const p = at(e); pts.push(...p); x.lineTo(...p); x.stroke(); };
   cv.onpointerup = cv.onpointercancel = () => { if (pts) { if (pts.length === 2) pts.push(pts[0] + 1, pts[1]); send('stroke', { p: pts, c: pad.c, w: pad.w }); } pts = null; };
 }
+// Mini Golf aim: drag back like a slingshot; the dashed line shows where and how hard it goes
+function initGolf(cv, s) {
+  const at = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 1000, (e.clientY - r.top) / r.height * 600]; };
+  let from = null, d = null, me, rolling;
+  // redraws every frame from the latest state, so every shot (yours and others') rolls along its path
+  const draw = () => { if (!cv.isConnected || S.phase !== 'putt') return; const balls = golfBalls(S); me = balls.find(b => b.id === id); rolling = me?.moving;
+    drawCourse(cv, S.hole, balls, S.players, id); requestAnimationFrame(draw); if (!d || !me) return;
+    const x = cv.getContext('2d'), k = Math.min(1, 400 / (Math.hypot(...d) || 1));
+    x.strokeStyle = '#fff'; x.lineWidth = 6; x.setLineDash([14, 10]); x.beginPath(); x.moveTo(me.x, me.y); x.lineTo(me.x - d[0] * k, me.y - d[1] * k); x.stroke(); x.setLineDash([]); };
+  requestAnimationFrame(draw);
+  cv.onpointerdown = e => { if (rolling) return; cv.setPointerCapture(e.pointerId); from = at(e); d = [0, 0]; };
+  cv.onpointermove = e => { if (!from) return; const p = at(e); d = [p[0] - from[0], p[1] - from[1]]; };
+  cv.onpointerup = () => { if (!from) return; const len = Math.hypot(...d), a = Math.atan2(-d[1], -d[0]); from = d = null;
+    if (len > 15) { sfx('tap'); send('putt', { a, p: Math.min(1, len / 400) }); } };
+  cv.onpointercancel = () => { from = d = null; };
+}
 // undo / clear come back from the server, so the drawer's pad redraws from the shared strokes
 function paintPad(s) {
   const cv = app.querySelector('canvas.pad'), strokes = s.pads ? s.pads[id] || [] : s.strokes; if (!cv || !strokes) return;
@@ -428,7 +452,7 @@ function watch() {
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
-    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${s.balls?.find(b => b.id === id)?.n}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
     if (key === last) { const h = document.getElementById('hint'); if (h && s.hint) h.textContent = s.hint; return paintPad(s); } // hint letters appear as time runs out
     last = key; chosen = -1; ranked = [];
     // a game this page doesn't know means it's an old copy from before an update: reload once to get the new one
@@ -447,7 +471,7 @@ function watch() {
     // between games players can swap avatars
     if (between) html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
       <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv', me.ph)}`;
-    swap(app, html, () => { restoreDraft(); app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } });
+    swap(app, html, () => { restoreDraft(); app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } const gp = app.querySelector('canvas.golfpad'); if (gp) initGolf(gp, s); });
   };
 }
 if (room && q.get('auto') && q.get('name')) send('join', { text: q.get('name') }).then(ok => { if (ok) { store('room', room); watch(); } else joinScreen(); });

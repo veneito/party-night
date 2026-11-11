@@ -133,5 +133,25 @@ function countUp(root) {
   }
 }
 
+// Mini Golf course (1000 x 600): grass, cup, walls, then each ball in its player's colour; `mine` gets a white ring
+function drawCourse(cv, h, balls, players, mine) {
+  const x = cv.getContext('2d'); x.setTransform(cv.width / 1000, 0, 0, cv.height / 600, 0, 0);
+  x.fillStyle = '#3fa34d'; x.fillRect(0, 0, 1000, 600);
+  x.fillStyle = '#111'; x.beginPath(); x.arc(h.cup[0], h.cup[1], 16, 0, 7); x.fill();
+  x.strokeStyle = '#7a4a21'; x.lineWidth = 14; x.lineCap = 'round';
+  for (const w of h.walls) { x.beginPath(); x.moveTo(w[0], w[1]); x.lineTo(w[2], w[3]); x.stroke(); }
+  for (const b of balls) { if (b.in && !b.moving) continue; const p = players.find(q => q.id === b.id);
+    x.fillStyle = p ? avColor(p) : '#fff'; x.strokeStyle = b.id === mine ? '#fff' : '#0008'; x.lineWidth = b.id === mine ? 5 : 2;
+    x.beginPath(); x.arc(b.x, b.y, 10, 0, 7); x.fill(); x.stroke(); }
+}
+// each ball rides along its latest shot's path (30 fps) until the shot is played out
+const golfAnim = {};
+function golfBalls(s) {
+  for (const b of s.balls) if (golfAnim[b.id]?.shot !== b.shot) golfAnim[b.id] = { shot: b.shot, t0: performance.now(), path: b.path };
+  return s.balls.map(b => { const a = golfAnim[b.id], i = Math.floor((performance.now() - a.t0) / 33);
+    return i * 2 < a.path.length - 2 ? { id: b.id, x: a.path[i * 2], y: a.path[i * 2 + 1], moving: true } : b; });
+}
+const GOLF_CSS = 'width:100%;aspect-ratio:5/3;border:.5rem solid #7a4a21;border-radius:1rem;touch-action:none;display:block';
+
 // casino-chip accents for game cards (TV menu and phone pickers)
 const CHIPS = ['#c8202f', '#1f5fbf', '#178a4a', '#24282d', '#d9a21b'];
