@@ -76,7 +76,7 @@ fn end(g: &mut Room) {
     for (id, n) in pts { g.add(&id, n) }
     // let the last slide play out on the TV before the scores
     g.phase = "splash";
-    set_timer(g, 4.0, finish, true);
+    set_timer(g, 7.0, finish, true);
 }
 
 impl Game for Knockout {

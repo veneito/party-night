@@ -227,10 +227,11 @@ const MODES = {
   knockout: {
     aim: (s, me) => { const p = s.ko.pucks.find(x => x.id === id);
       if (!p) return wait(me, 'Next round is yours!');
-      if (p.out) return wait(me, 'Knocked off! 💦', 'Watch the TV');
-      return `<div class="kicker">Turn ${s.ko.turn + 1} · ${me.done ? 'locked in, wait for the slide' : 'drag back on the ice, let go to aim'}</div>
+      // knocked-off players still see the ice (input is blocked since they count as done)
+      return `<div class="kicker">${p.out ? 'Knocked off! 💦' : `Turn ${s.ko.turn + 1} · ${me.done ? 'locked in, wait for the slide' : 'drag back on the ice, let go to aim'}`}</div>
        <canvas class="kopad" width="1000" height="600" style="${GOLF_CSS};border-color:#9fd3f5"></canvas>
        <p>Your puck has the black ring. Everyone slides at the same time!</p>`; },
+    splash: () => `<div class="kicker">Final slide!</div><canvas class="kopad" width="1000" height="600" style="${GOLF_CSS};border-color:#9fd3f5"></canvas>`,
     splash: (s, me) => wait(me, s.ko.pucks.find(x => x.id === id)?.out === false ? 'Still standing! 🥊' : 'Watch the TV'),
   },
   oddone: {
@@ -388,7 +389,7 @@ function initKnock(cv) {
     if (!d) x.globalAlpha = .6;
     x.strokeStyle = '#000'; x.lineWidth = 6; x.setLineDash([14, 10]); x.beginPath(); x.moveTo(me.x, me.y); x.lineTo(me.x - dd[0] * k, me.y - dd[1] * k); x.stroke(); x.setLineDash([]); x.globalAlpha = 1; };
   requestAnimationFrame(draw);
-  cv.onpointerdown = e => { if (v?.moving || S.players.find(p => p.id === id)?.done) return; cv.setPointerCapture(e.pointerId); from = at(e); d = [0, 0]; };
+  cv.onpointerdown = e => { if (v?.moving || S.phase !== 'aim' || S.players.find(p => p.id === id)?.done) return; cv.setPointerCapture(e.pointerId); from = at(e); d = [0, 0]; };
   cv.onpointermove = e => { if (!from) return; const p = at(e); d = [p[0] - from[0], p[1] - from[1]]; };
   cv.onpointerup = () => { if (!from) return; const len = Math.hypot(...d), a = Math.atan2(-d[1], -d[0]), dd0 = d; from = d = null;
     if (len > 15) { sfx('tap'); koLocked = { turn: S.ko.turn, d: dd0 }; send('shot', { a, p: Math.min(1, len / 300) }); } };
