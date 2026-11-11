@@ -155,7 +155,7 @@ function golfBalls(s) {
 const koAnim = {};
 function koView(s) {
   const k = s.ko; if (koAnim.turn !== k.turn) Object.assign(koAnim, { turn: k.turn, t0: performance.now() });
-  const i = Math.floor((performance.now() - koAnim.t0) / 33), f = k.frames[i];
+  const i = Math.floor((performance.now() - koAnim.t0) / 66), f // half speed so people can follow the hits = k.frames[i];
   if (!f || i >= k.frames.length - 1) return { r: k.r, pucks: k.pucks.filter(p => !p.out), moving: false };
   return { r: k.lastR, moving: true, pucks: k.pucks.map((p, j) => ({ id: p.id, x: f[j * 2], y: f[j * 2 + 1] })).filter(p => p.x > -999) };
 }

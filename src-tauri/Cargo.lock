@@ -2693,7 +2693,7 @@ dependencies = [
 
 [[package]]
 name = "party-night"
-version = "1.6.0"
+version = "1.6.1"
 dependencies = [
  "axum",
  "base64 0.22.1",
