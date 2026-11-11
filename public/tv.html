@@ -92,6 +92,16 @@
   .gif{display:block;height:40vh;width:auto;max-width:85vw;object-fit:contain;border-radius:1rem;margin:auto}
   .prompt{background:var(--card);border-radius:2rem;padding:2.5rem 3.5rem;box-shadow:0 .6rem 0 #0005;max-width:70rem}
   .strip{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;max-width:110rem;margin-top:1.8rem}
+  .night{width:min(40rem,100%);box-sizing:border-box;margin:1.2rem auto 0;background:var(--card);border-radius:1.8rem;padding:1.1rem 1.4rem 1.3rem;box-shadow:0 .5rem 0 #0006;text-align:left}
+  .night h3{margin:0 0 .7rem;text-align:center;font-size:1.05rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold)}
+  .nrow{display:grid;grid-template-columns:2.4rem auto 1fr auto;align-items:center;gap:.7rem;padding:.45rem .6rem;border-radius:1rem;font-weight:700;font-size:1.2rem}
+  .nrow+.nrow{margin-top:.3rem} .nrow .rk{text-align:center;font-size:1.4rem}
+  .nrow .nm{display:flex;flex-direction:column;gap:.3rem;min-width:0} .nrow .bar{height:.55rem;border-radius:999px;background:#ffffff14;overflow:hidden} .nrow .bar i{display:block;height:100%;border-radius:inherit;background:var(--gold);transform-origin:left;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+  .nrow .w{font-variant-numeric:tabular-nums;min-width:4.5rem;text-align:right}
+  .nrow.new{background:#ffb62724;box-shadow:inset 0 0 0 2px var(--gold)}
+  .plus{display:inline-block;margin-left:.4rem;padding:.05rem .5rem;border-radius:999px;background:var(--gold);color:#2a1a00;font-size:.85rem;animation:pop .5s .9s both}
+  .nwin{text-align:center;margin:1.2rem 0 0;font-size:1.9rem}
+  @keyframes grow{from{transform:scaleX(0)}}
   .who{display:flex;align-items:center;gap:.5rem;padding:.35rem 1rem .35rem .35rem;border-radius:999px;background:var(--card);font-weight:700;font-size:1.05rem;transition:background .3s,opacity .3s;opacity:.55}
   .who.done{background:var(--mint);color:#0b2a22;opacity:1}
   .who.done::after{content:'✓';font-weight:800}
@@ -169,6 +179,9 @@
   .roles .who{font-size:1.3rem} .roles small{color:var(--mute);margin-right:.3rem}
   .evid{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin:1rem 0}
   .evid div{background:#fff;color:#1b1e22;border-radius:.9rem;padding:.9rem 1.2rem;font-weight:800;font-size:1.3rem;max-width:15rem;box-shadow:0 .4rem 0 #0005;rotate:var(--tilt,0deg)}
+  .steps{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:.8rem 0}
+  .steps span{padding:.35rem .9rem;border-radius:2rem;background:#0003;font-weight:700;font-size:1.05rem}
+  .steps .on{background:#fff;color:#1b1e22} .steps .past{opacity:.45}
   .evid .used{opacity:.55;text-decoration:line-through}
   .stamp{display:inline-block;font-size:5rem;font-weight:900;letter-spacing:.05em;border:.5rem solid currentColor;border-radius:1rem;padding:.1rem 1.4rem;transform:rotate(-6deg);animation:pop .5s}
   .objection{position:fixed;left:50%;top:22%;translate:-50% 0;z-index:40;background:var(--coral);color:#fff;font-size:3.4rem;font-weight:900;padding:.6rem 2.4rem;border-radius:1.2rem;box-shadow:0 .6rem 0 #0006;animation:pop .35s}
@@ -182,6 +195,7 @@
   <label class="row">Sound effects <input type="range" min="0" max="100" id="sfxVol" oninput="setSfxVol(this.value / 100)" onchange="sfx('done')"></label>
   <label class="row">Voice-over <input type="checkbox" id="voiceOn" onchange='send("set",{key:"voice",value:this.checked ? "on" : "off"})'></label>
   <label class="row">Players vote for next game <input type="checkbox" id="voteOn" onchange='send("set",{key:"home",value:this.checked ? "vote" : "menu"})'></label>
+  <label class="row">Night leaderboard (wins across games) <input type="checkbox" id="nightOn" onchange='send("set",{key:"night",value:this.checked ? "on" : "off"})'></label>
   <label class="row">Voice volume <input type="range" min="0" max="100" id="voiceVol" oninput="setVoiceVol(this.value / 100)"></label>
   <div id="upd" hidden><h3>Updates</h3><div class="row"><span id="updVer"></span><button class="btn ghost" onclick="checkUpdate()">Check for updates</button></div><p id="updMsg"></p></div>
   <div class="done"><button class="btn ghost" id="quitBtn" onclick="partyApp.quit()" hidden>Quit Party Night</button><button class="btn" onclick="settings.close()">Done</button></div>
@@ -196,7 +210,7 @@ let url = '', room = sessionStorage.room, spoken = '', lastKey = '', seen = new 
 let voiceVol = 1; try { voiceVol = Number(localStorage.voiceVol ?? 1); } catch {}
 function setVoiceVol(v) { voiceVol = v; try { localStorage.voiceVol = v; } catch {} }
 function openSettings() {
-  sfxVolEl.value = sfxVol * 100; voiceVolEl.value = voiceVol * 100; voiceOn.checked = S?.settings.voice !== 'off'; voteOn.checked = S?.settings.home !== 'menu';
+  sfxVolEl.value = sfxVol * 100; voiceVolEl.value = voiceVol * 100; voiceOn.checked = S?.settings.voice !== 'off'; voteOn.checked = S?.settings.home !== 'menu'; nightOn.checked = S?.settings.night === 'on';
   settings.showModal();
 }
 const sfxVolEl = document.getElementById('sfxVol'), voiceVolEl = document.getElementById('voiceVol');
@@ -264,6 +278,7 @@ function narrate(s) {
     take: () => [s.take, 'Agree or disagree?'],
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
+    putt: () => [`Hole ${s.round}. Drag back on your phone and let go to putt!`],
     ...(s.game === 'loneclue' && { clue: () => ['Write a one-word clue. Matching clues cancel out!'], guess: () => ['Here are the clues. What is the word?'] }),
     turn: () => ['Elemix! Match the element or the number. Your hand is on your phone.'],
     tstart: () => ['Write something for the next player to draw!'],
@@ -278,14 +293,10 @@ function narrate(s) {
     guess: () => [`Confession ${s.entryNo}.`, s.entry.text, 'Who wrote it?'],
     ...(s.game === 'receipts' && { reveal: () => s.reveal.pleaded ? ['They pleaded the Fifth!'] : [`It was ${who(s, s.entry.by).name}!`] }),
     wanted: () => ['Which confession is the most shocking? Vote now!'],
-    crime: () => [s.trial.supreme ? 'The Supreme Court is now in session.' : 'Order in the court!', `The charge: ${s.trial.crime}.`],
-    speak: () => { const n = who(s, s.trial.turn.id).name;
-      return [{ prosecution: `${n}, for the prosecution.`, defense: `${n}, for the defense.`, witness: `The court calls ${n} as a witness.`,
-        surprise: `Surprise witness! ${n}, defend the accused.`, plea: `${n}, how do you plead?` }[s.trial.turn.role]]; },
-    verdict: () => ['Jury, how do you find the defendant?'],
-    ruling: () => ['The judge is deliberating.'],
-    rank: () => ['The judge will now sentence everyone.'],
-    sentence: () => s.last.supreme ? ['The sentences are in!'] : [s.last.guilty ? 'Guilty!' : 'Not guilty!'],
+    crime: () => ['Order in the court!', `${who(s, s.trial.accused).name} is accused of: ${s.trial.crime}.`],
+    speak: () => [s.trial.turnNo === 1 ? `${who(s, s.trial.pros).name}, prove they did it.` : `${who(s, s.trial.accused).name}, how do you plead?`],
+    ...(s.game === 'objection' && { vote: () => ['Jury, how do you find the defendant?'] }),
+    sentence: () => [s.last.guilty ? 'Guilty!' : 'Not guilty!'],
     scores: () => top ? [`End of round ${s.round}. ${top.name} is in the lead with ${top.score} points!`] : [],
     results: () => top ? [`${top.name} wins the game with ${top.score} points!`] : [],
   }[s.phase];
@@ -455,6 +466,22 @@ const MODES = {
       <div class="answers">${s.last.clues.map((c, i) => `<div class="answer rise ${c.odd ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(c.text)}
         <small>${esc(c.name)} · ${plural(c.votes, 'vote')}</small></div></div>`).join('')}</div>`,
   },
+  golf: {
+    art: '⛳', bg: 'linear-gradient(135deg,#3fa34d,#5fb6e8)',
+    putt: s => `<div class="kicker rise">Hole ${s.round} · ${esc({ easy: '🟢 Easy', medium: '🟡 Medium', hard: '🔴 Hard' }[s.hole.level] || '')} · up to ${s.maxStrokes} strokes</div><div style="width:min(64rem,100%);margin:0 auto"><canvas id="golf" data-live="golf" width="1000" height="600" style="${GOLF_CSS}"></canvas></div>
+      <div data-live="gsc" class="rest">${s.balls.map(b => { const p = who(s, b.id); return `<div class="who">${avatar(p)}${esc(p.name)} ${b.in ? '⛳' : ''} ${plural(b.n, 'stroke')}</div>`; }).join('')}</div>${strip(s)}${skip()}`,
+    after: golfTV,
+    results: s => !s.balls ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">Hole ${s.round}</h1><div class="answers">${[...s.balls].sort((a, b) => b.in - a.in || a.n - b.n).map((b, i) =>
+      `<div class="answer rise ${b.in && i === 0 ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(who(s, b.id).name)}<small>${b.in ? `in ${plural(b.n, 'stroke')}` : 'missed'}</small></div></div>`).join('')}</div>`,
+  },
+  knockout: {
+    art: '🥊', bg: 'linear-gradient(135deg,#5fb6e8,#1d5d8f)',
+    aim: s => `<div class="kicker rise">Round ${s.round} · Turn ${s.ko.turn + 1} · aim on your phone!</div>${koCanvas(s)}${strip(s)}${skip('Slide now ▶')}`,
+    splash: s => `<div class="kicker rise">${(w => w.length === 1 ? `${esc(who(s, w[0].id).name)} is the last one standing! 🥊` : 'Time! Survivors share the ice')(s.ko.pucks.filter(p => !p.out))}</div>${koCanvas(s)}`,
+    after: koTV,
+    results: s => !s.ko ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">Round ${s.round}</h1><div class="answers">${[...s.ko.pucks].sort((a, b) => a.out - b.out || b.turns - a.turns).map((p, i) =>
+      `<div class="answer rise ${!p.out && i === 0 ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(who(s, p.id).name)}<small>${p.out ? `lasted ${plural(p.turns, 'turn')}` : 'still on the ice'}</small></div></div>`).join('')}</div>`,
+  },
   receipts: {
     art: '🧾', bg: 'linear-gradient(135deg,#a78bfa,#ff5e7e)',
     confess: s => `<div class="kicker rise">${s.lastRound ? 'Final round · Most Wanted' : `Round ${s.round}`} · Keep it true!</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
@@ -479,23 +506,17 @@ const MODES = {
   objection: {
     art: '⚖️', bg: 'linear-gradient(135deg,#c49a6c,#5fb6e8)',
     crime: s => { const t = s.trial;
-      return `<div class="kicker rise">${t.supreme ? 'Final round · The Supreme Court' : `Round ${s.round} · Order in the court!`}</div>
-      <div class="prompt pop"><div class="kicker">The charge</div><h1>${esc(t.crime)}</h1></div>
-      <div class="roles rise">${role(s, t.judge, '⚖️ Judge')}${t.supreme ? '<h2 style="margin:0">Everyone else is on trial!</h2>' : role(s, t.pros, '👉 Prosecution') + role(s, t.def, '🛡️ Defense')}</div>
-      <h2 class="rise">${esc(who(s, t.judge).name)}, open court on your phone when everyone's ready.</h2>${skip('Begin ▶')}`; },
-    speak: s => { const t = s.trial, sp = who(s, t.turn.id), cards = t.cards[t.turn.id] || [], marked = t.marked[t.turn.id] || [];
-      const head = { prosecution: 'For the prosecution', defense: 'For the defense', witness: 'Witness: tell the court what you saw',
-        surprise: 'Surprise witness! Defend the accused with this evidence', plea: `How do you plead? Defend yourself with this evidence` }[t.turn.role];
-      return `<div class="kicker rise">${esc(t.crime)} · speaker ${t.turnNo} of ${t.turnCount}</div><div class="spot pop">${avatar(sp, 'xl')}${esc(sp.name)}</div>
-      <h1 class="rise" style="font-size:2.4rem;margin:.3rem 0">${head}</h1>
-      <div class="evid" data-live="evid">${cards.map((c, i) => `<div class="${marked[i] ? 'used' : ''}" style="--tilt:${[-2, 1.5, -1][i % 3]}deg">${esc(c)}${marked[i] ? ' ✓' : ''}</div>`).join('')}</div>
-      <div data-live="obj">${objBanner(s)}</div>${skip('Next speaker ▶')}`; },
-    verdict: s => `<div class="kicker rise">${esc(s.trial.crime)}</div><h1 class="pop">Jury: guilty or not guilty?</h1>
-      <h2 class="rise">Vote on your phone</h2>${strip(s)}${skip()}`,
-    ruling: s => `<div class="kicker rise">The jury says ${s.tally.majority == null ? `it's a tie` : s.tally.majority ? '<b style="color:var(--coral)">guilty</b>' : '<b style="color:var(--mint)">not guilty</b>'} · ${s.tally.guilty}–${s.tally.not}</div>
-      <h1 class="pop">The judge is deliberating…</h1><div class="roles">${role(s, s.trial.judge, '⚖️')}</div>${skip()}`,
-    rank: s => `<div class="kicker rise">${esc(s.trial.crime)}</div><h1 class="pop">The judge is ranking the accused…</h1>
-      <h2 class="rise">From most innocent to most guilty</h2><div class="roles">${role(s, s.trial.judge, '⚖️')}</div>${skip()}`,
+      return `<div class="kicker rise">Round ${s.round} · Order in the court!</div>
+      <div class="prompt pop"><div class="kicker">${esc(who(s, t.accused).name)} is accused of</div><h1>${esc(t.crime)}</h1></div>
+      <div class="roles rise">${role(s, t.pros, '👉 Says they did it')}${role(s, t.accused, '🙋 Says they didn\'t')}</div>
+      <h2 class="rise">Each gets 45 seconds to argue out loud. Everyone else is the jury and votes on their phone.</h2>${steps(s)}${skip('Begin ▶')}`; },
+    speak: s => { const t = s.trial, sp = who(s, t.speaker), cards = t.cards[t.speaker] || [];
+      return `<div class="kicker rise">${esc(t.crime)}</div><div class="spot pop">${avatar(sp, 'xl')}${esc(sp.name)}</div>
+      <h1 class="rise" style="font-size:2.4rem;margin:.3rem 0">${t.turnNo === 1 ? 'Prove they did it!' : 'Prove you\'re innocent!'}</h1>
+      <h2 style="margin:0">Use this evidence:</h2><div class="evid">${cards.map((c, i) => `<div style="--tilt:${[-2, 1.5][i % 2]}deg">${esc(c)}</div>`).join('')}</div>
+      ${steps(s)}<div data-live="obj">${objBanner(s)}</div>${skip('Next ▶')}`; },
+    vote: s => `<div class="kicker rise">${esc(s.trial.crime)}</div><h1 class="pop">Jury: is ${esc(who(s, s.trial.accused).name)} guilty?</h1>
+      <h2 class="rise">Vote on your phone · vote with the majority for +50</h2>${steps(s)}${strip(s)}${skip()}`,
     sentence: s => `${verdictView(s)}${skip('Next ▶')}`,
     results: s => verdictView(s),
   },
@@ -504,16 +525,16 @@ MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg
 MODES.gif = { ...MODES.quickwit, art: '🎞️', bg: 'linear-gradient(135deg,#ff7ab6,#8f6aff)' };
 const who = (s, id) => s.players.find(p => p.id === id) || { av: 0, name: '(left)' };
 const role = (s, id, label) => `<div class="who"><small>${label}</small>${avatar(who(s, id))}${esc(who(s, id).name)}</div>`;
-const objBanner = s => { const o = s.trial.objection; if (!o) return '';
-  return `<div class="objection">OBJECTION!<small>${esc(who(s, o.by).name)} · ${o.sustained == null ? 'the judge is ruling…' : o.sustained ? 'Sustained! +100' : 'Overruled!'}</small></div>`; };
+// the round's running order, current step lit up
+const steps = s => { const t = s.trial, at = { crime: -1, speak: t.turnNo - 1, vote: 2 }[s.phase] ?? 3;
+  const items = [`👉 ${esc(who(s, t.pros).name)} argues`, `🙋 ${esc(who(s, t.accused).name)} defends`, '🗳️ Jury votes', '🔨 Verdict'];
+  return `<div class="steps rise">${items.map((x, i) => `<span class="${i === at ? 'on' : i < at ? 'past' : ''}">${x}</span>`).join('')}</div>`; };
+const objBanner = s => s.trial.objection ? `<div class="objection">OBJECTION!<small>${esc(who(s, s.trial.objection).name)}</small></div>` : '';
 function verdictView(s) {
   const l = s.last; if (!l) return '';
-  if (l.supreme) return `<div class="kicker">The Supreme Court rules on: ${esc(l.crime)}</div><h1 class="pop" style="margin:.2rem 0">Sentencing</h1>
-    <div class="answers">${l.ranking.map((p, i) => `<div class="answer rise ${i === 0 ? 'win' : ''}" style="animation-delay:${i * 150}ms"><span class="n">${i + 1}</span>${avatar(who(s, p.id))}
-      <div class="stack">${esc(p.name)}<small>${['Free to go · +300', 'Community service · +200', 'A stern warning · +100'][i] || 'Guilty as charged'}</small></div></div>`).join('')}</div>`;
   return `<div class="kicker">${esc(l.crime)}</div><div class="stamp" style="color:var(${l.guilty ? '--coral' : '--mint'})">${l.guilty ? 'GUILTY' : 'NOT GUILTY'}</div>
-    <h2 class="rise">${l.overruled ? `⚖️ ${esc(l.judge)} overruled the jury! ` : ''}${l.guilty ? `${esc(l.pros)} wins for the prosecution` : `${esc(l.def)} wins for the defense`} · +200</h2>
-    ${l.favourite ? `<h2 class="rise" style="margin:0">Judge's favourite argument: ${esc(l.favourite)} · +100</h2>` : ''}`;
+    <h2 class="rise">Jury: ${l.guiltyVotes} guilty · ${l.notVotes} not guilty</h2>
+    <h2 class="rise" style="margin:0">${esc(l.guilty ? l.pros : l.accused)} wins the case · +200</h2>`;
 }
 
 function duel(s) {
@@ -583,7 +604,42 @@ function results(s) {
       <div class="name">${esc(ranked[i].name)}</div><div class="pts" data-count="${ranked[i].score}" data-suffix=" pts">${ranked[i].score} pts</div>
       <div class="block" style="height:${H[i]};background:${C[i]}">${i + 1}</div></div>`).join('')}</div>
     <div class="rest">${ranked.slice(3).map((p, i) => `<div class="who rise">${i + 4}. ${avatar(p)}${esc(p.name)} · ${p.score}</div>`).join('')}</div>
+    ${final && s.settings.night === 'on' ? nightBoard(s, ranked) : ''}
     <div class="footer-actions sticky">${final ? btn('start', '↻ Play again') : btn('skip', `▶ Round ${s.round + 1}`)}${btn('menu', s.settings.home === 'menu' ? '← Menu' : '🏠 Vote next game', 'ghost')}</div>`;
+}
+
+// night leaderboard: the game's winner gets +1 win, then everyone's wins so far tonight
+function nightBoard(s, ranked) {
+  const won = ranked.filter(p => p.score > 0 && p.score === ranked[0].score), wonIds = new Set(won.map(p => p.id));
+  const rows = [...s.players].sort((a, b) => b.wins - a.wins), most = Math.max(1, rows[0]?.wins || 0);
+  return `${won.length ? `<h2 class="nwin pop">🏆 ${won.map(p => esc(p.name)).join(' & ')} won ${esc(s.games.find(g => g.id === s.game)?.name || '')}!</h2>` : ''}
+    <div class="night rise"><h3>Tonight's leaderboard</h3>${rows.map((p, i) => {
+      const rk = rows.findIndex(q => q.wins === p.wins); // ties share a rank
+      return `<div class="nrow ${wonIds.has(p.id) ? 'new' : ''}" style="animation-delay:${i * 70}ms"><span class="rk">${p.wins ? ['🥇', '🥈', '🥉'][rk] || rk + 1 : '–'}</span>${avatar(p)}
+        <span class="nm">${esc(p.name)}<span class="bar"><i style="width:${p.wins / most * 100}%;animation-delay:${300 + i * 70}ms"></i></span></span>
+        <span class="w">${plural(p.wins, 'win')}${wonIds.has(p.id) ? '<span class="plus">+1</span>' : ''}</span></div>`; }).join('')}</div>`;
+}
+// Mini Golf: keeps the TV canvas drawing while the putt phase is up, so shots roll along their paths
+function golfTV(s) {
+  if (s.phase !== 'putt' || golfTV.on) return; golfTV.on = true;
+  requestAnimationFrame(function f() {
+    const cv = document.getElementById('golf');
+    if (!cv || S?.game !== 'golf' || S.phase !== 'putt') return golfTV.on = false;
+    drawCourse(cv, S.hole, golfBalls(S), S.players);
+    requestAnimationFrame(f);
+  });
+}
+
+const koCanvas = s => `<div style="width:min(64rem,100%);margin:0 auto"><canvas id="ko" data-live="ko" width="1000" height="600" style="${GOLF_CSS};border-color:#9fd3f5"></canvas></div>`;
+// Knockout: keeps the TV ice drawing so each slide plays out
+function koTV(s) {
+  if (koTV.on) return; koTV.on = true;
+  requestAnimationFrame(function f() {
+    const cv = document.getElementById('ko');
+    if (!cv || S?.game !== 'knockout' || !S.ko) return koTV.on = false;
+    drawIce(cv, koView(S), S.players);
+    requestAnimationFrame(f);
+  });
 }
 
 // sounds follow what changed since the last update
@@ -594,7 +650,7 @@ function playSounds(s) {
   const ids = new Set(p.players.map(x => x.id));
   if (s.players.some(x => !ids.has(x.id))) sfx('join');
   else if (s.players.length < p.players.length) sfx('leave');
-  if (s.trial?.objection && !p.trial?.objection) { sfx('airhorn'); say('Objection!'); }
+  if (s.trial?.objection && s.trial.objection !== p.trial?.objection) { sfx('airhorn'); say('Objection!'); }
   if (s.phase !== p.phase || s.duelNo !== p.duelNo || s.entryNo !== p.entryNo || s.trial?.turnNo !== p.trial?.turnNo) {
     if (s.phase === 'results') sfx('fanfare');
     else if (s.phase === 'scores') sfx('reveal');
@@ -629,12 +685,12 @@ function render(s, force) {
     // a missing piece means the screen change is still animating in; redraw in full so this update isn't lost
     if (live.every(([, cur]) => cur)) {
       for (const [el, cur] of live) if (cur.innerHTML !== el.innerHTML) cur.innerHTML = el.innerHTML;
-      fit(); return;
+      fit(); M.after?.(s); return;
     }
   }
   lastKey = key;
   swap(app, html, () => {
-    fit();
+    fit(); M.after?.(s);
     // the narrator plays vote answers' sounds as it reads them
     if (s.phase !== 'reveal' && !(s.phase === 'vote' && s.settings.voice !== 'off')) playChips(app); // reveal repeats the duel jokes, no need to replay
     if (s.phase === 'results' || s.phase === 'scores' || (s.phase === 'reveal' && s.duel?.some(j => j.votes))) confetti(s.phase === 'reveal' ? 90 : s.phase === 'scores' ? 120 : 260);

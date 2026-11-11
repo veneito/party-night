@@ -216,6 +216,23 @@ const MODES = {
        <label for="g">How much of the room agrees? <b id="gv" style="color:var(--gold)">50%</b></label><input id="g" type="range" min="0" max="100" step="5" value="50" oninput="gv.textContent = this.value + '%'" style="padding:0;accent-color:var(--gold)">
        <button class="btn" onclick="send('take',{agree:chosen < 0 ? null : chosen === 0, guess:+g.value})">Lock it in</button>`,
   },
+  golf: {
+    putt: (s, me) => { const b = s.balls.find(x => x.id === id);
+      if (!b) return wait(me, 'Next hole is yours!');
+      // finished players keep the course up so they can watch their last shot (and everyone else's) roll
+      return `<div class="kicker">Hole ${s.round} · ${me.done ? (b.in ? `in the hole in ${plural(b.n, 'stroke')}! ⛳` : 'out of strokes') : `stroke ${b.n + 1} of ${s.maxStrokes}`}</div>
+       <canvas class="golfpad" width="1000" height="600" style="${GOLF_CSS}"></canvas>
+       <p>${me.done ? 'Watch the others finish.' : 'Drag back anywhere on the course, let go to putt. Your ball has the white ring.'}</p>`; },
+  },
+  knockout: {
+    aim: (s, me) => { const p = s.ko.pucks.find(x => x.id === id);
+      if (!p) return wait(me, 'Next round is yours!');
+      if (p.out) return wait(me, 'Knocked off! 💦', 'Watch the TV');
+      return `<div class="kicker">Turn ${s.ko.turn + 1} · ${me.done ? 'locked in, wait for the slide' : 'drag back on the ice, let go to aim'}</div>
+       <canvas class="kopad" width="1000" height="600" style="${GOLF_CSS};border-color:#9fd3f5"></canvas>
+       <p>Your puck has the black ring. Everyone slides at the same time!</p>`; },
+    splash: (s, me) => wait(me, s.ko.pucks.find(x => x.id === id)?.out === false ? 'Still standing! 🥊' : 'Watch the TV'),
+  },
   oddone: {
     clue: (s, me) => me.done ? wait(me, 'Clue sent!', 'Act natural…') :
       `<div class="kicker">Your secret word</div><h2 style="font-size:40px;color:var(--gold)">${esc(s.secret[id])}</h2><p>Everyone has the same word except one player. Maybe it's you!</p>
@@ -286,45 +303,32 @@ const MODES = {
         `<button class="opt" onclick="send('wanted',{index:${i}})">${esc(e.text)}</button>`).join('')}`,
   },
   objection: {
-    crime: (s, me) => { const t = s.trial;
-      if (t.judge === id) return `<div class="kicker">You're the Judge ⚖️</div><h2>${esc(t.crime)}</h2><p>You run the court: rule on objections, then decide the case. Open court when everyone's ready.</p>
-        <button class="btn" onclick="send('open')">🔨 Open court</button>`;
-      const mine = t.cards[id];
-      const job = t.supreme ? "You're on trial! Defend yourself with this evidence when it's your turn." : t.pros === id ? "You're the Prosecution 👉 Prove they did it, and work in all your evidence." :
-        t.def === id ? "You're the Defense 🛡️ Get them off, and work in all your evidence." : "You're on the jury. You might get called as a witness!";
-      return `<div class="kicker">The charge</div><h2>${esc(t.crime)}</h2><p>${job}</p>${mine ? evidence(mine) : ''}`; },
-    speak: (s, me) => { const t = s.trial, sp = t.turn.id, o = t.objection;
-      if (sp === id) return `<div class="kicker">${{ prosecution: 'Prosecution', defense: 'Defense', witness: 'Witness', surprise: 'Surprise witness!', plea: 'On trial' }[t.turn.role]}</div>
-        <h2>You're up! Talk to the room.</h2><p>${t.cards[id] ? 'Tap each piece of evidence once you\'ve worked it in.' : 'Tell the court what you saw.'}</p>
-        ${t.cards[id] ? evidence(t.cards[id], t.marked[id], true) : ''}<button class="btn" onclick="send('rest')">I rest my case</button>`;
-      if (t.judge === id) return o && o.sustained == null ? `<div class="kicker">Objection!</div><h2>${esc(who(s, o.by).name)} objects to ${esc(who(s, o.against).name)}</h2>
-        <div class="duo"><button class="opt" onclick="send('rule',{sustain:true})">✅ <b>Sustained</b></button><button class="opt" onclick="send('rule',{sustain:false})">❌ <b>Overruled</b></button></div>` :
-        wait(me, 'Keep order in court ⚖️', `${esc(who(s, sp).name)} has the floor.`);
-      if (o && o.sustained == null) return wait(me, 'Objection!', 'The judge is ruling…');
-      return t.objected.includes(id) ? wait(me, 'Listen closely 👂', 'You used your objection this game.') :
-        `<div class="kicker">${esc(who(s, sp).name)} has the floor</div><h2>Hear something outrageous?</h2>
-         <button class="btn" style="background:var(--coral);font-size:28px;padding:28px" onclick="send('object')">OBJECTION!</button><p>Once per game. The judge decides if it stands.</p>`; },
-    verdict: (s, me) => !s.trial.jurors.includes(id) ? wait(me, 'The jury is out', 'Eyes on the TV!') : me.done ? wait(me, 'Vote cast!') :
-      `<div class="kicker">You're on the jury</div><h2>${esc(s.trial.crime)}</h2><div class="duo"><button class="opt" onclick="send('vote',{guilty:true})">🔨 <b>Guilty</b></button>
+    crime: (s, me) => { const t = s.trial, cards = t.cards[id];
+      const job = t.pros === id ? `<div class="kicker">You're the Prosecutor 👉</div><h2>${esc(who(s, t.accused).name)} is accused of: ${esc(t.crime)}</h2>
+          <p>You go first. Talk out loud for 45 seconds and convince everyone they DID it. Work in your evidence. If the jury says guilty, you get +200.</p>` :
+        t.accused === id ? `<div class="kicker">You're the Accused 🙋</div><h2>You're accused of: ${esc(t.crime)}</h2>
+          <p>You go second. Talk out loud for 45 seconds and convince everyone you're innocent. Work in your evidence. If the jury says not guilty, you get +200.</p>` :
+        `<div class="kicker">You're on the jury 🗳️</div><h2>${esc(who(s, t.accused).name)} is accused of: ${esc(t.crime)}</h2>
+          <p>Listen to both sides, then vote guilty or not guilty. Vote with the majority for +50. Hear something ridiculous? Hit Objection!</p>`;
+      return job + (cards ? `<label>Your evidence</label>${evidence(cards)}` : ''); },
+    speak: (s, me) => { const t = s.trial;
+      if (t.speaker === id) return `<div class="kicker">${t.turnNo === 1 ? 'Prosecutor' : 'Accused'}</div><h2>You're up! Talk out loud.</h2>
+        <p>${t.turnNo === 1 ? 'Prove they did it.' : 'Prove you\'re innocent.'} Work in your evidence:</p>${evidence(t.cards[id])}<button class="btn" onclick="send('rest')">I'm done</button>`;
+      if (!t.jurors.includes(id)) return wait(me, 'Listen closely 👂', `${esc(who(s, t.speaker).name)} has the floor.`);
+      return t.objected.includes(id) ? wait(me, 'Objection noted 😤', 'You get another one next speech.') :
+        `<div class="kicker">${esc(who(s, t.speaker).name)} has the floor</div><h2>Hear something ridiculous?</h2>
+         <button class="btn" style="background:var(--coral);font-size:28px;padding:28px" onclick="send('object')">OBJECTION!</button><p>Just for fun. Once per speech.</p>`; },
+    vote: (s, me) => !s.trial.jurors.includes(id) ? wait(me, 'The jury is deciding…', 'Eyes on the TV!') : me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">You're on the jury</div><h2>Is ${esc(who(s, s.trial.accused).name)} guilty of ${esc(s.trial.crime)}?</h2><div class="duo"><button class="opt" onclick="send('vote',{guilty:true})">🔨 <b>Guilty</b></button>
        <button class="opt" onclick="send('vote',{guilty:false})">🕊️ <b>Not guilty</b></button></div>`,
-    ruling: (s, me) => s.trial.judge !== id || me.done ? wait(me, 'The judge is deliberating…') :
-      `<div class="kicker">Your ruling, Judge</div><h2>The jury says ${s.tally.majority == null ? "it's a tie (not guilty)" : s.tally.majority ? 'guilty' : 'not guilty'} · ${s.tally.guilty}–${s.tally.not}</h2>
-       ${s.trial.canOverrule ? `<label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="ov" style="width:24px;height:24px;margin:0"> Overrule the jury (once per game)</label>` : ''}
-       <label>Your favourite argument (+100)</label>${s.trial.turns.map((t, i) => `<button class="opt" onclick="choose(${i})">${avatar(who(s, t.id))} ${esc(who(s, t.id).name)} <small>${t.role}</small></button>`).join('')}
-       <button class="btn" onclick="chosen < 0 ? errEl.textContent = 'Pick a favourite' : send('ruling',{overrule:!!window.ov?.checked,fav:S.trial.turns[chosen].id})">🔨 Rule</button>`,
-    rank: (s, me) => s.trial.judge !== id || me.done ? wait(me, 'The judge is sentencing…') :
-      `<div class="kicker">Sentencing</div><h2>Tap everyone from most innocent to most guilty</h2><div id="rk">${rankList(s)}</div>
-       <div class="row"><button class="btn ghost" onclick="ranked = []; rk.innerHTML = rankList(S)">Start over</button><button class="btn" onclick="send('rank',{order:ranked})">🔨 Sentence them</button></div>`,
-    sentence: (s, me) => wait(me, s.last.supreme ? 'Sentences are in!' : s.last.guilty ? 'GUILTY!' : 'NOT GUILTY!'),
+    sentence: (s, me) => wait(me, s.last.guilty ? 'GUILTY!' : 'NOT GUILTY!'),
   },
 };
 MODES.caption = MODES.quickwit;
 MODES.gif = MODES.quickwit;
 const who = (s, pid) => s.players.find(p => p.id === pid) || { av: 0, name: '(left)' };
-const evidence = (cards, marked = [], tap) => cards.map((c, i) => `<button class="opt ${marked[i] ? 'on' : ''}" ${tap ? `onclick="send('mark',{index:${i}})"` : 'disabled'}>🗂️ ${esc(c)}${marked[i] ? ' ✓' : ''}</button>`).join('');
-let ranked = [], S; // S: the latest state, for buttons that need it after the screen is drawn
-const rankList = s => s.trial.turns.map(t => { const n = ranked.indexOf(t.id);
-  return `<button class="opt ${n >= 0 ? 'on' : ''}" data-id="${esc(t.id)}" onclick="if (!ranked.includes(this.dataset.id)) { ranked.push(this.dataset.id); rk.innerHTML = rankList(S) }">${n >= 0 ? `<b>${n + 1}.</b> ` : ''}${avatar(who(s, t.id))} ${esc(who(s, t.id).name)}</button>`; }).join('');
+const evidence = cards => cards.map(c => `<div class="opt">🗂️ ${esc(c)}</div>`).join('');
+let S; // S: the latest state, for buttons that need it after the screen is drawn
 const padHtml = `<canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
   <div class="row">${['#231a08', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" class="pv ${c === '#231a08' ? 'on' : ''}" onclick="padPick(this,'c','${c}')"></button>`).join('')}</div>
   <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost ${w === 10 ? 'on' : ''}" onclick="padPick(this,'w',${w})">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
@@ -356,6 +360,41 @@ function initPad(cv) {
   cv.onpointermove = e => { if (!pts || pts.length >= 1200) return; const p = at(e); pts.push(...p); x.lineTo(...p); x.stroke(); };
   cv.onpointerup = cv.onpointercancel = () => { if (pts) { if (pts.length === 2) pts.push(pts[0] + 1, pts[1]); send('stroke', { p: pts, c: pad.c, w: pad.w }); } pts = null; };
 }
+// Mini Golf aim: drag back like a slingshot; the dashed line shows where and how hard it goes
+function initGolf(cv, s) {
+  const at = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 1000, (e.clientY - r.top) / r.height * 600]; };
+  let from = null, d = null, me, rolling;
+  // redraws every frame from the latest state, so every shot (yours and others') rolls along its path
+  const draw = () => { if (!cv.isConnected || S.phase !== 'putt') return; const balls = golfBalls(S); me = balls.find(b => b.id === id); rolling = me?.moving;
+    drawCourse(cv, S.hole, balls, S.players, id); requestAnimationFrame(draw); if (!d || !me) return;
+    const x = cv.getContext('2d'), k = Math.min(1, 400 / (Math.hypot(...d) || 1));
+    x.strokeStyle = '#fff'; x.lineWidth = 6; x.setLineDash([14, 10]); x.beginPath(); x.moveTo(me.x, me.y); x.lineTo(me.x - d[0] * k, me.y - d[1] * k); x.stroke(); x.setLineDash([]); };
+  requestAnimationFrame(draw);
+  cv.onpointerdown = e => { if (rolling) return; cv.setPointerCapture(e.pointerId); from = at(e); d = [0, 0]; };
+  cv.onpointermove = e => { if (!from) return; const p = at(e); d = [p[0] - from[0], p[1] - from[1]]; };
+  cv.onpointerup = () => { if (!from) return; const len = Math.hypot(...d), a = Math.atan2(-d[1], -d[0]); from = d = null;
+    if (len > 15) { sfx('tap'); send('putt', { a, p: Math.min(1, len / 400) }); } };
+  cv.onpointercancel = () => { from = d = null; };
+}
+// Knockout aim: same slingshot drag as golf, one shot per turn, sent when you let go
+function initKnock(cv) {
+  const at = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 1000, (e.clientY - r.top) / r.height * 600]; };
+  let from = null, d = null, v;
+  const draw = () => { if (!cv.isConnected || S.game !== 'knockout') return; v = koView(S); drawIce(cv, v, S.players, id); requestAnimationFrame(draw);
+    const me = v.pucks.find(b => b.id === id); if (!me || v.moving) return;
+    // after you pull, your shot stays drawn until everyone has pulled and the slide plays
+    const L = koLocked.turn === S.ko.turn && koLocked.d; if (!d && !L) return;
+    const dd = d || L, x = cv.getContext('2d'), k = Math.min(1, 300 / (Math.hypot(...dd) || 1));
+    if (!d) x.globalAlpha = .6;
+    x.strokeStyle = '#000'; x.lineWidth = 6; x.setLineDash([14, 10]); x.beginPath(); x.moveTo(me.x, me.y); x.lineTo(me.x - dd[0] * k, me.y - dd[1] * k); x.stroke(); x.setLineDash([]); x.globalAlpha = 1; };
+  requestAnimationFrame(draw);
+  cv.onpointerdown = e => { if (v?.moving || S.players.find(p => p.id === id)?.done) return; cv.setPointerCapture(e.pointerId); from = at(e); d = [0, 0]; };
+  cv.onpointermove = e => { if (!from) return; const p = at(e); d = [p[0] - from[0], p[1] - from[1]]; };
+  cv.onpointerup = () => { if (!from) return; const len = Math.hypot(...d), a = Math.atan2(-d[1], -d[0]), dd0 = d; from = d = null;
+    if (len > 15) { sfx('tap'); koLocked = { turn: S.ko.turn, d: dd0 }; send('shot', { a, p: Math.min(1, len / 300) }); } };
+  cv.onpointercancel = () => { from = d = null; };
+}
+let koLocked = {};
 // undo / clear come back from the server, so the drawer's pad redraws from the shared strokes
 function paintPad(s) {
   const cv = app.querySelector('canvas.pad'), strokes = s.pads ? s.pads[id] || [] : s.strokes; if (!cv || !strokes) return;
@@ -428,9 +467,9 @@ function watch() {
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
-    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${s.ko?.turn}|${s.balls?.find(b => b.id === id)?.n}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
     if (key === last) { const h = document.getElementById('hint'); if (h && s.hint) h.textContent = s.hint; return paintPad(s); } // hint letters appear as time runs out
-    last = key; chosen = -1; ranked = [];
+    last = key; chosen = -1;
     // a game this page doesn't know means it's an old copy from before an update: reload once to get the new one
     if (s.game && !MODES[s.game]) { if (sessionStorage.reloadedFor !== s.game) { sessionStorage.reloadedFor = s.game; return location.reload(); } }
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
@@ -442,12 +481,12 @@ function watch() {
     else if (s.phase === 'gamevote') html = me.done ? wait(me, 'Vote cast!', 'Eyes on the TV!') :
       `<div class="kicker">What's next?</div><h2>Vote for the next game</h2>${G ? `<button class="opt" onclick="send('gvote',{game:'replay'})">↻ <b>Play ${esc(G.name)} again</b></button>` : ''}${s.games.filter(g => g.id !== s.game).map((g, i) =>
         gameOpt(g, i, `send('gvote',{game:'${g.id}'})`)).join('')}`;
-    else if (s.phase === 'results') html = wait(me, `#${rank} with ${me.score} pts`, rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!');
+    else if (s.phase === 'results') html = wait(me, `#${rank} with ${me.score} pts`, (rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!') + (s.settings.night === 'on' ? ` · ${plural(me.wins, 'win')} tonight` : ''));
     else html = screen ? screen(s, me) : wait(me, 'Watch the TV');
-    // between games players can swap avatars
-    if (between) html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
+    // only on the home menu can players change their name, emoji or photo
+    if (s.phase === 'menu') html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
       <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv', me.ph)}`;
-    swap(app, html, () => { restoreDraft(); app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } });
+    swap(app, html, () => { restoreDraft(); app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } const gp = app.querySelector('canvas.golfpad'); if (gp) initGolf(gp, s); const kp = app.querySelector('canvas.kopad'); if (kp) initKnock(kp); });
   };
 }
 if (room && q.get('auto') && q.get('name')) send('join', { text: q.get('name') }).then(ok => { if (ok) { store('room', room); watch(); } else joinScreen(); });

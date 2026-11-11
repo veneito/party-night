@@ -14,7 +14,7 @@ pub type Next = fn(&mut Room);
 pub type Res = Result<(), String>;
 pub fn no<T>(m: &str) -> Result<T, String> { Err(m.into()) }
 
-pub struct Player { pub name: String, pub score: i64, pub av: i64, pub bot: bool, pub photo: Option<String>, pub photo_v: String }
+pub struct Player { pub name: String, pub score: i64, pub av: i64, pub bot: bool, pub photo: Option<String>, pub photo_v: String, pub wins: i64 } // wins: games won tonight, for the night leaderboard
 
 pub struct Room {
     pub code: String,
@@ -109,6 +109,7 @@ pub static CORE_SETTINGS: LazyLock<Vec<Value>> = LazyLock::new(|| serde_json::fr
     { "key": "voice", "label": "Voice-over", "options": [["on", "On"], ["off", "Off"]] },
     { "key": "max", "label": "Max players", "options": [[20, "20"], [8, "8"], [12, "12"], [16, "16"]] },
     { "key": "home", "label": "Home button", "options": [["vote", "Players vote next"], ["menu", "Back to menu"]] },
+    { "key": "night", "label": "Night leaderboard", "options": [["off", "Off"], ["on", "On"]] },
 ])).unwrap());
 static ALL_SETTINGS: LazyLock<Vec<Vec<Value>>> = LazyLock::new(|| GAMES.iter().map(|g| {
     let mut v = CORE_SETTINGS.clone();
@@ -132,7 +133,12 @@ pub fn set_timer(g: &mut Room, secs: f64, next: Next, always: bool) {
 pub fn clear_timer(g: &mut Room) { g.timer = None }
 pub fn finish(g: &mut Room) {
     if (g.round as f64) < g.set_or("rounds", 3.0) { g.phase = "scores"; set_timer(g, 15.0, next_round, true) }
-    else { g.phase = "results"; clear_timer(g) }
+    else {
+        g.phase = "results"; clear_timer(g);
+        // night leaderboard: the game's top scorer (ties all count) gets a win
+        let top = g.players.values().map(|p| p.score).max().unwrap_or(0);
+        if g.set_str("night") == "on" && top > 0 { for p in g.players.values_mut() { if p.score == top { p.wins += 1 } } }
+    }
 }
 fn next_round(g: &mut Room) {
     let n = g.pending_bots; add_bots(g, n); g.pending_bots = 0;
@@ -184,7 +190,7 @@ fn add_bots(g: &mut Room, n: i64) {
         if g.players.len() as i64 >= max_of(g) { break }
         let av = free_avatar(g);
         let id = format!("bot{}", base36(rand::thread_rng().gen_range(0..36u64.pow(6)), 6));
-        g.players.insert(id, Player { name: format!("Bot {}", BOT_NAMES[av as usize % BOT_NAMES.len()]), score: 0, av, bot: true, photo: None, photo_v: String::new() });
+        g.players.insert(id, Player { name: format!("Bot {}", BOT_NAMES[av as usize % BOT_NAMES.len()]), score: 0, av, bot: true, photo: None, photo_v: String::new(), wins: 0 });
     }
 }
 
@@ -197,7 +203,7 @@ pub fn public_state(g: &mut Room) -> Value {
     let G = game(g);
     let left = g.timer.map_or(0, |(t, _)| t.saturating_duration_since(Instant::now()).as_secs_f64().ceil() as u64);
     let players: Vec<Value> = g.players.iter().map(|(id, p)| {
-        let mut o = json!({ "id": id, "name": p.name, "av": p.av, "score": p.score,
+        let mut o = json!({ "id": id, "name": p.name, "av": p.av, "score": p.score, "wins": p.wins,
             "done": if g.phase == "gamevote" { g.gvotes.contains_key(id) } else { in_game(g) && G.is_some_and(|G| G.is_done(g, id)) } });
         if p.photo.is_some() { o["ph"] = json!(format!("/photo/{}/{}?v={}", g.code, enc(id), p.photo_v)) }
         if p.bot { o["bot"] = json!(true) }
@@ -267,14 +273,16 @@ pub fn game_act(g: &mut Room, a: &Value) -> Option<String> {
         "join" => {
             let name = clean(a.get("text"), 16);
             if name.is_empty() { return Some("Name required".into()) }
-            if let Some(p) = g.players.get_mut(&id) { p.name = name; return None }
+            // names only change on the home menu; a rejoin elsewhere just keeps the old one
+            if let Some(p) = g.players.get_mut(&id) { if g.phase == "menu" { p.name = name } return None }
             if in_game(g) { return Some("Game in progress, join after this round".into()) }
             if count + g.pending_bots >= max_of(g) { return Some("Room is full".into()) }
             let av = if avatar_free(g, a.get("av"), &id) { num(a.get("av")) as i64 } else { free_avatar(g) };
-            g.players.insert(id, Player { name, score: 0, av, bot: false, photo: None, photo_v: String::new() });
+            g.players.insert(id, Player { name, score: 0, av, bot: false, photo: None, photo_v: String::new(), wins: 0 });
         }
         "photo" => { // player uploads a picture (phone shrinks it to a small JPEG first), or clears it with ''
-            if !me { return Some(NOT_NOW.into()) }
+            // home menu only, except the first photo sent right after joining in a lobby
+            if !me || !(g.phase == "menu" || (g.phase == "lobby" && g.players[&id].photo.is_none())) { return Some(NOT_NOW.into()) }
             let data = a.get("data");
             if truthy(data) && !data.and_then(|v| v.as_str()).is_some_and(|s| s.len() <= 30000 && is_photo(s)) {
                 return Some("That picture didn't work, try another".into());
@@ -285,7 +293,7 @@ pub fn game_act(g: &mut Room, a: &Value) -> Option<String> {
             p.photo_v = base36(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u64, 1);
         }
         "avatar" => { // player picks their emoji; one per player so everyone is easy to spot
-            if !me || in_game(g) { return Some(NOT_NOW.into()) }
+            if !me || g.phase != "menu" { return Some(NOT_NOW.into()) }
             if !avatar_free(g, a.get("av"), &id) { return Some("Someone already has that one".into()) }
             g.players[&id].av = num(a.get("av")) as i64;
         }
@@ -295,7 +303,7 @@ pub fn game_act(g: &mut Room, a: &Value) -> Option<String> {
             g.game = Some(i); g.phase = "lobby"; g.round = 0;
             // fresh defaults per game, but the voice-over and home choices carry over
             let mut s: Map<String, Value> = ALL_SETTINGS[i].iter().map(|d| (d["key"].as_str().unwrap().to_string(), d["options"][0][0].clone())).collect();
-            for k in ["voice", "home"] { if let Some(v) = g.settings.get(k).filter(|v| truthy(Some(v))) { s.insert(k.into(), v.clone()); } }
+            for k in ["voice", "home", "night"] { if let Some(v) = g.settings.get(k).filter(|v| truthy(Some(v))) { s.insert(k.into(), v.clone()); } }
             g.settings = s;
             for p in g.players.values_mut() { p.score = 0 }
         }
@@ -303,7 +311,7 @@ pub fn game_act(g: &mut Room, a: &Value) -> Option<String> {
             let key = a.get("key").and_then(|v| v.as_str()).unwrap_or("");
             let defs = g.game.map_or(&*CORE_SETTINGS, |i| &ALL_SETTINGS[i]);
             let opt = defs.iter().find(|d| d["key"] == key).and_then(|d| d["options"].as_array()?.iter().find(|o| Some(&o[0]) == a.get("value")));
-            let Some(opt) = opt.filter(|_| g.phase == "lobby" || key == "voice" || key == "home") else { return Some(NOT_NOW.into()) };
+            let Some(opt) = opt.filter(|_| g.phase == "lobby" || key == "voice" || key == "home" || key == "night") else { return Some(NOT_NOW.into()) };
             g.settings.insert(key.into(), opt[0].clone());
         }
         "start" => { // lobby "start", scoreboard "next round", final "play again"
@@ -375,7 +383,7 @@ pub fn test_room(ids: &[&str]) -> Room {
     let mut g = r.remove(&code).unwrap();
     g.round = 1;
     g.settings.insert("rounds".into(), json!(1));
-    for id in ids { g.players.insert(id.to_string(), Player { name: id.to_uppercase(), score: 0, av: 0, bot: false, photo: None, photo_v: String::new() }); }
+    for id in ids { g.players.insert(id.to_string(), Player { name: id.to_uppercase(), score: 0, av: 0, bot: false, photo: None, photo_v: String::new(), wins: 0 }); }
     g
 }
 // photos live only in memory on the player, so they disappear when the player is removed or the room closes
