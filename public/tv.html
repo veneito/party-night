@@ -92,6 +92,16 @@
   .gif{display:block;height:40vh;width:auto;max-width:85vw;object-fit:contain;border-radius:1rem;margin:auto}
   .prompt{background:var(--card);border-radius:2rem;padding:2.5rem 3.5rem;box-shadow:0 .6rem 0 #0005;max-width:70rem}
   .strip{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;max-width:110rem;margin-top:1.8rem}
+  .night{width:min(40rem,100%);box-sizing:border-box;margin:1.2rem auto 0;background:var(--card);border-radius:1.8rem;padding:1.1rem 1.4rem 1.3rem;box-shadow:0 .5rem 0 #0006;text-align:left}
+  .night h3{margin:0 0 .7rem;text-align:center;font-size:1.05rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold)}
+  .nrow{display:grid;grid-template-columns:2.4rem auto 1fr auto;align-items:center;gap:.7rem;padding:.45rem .6rem;border-radius:1rem;font-weight:700;font-size:1.2rem}
+  .nrow+.nrow{margin-top:.3rem} .nrow .rk{text-align:center;font-size:1.4rem}
+  .nrow .nm{display:flex;flex-direction:column;gap:.3rem;min-width:0} .nrow .bar{height:.55rem;border-radius:999px;background:#ffffff14;overflow:hidden} .nrow .bar i{display:block;height:100%;border-radius:inherit;background:var(--gold);transform-origin:left;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+  .nrow .w{font-variant-numeric:tabular-nums;min-width:4.5rem;text-align:right}
+  .nrow.new{background:#ffb62724;box-shadow:inset 0 0 0 2px var(--gold)}
+  .plus{display:inline-block;margin-left:.4rem;padding:.05rem .5rem;border-radius:999px;background:var(--gold);color:#2a1a00;font-size:.85rem;animation:pop .5s .9s both}
+  .nwin{text-align:center;margin:1.2rem 0 0;font-size:1.9rem}
+  @keyframes grow{from{transform:scaleX(0)}}
   .who{display:flex;align-items:center;gap:.5rem;padding:.35rem 1rem .35rem .35rem;border-radius:999px;background:var(--card);font-weight:700;font-size:1.05rem;transition:background .3s,opacity .3s;opacity:.55}
   .who.done{background:var(--mint);color:#0b2a22;opacity:1}
   .who.done::after{content:'✓';font-weight:800}
@@ -185,6 +195,7 @@
   <label class="row">Sound effects <input type="range" min="0" max="100" id="sfxVol" oninput="setSfxVol(this.value / 100)" onchange="sfx('done')"></label>
   <label class="row">Voice-over <input type="checkbox" id="voiceOn" onchange='send("set",{key:"voice",value:this.checked ? "on" : "off"})'></label>
   <label class="row">Players vote for next game <input type="checkbox" id="voteOn" onchange='send("set",{key:"home",value:this.checked ? "vote" : "menu"})'></label>
+  <label class="row">Night leaderboard (wins across games) <input type="checkbox" id="nightOn" onchange='send("set",{key:"night",value:this.checked ? "on" : "off"})'></label>
   <label class="row">Voice volume <input type="range" min="0" max="100" id="voiceVol" oninput="setVoiceVol(this.value / 100)"></label>
   <div id="upd" hidden><h3>Updates</h3><div class="row"><span id="updVer"></span><button class="btn ghost" onclick="checkUpdate()">Check for updates</button></div><p id="updMsg"></p></div>
   <div class="done"><button class="btn ghost" id="quitBtn" onclick="partyApp.quit()" hidden>Quit Party Night</button><button class="btn" onclick="settings.close()">Done</button></div>
@@ -199,7 +210,7 @@ let url = '', room = sessionStorage.room, spoken = '', lastKey = '', seen = new 
 let voiceVol = 1; try { voiceVol = Number(localStorage.voiceVol ?? 1); } catch {}
 function setVoiceVol(v) { voiceVol = v; try { localStorage.voiceVol = v; } catch {} }
 function openSettings() {
-  sfxVolEl.value = sfxVol * 100; voiceVolEl.value = voiceVol * 100; voiceOn.checked = S?.settings.voice !== 'off'; voteOn.checked = S?.settings.home !== 'menu';
+  sfxVolEl.value = sfxVol * 100; voiceVolEl.value = voiceVol * 100; voiceOn.checked = S?.settings.voice !== 'off'; voteOn.checked = S?.settings.home !== 'menu'; nightOn.checked = S?.settings.night === 'on';
   settings.showModal();
 }
 const sfxVolEl = document.getElementById('sfxVol'), voiceVolEl = document.getElementById('voiceVol');
@@ -463,6 +474,14 @@ const MODES = {
     results: s => !s.balls ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">Hole ${s.round}</h1><div class="answers">${[...s.balls].sort((a, b) => b.in - a.in || a.n - b.n).map((b, i) =>
       `<div class="answer rise ${b.in && i === 0 ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(who(s, b.id).name)}<small>${b.in ? `in ${plural(b.n, 'stroke')}` : 'missed'}</small></div></div>`).join('')}</div>`,
   },
+  knockout: {
+    art: '🥊', bg: 'linear-gradient(135deg,#5fb6e8,#1d5d8f)',
+    aim: s => `<div class="kicker rise">Round ${s.round} · Turn ${s.ko.turn + 1} · aim on your phone!</div>${koCanvas(s)}${strip(s)}${skip('Slide now ▶')}`,
+    splash: s => `<div class="kicker rise">${(w => w.length === 1 ? `${esc(who(s, w[0].id).name)} is the last one standing! 🥊` : 'Time! Survivors share the ice')(s.ko.pucks.filter(p => !p.out))}</div>${koCanvas(s)}`,
+    after: koTV,
+    results: s => !s.ko ? '' : `<h1 class="pop" style="font-size:2.4rem;margin:0">Round ${s.round}</h1><div class="answers">${[...s.ko.pucks].sort((a, b) => a.out - b.out || b.turns - a.turns).map((p, i) =>
+      `<div class="answer rise ${!p.out && i === 0 ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(who(s, p.id).name)}<small>${p.out ? `lasted ${plural(p.turns, 'turn')}` : 'still on the ice'}</small></div></div>`).join('')}</div>`,
+  },
   receipts: {
     art: '🧾', bg: 'linear-gradient(135deg,#a78bfa,#ff5e7e)',
     confess: s => `<div class="kicker rise">${s.lastRound ? 'Final round · Most Wanted' : `Round ${s.round}`} · Keep it true!</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
@@ -585,9 +604,21 @@ function results(s) {
       <div class="name">${esc(ranked[i].name)}</div><div class="pts" data-count="${ranked[i].score}" data-suffix=" pts">${ranked[i].score} pts</div>
       <div class="block" style="height:${H[i]};background:${C[i]}">${i + 1}</div></div>`).join('')}</div>
     <div class="rest">${ranked.slice(3).map((p, i) => `<div class="who rise">${i + 4}. ${avatar(p)}${esc(p.name)} · ${p.score}</div>`).join('')}</div>
+    ${final && s.settings.night === 'on' ? nightBoard(s, ranked) : ''}
     <div class="footer-actions sticky">${final ? btn('start', '↻ Play again') : btn('skip', `▶ Round ${s.round + 1}`)}${btn('menu', s.settings.home === 'menu' ? '← Menu' : '🏠 Vote next game', 'ghost')}</div>`;
 }
 
+// night leaderboard: the game's winner gets +1 win, then everyone's wins so far tonight
+function nightBoard(s, ranked) {
+  const won = ranked.filter(p => p.score > 0 && p.score === ranked[0].score), wonIds = new Set(won.map(p => p.id));
+  const rows = [...s.players].sort((a, b) => b.wins - a.wins), most = Math.max(1, rows[0]?.wins || 0);
+  return `${won.length ? `<h2 class="nwin pop">🏆 ${won.map(p => esc(p.name)).join(' & ')} won ${esc(s.games.find(g => g.id === s.game)?.name || '')}!</h2>` : ''}
+    <div class="night rise"><h3>Tonight's leaderboard</h3>${rows.map((p, i) => {
+      const rk = rows.findIndex(q => q.wins === p.wins); // ties share a rank
+      return `<div class="nrow ${wonIds.has(p.id) ? 'new' : ''}" style="animation-delay:${i * 70}ms"><span class="rk">${p.wins ? ['🥇', '🥈', '🥉'][rk] || rk + 1 : '–'}</span>${avatar(p)}
+        <span class="nm">${esc(p.name)}<span class="bar"><i style="width:${p.wins / most * 100}%;animation-delay:${300 + i * 70}ms"></i></span></span>
+        <span class="w">${plural(p.wins, 'win')}${wonIds.has(p.id) ? '<span class="plus">+1</span>' : ''}</span></div>`; }).join('')}</div>`;
+}
 // Mini Golf: keeps the TV canvas drawing while the putt phase is up, so shots roll along their paths
 function golfTV(s) {
   if (s.phase !== 'putt' || golfTV.on) return; golfTV.on = true;
@@ -595,6 +626,18 @@ function golfTV(s) {
     const cv = document.getElementById('golf');
     if (!cv || S?.game !== 'golf' || S.phase !== 'putt') return golfTV.on = false;
     drawCourse(cv, S.hole, golfBalls(S), S.players);
+    requestAnimationFrame(f);
+  });
+}
+
+const koCanvas = s => `<div style="width:min(64rem,100%);margin:0 auto"><canvas id="ko" data-live="ko" width="1000" height="600" style="${GOLF_CSS};border-color:#9fd3f5"></canvas></div>`;
+// Knockout: keeps the TV ice drawing so each slide plays out
+function koTV(s) {
+  if (koTV.on) return; koTV.on = true;
+  requestAnimationFrame(function f() {
+    const cv = document.getElementById('ko');
+    if (!cv || S?.game !== 'knockout' || !S.ko) return koTV.on = false;
+    drawIce(cv, koView(S), S.players);
     requestAnimationFrame(f);
   });
 }

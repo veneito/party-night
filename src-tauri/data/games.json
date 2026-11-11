@@ -1911,6 +1911,18 @@
    ]
   }
  },
+ "knockout": {
+  "meta": {
+   "id": "knockout",
+   "name": "Knockout",
+   "desc": "Everyone aims at once, then all the pucks slide together. Bump the others off the ice. It shrinks every turn!",
+   "min": 2,
+   "tag": "Action · 3 min",
+   "art": "🥊",
+   "settings": []
+  },
+  "data": {}
+ },
  "golf": {
   "meta": {
    "id": "golf",

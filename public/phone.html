@@ -224,6 +224,15 @@ const MODES = {
        <canvas class="golfpad" width="1000" height="600" style="${GOLF_CSS}"></canvas>
        <p>${me.done ? 'Watch the others finish.' : 'Drag back anywhere on the course, let go to putt. Your ball has the white ring.'}</p>`; },
   },
+  knockout: {
+    aim: (s, me) => { const p = s.ko.pucks.find(x => x.id === id);
+      if (!p) return wait(me, 'Next round is yours!');
+      if (p.out) return wait(me, 'Knocked off! 💦', 'Watch the TV');
+      return `<div class="kicker">Turn ${s.ko.turn + 1} · ${me.done ? 'locked in, wait for the slide' : 'drag back on the ice, let go to aim'}</div>
+       <canvas class="kopad" width="1000" height="600" style="${GOLF_CSS};border-color:#9fd3f5"></canvas>
+       <p>Your puck has the black ring. Everyone slides at the same time!</p>`; },
+    splash: (s, me) => wait(me, s.ko.pucks.find(x => x.id === id)?.out === false ? 'Still standing! 🥊' : 'Watch the TV'),
+  },
   oddone: {
     clue: (s, me) => me.done ? wait(me, 'Clue sent!', 'Act natural…') :
       `<div class="kicker">Your secret word</div><h2 style="font-size:40px;color:var(--gold)">${esc(s.secret[id])}</h2><p>Everyone has the same word except one player. Maybe it's you!</p>
@@ -367,6 +376,25 @@ function initGolf(cv, s) {
     if (len > 15) { sfx('tap'); send('putt', { a, p: Math.min(1, len / 400) }); } };
   cv.onpointercancel = () => { from = d = null; };
 }
+// Knockout aim: same slingshot drag as golf, one shot per turn, sent when you let go
+function initKnock(cv) {
+  const at = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 1000, (e.clientY - r.top) / r.height * 600]; };
+  let from = null, d = null, v;
+  const draw = () => { if (!cv.isConnected || S.game !== 'knockout') return; v = koView(S); drawIce(cv, v, S.players, id); requestAnimationFrame(draw);
+    const me = v.pucks.find(b => b.id === id); if (!me || v.moving) return;
+    // after you pull, your shot stays drawn until everyone has pulled and the slide plays
+    const L = koLocked.turn === S.ko.turn && koLocked.d; if (!d && !L) return;
+    const dd = d || L, x = cv.getContext('2d'), k = Math.min(1, 300 / (Math.hypot(...dd) || 1));
+    if (!d) x.globalAlpha = .6;
+    x.strokeStyle = '#000'; x.lineWidth = 6; x.setLineDash([14, 10]); x.beginPath(); x.moveTo(me.x, me.y); x.lineTo(me.x - dd[0] * k, me.y - dd[1] * k); x.stroke(); x.setLineDash([]); x.globalAlpha = 1; };
+  requestAnimationFrame(draw);
+  cv.onpointerdown = e => { if (v?.moving || S.players.find(p => p.id === id)?.done) return; cv.setPointerCapture(e.pointerId); from = at(e); d = [0, 0]; };
+  cv.onpointermove = e => { if (!from) return; const p = at(e); d = [p[0] - from[0], p[1] - from[1]]; };
+  cv.onpointerup = () => { if (!from) return; const len = Math.hypot(...d), a = Math.atan2(-d[1], -d[0]), dd0 = d; from = d = null;
+    if (len > 15) { sfx('tap'); koLocked = { turn: S.ko.turn, d: dd0 }; send('shot', { a, p: Math.min(1, len / 300) }); } };
+  cv.onpointercancel = () => { from = d = null; };
+}
+let koLocked = {};
 // undo / clear come back from the server, so the drawer's pad redraws from the shared strokes
 function paintPad(s) {
   const cv = app.querySelector('canvas.pad'), strokes = s.pads ? s.pads[id] || [] : s.strokes; if (!cv || !strokes) return;
@@ -439,7 +467,7 @@ function watch() {
     // only redraw when my view changes, so typing isn't wiped by other players' updates
     const between = ['menu', 'lobby', 'scores', 'results'].includes(s.phase);
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
-    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${s.balls?.find(b => b.id === id)?.n}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
+    const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${s.ko?.turn}|${s.balls?.find(b => b.id === id)?.n}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
     if (key === last) { const h = document.getElementById('hint'); if (h && s.hint) h.textContent = s.hint; return paintPad(s); } // hint letters appear as time runs out
     last = key; chosen = -1;
     // a game this page doesn't know means it's an old copy from before an update: reload once to get the new one
@@ -453,12 +481,12 @@ function watch() {
     else if (s.phase === 'gamevote') html = me.done ? wait(me, 'Vote cast!', 'Eyes on the TV!') :
       `<div class="kicker">What's next?</div><h2>Vote for the next game</h2>${G ? `<button class="opt" onclick="send('gvote',{game:'replay'})">↻ <b>Play ${esc(G.name)} again</b></button>` : ''}${s.games.filter(g => g.id !== s.game).map((g, i) =>
         gameOpt(g, i, `send('gvote',{game:'${g.id}'})`)).join('')}`;
-    else if (s.phase === 'results') html = wait(me, `#${rank} with ${me.score} pts`, rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!');
+    else if (s.phase === 'results') html = wait(me, `#${rank} with ${me.score} pts`, (rank === 1 ? 'You won! 🏆' : 'Eyes on the TV!') + (s.settings.night === 'on' ? ` · ${plural(me.wins, 'win')} tonight` : ''));
     else html = screen ? screen(s, me) : wait(me, 'Watch the TV');
-    // between games players can swap avatars
-    if (between) html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
+    // only on the home menu can players change their name, emoji or photo
+    if (s.phase === 'menu') html += `<label for="nm">Change name</label><div class="sndbar"><input id="nm" maxlength="16" value="${esc(me.name)}" autocomplete="nickname" style="flex:1">
       <button class="pv add" onclick="rename()">Save</button></div><label>Change avatar</label>${avGrid(me.av, taken, 'changeAv', me.ph)}`;
-    swap(app, html, () => { restoreDraft(); app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } const gp = app.querySelector('canvas.golfpad'); if (gp) initGolf(gp, s); });
+    swap(app, html, () => { restoreDraft(); app.querySelector('input:not(#nm)')?.focus(); drawnAt = Date.now(); const cv = app.querySelector('canvas.pad'); if (cv) { initPad(cv); paintPad(s); } const gp = app.querySelector('canvas.golfpad'); if (gp) initGolf(gp, s); const kp = app.querySelector('canvas.kopad'); if (kp) initKnock(kp); });
   };
 }
 if (room && q.get('auto') && q.get('name')) send('join', { text: q.get('name') }).then(ok => { if (ok) { store('room', room); watch(); } else joinScreen(); });

@@ -151,6 +151,28 @@ function golfBalls(s) {
   return s.balls.map(b => { const a = golfAnim[b.id], i = Math.floor((performance.now() - a.t0) / 33);
     return i * 2 < a.path.length - 2 ? { id: b.id, x: a.path[i * 2], y: a.path[i * 2 + 1], moving: true } : b; });
 }
+// Knockout ice (1000 x 600): the latest slide plays from its 30 fps frames on the old ice, then the shrunk ice shows
+const koAnim = {};
+function koView(s) {
+  const k = s.ko; if (koAnim.turn !== k.turn) Object.assign(koAnim, { turn: k.turn, t0: performance.now() });
+  const i = Math.floor((performance.now() - koAnim.t0) / 33), f = k.frames[i];
+  if (!f || i >= k.frames.length - 1) return { r: k.r, pucks: k.pucks.filter(p => !p.out), moving: false };
+  return { r: k.lastR, moving: true, pucks: k.pucks.map((p, j) => ({ id: p.id, x: f[j * 2], y: f[j * 2 + 1] })).filter(p => p.x > -999) };
+}
+function drawIce(cv, v, players, mine) {
+  const x = cv.getContext('2d'); x.setTransform(cv.width / 1000, 0, 0, cv.height / 600, 0, 0);
+  x.fillStyle = '#1d5d8f'; x.fillRect(0, 0, 1000, 600);
+  x.fillStyle = '#e6f6ff'; x.strokeStyle = '#9fd3f5'; x.lineWidth = 8; x.beginPath(); x.arc(500, 300, v.r, 0, 7); x.fill(); x.stroke();
+  for (const b of v.pucks) { const p = players.find(q => q.id === b.id);
+    x.fillStyle = p ? avColor(p) : '#888'; x.strokeStyle = b.id === mine ? '#000' : '#0006'; x.lineWidth = b.id === mine ? 6 : 3;
+    x.beginPath(); x.arc(b.x, b.y, 22, 0, 7); x.fill(); x.stroke();
+    // the player's photo clipped round, or their emoji
+    const img = p?.ph && puckImg(p.ph);
+    if (img?.complete && img.naturalWidth) { x.save(); x.beginPath(); x.arc(b.x, b.y, 20, 0, 7); x.clip(); x.drawImage(img, b.x - 20, b.y - 20, 40, 40); x.restore(); }
+    else if (p) { x.font = '28px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(AV_EMOJI[p.av % AV_EMOJI.length], b.x, b.y + 2); } }
+}
+const puckImgs = {};
+const puckImg = src => puckImgs[src] ||= Object.assign(new Image(), { src });
 const GOLF_CSS = 'width:100%;aspect-ratio:5/3;border:.5rem solid #7a4a21;border-radius:1rem;touch-action:none;display:block';
 
 // casino-chip accents for game cards (TV menu and phone pickers)
