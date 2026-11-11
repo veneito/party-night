@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Party Night",
   "mainBinaryName": "Party Night",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "identifier": "com.partynight.app",
   "build": {
     "frontendDist": "../public"
