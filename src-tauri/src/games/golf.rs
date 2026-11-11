@@ -62,7 +62,9 @@ impl Game for Golf {
     fn start(&self, g: &mut Room) {
         g.phase = "putt";
         let holes = data("golf", "HOLES").as_array().unwrap();
-        let all: Vec<usize> = (0..holes.len()).collect();
+        // "mixed" (the default) plays holes of every difficulty
+        let level = g.set_str("level");
+        let all: Vec<usize> = (0..holes.len()).filter(|&i| matches!(level, "" | "mixed") || holes[i]["level"] == level).collect();
         let fresh: Vec<usize> = all.iter().copied().filter(|i| !g.used.contains(&format!("hole{i}"))).collect();
         let i = pick(if fresh.is_empty() { &all } else { &fresh });
         g.used.push(format!("hole{i}"));
@@ -115,5 +117,21 @@ mod tests {
         let mut b = Ball { x: 500.0, y: 300.0, ..Default::default() };
         roll(&mut b, &[[700.0, 0.0, 700.0, 600.0]], (900.0, 300.0), 0.0, 1.0);
         assert!(!b.sunk && b.x > 0.0 && b.x < 700.0);
+    }
+    #[test]
+    fn every_hole_is_playable() {
+        // tee and cup sit on the course, clear of every wall, and each difficulty has holes
+        let holes = data("golf", "HOLES").as_array().unwrap();
+        for lv in ["easy", "medium", "hard"] { assert!(holes.iter().any(|h| h["level"] == lv), "{lv}") }
+        for h in holes {
+            for p in [pt(&h["start"]), pt(&h["cup"])] {
+                assert!(p.0 >= HIT && p.0 <= 1000.0 - HIT && p.1 >= HIT && p.1 <= 600.0 - HIT, "{h}");
+                for w in h["walls"].as_array().unwrap() {
+                    let mut b = Ball { x: p.0, y: p.1, ..Default::default() };
+                    roll(&mut b, &[[0, 1, 2, 3].map(|k| w[k].as_f64().unwrap())], (-99.0, -99.0), 0.0, 0.0);
+                    assert!((b.x, b.y) == p, "{h} {w}");
+                }
+            }
+        }
     }
 }

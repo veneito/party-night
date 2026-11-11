@@ -294,45 +294,32 @@ const MODES = {
         `<button class="opt" onclick="send('wanted',{index:${i}})">${esc(e.text)}</button>`).join('')}`,
   },
   objection: {
-    crime: (s, me) => { const t = s.trial;
-      if (t.judge === id) return `<div class="kicker">You're the Judge ⚖️</div><h2>${esc(t.crime)}</h2><p>You run the court: rule on objections, then decide the case. Open court when everyone's ready.</p>
-        <button class="btn" onclick="send('open')">🔨 Open court</button>`;
-      const mine = t.cards[id];
-      const job = t.supreme ? "You're on trial! Defend yourself with this evidence when it's your turn." : t.pros === id ? "You're the Prosecution 👉 Prove they did it, and work in all your evidence." :
-        t.def === id ? "You're the Defense 🛡️ Get them off, and work in all your evidence." : "You're on the jury. You might get called as a witness!";
-      return `<div class="kicker">The charge</div><h2>${esc(t.crime)}</h2><p>${job}</p>${mine ? evidence(mine) : ''}`; },
-    speak: (s, me) => { const t = s.trial, sp = t.turn.id, o = t.objection;
-      if (sp === id) return `<div class="kicker">${{ prosecution: 'Prosecution', defense: 'Defense', witness: 'Witness', surprise: 'Surprise witness!', plea: 'On trial' }[t.turn.role]}</div>
-        <h2>You're up! Talk to the room.</h2><p>${t.cards[id] ? 'Tap each piece of evidence once you\'ve worked it in.' : 'Tell the court what you saw.'}</p>
-        ${t.cards[id] ? evidence(t.cards[id], t.marked[id], true) : ''}<button class="btn" onclick="send('rest')">I rest my case</button>`;
-      if (t.judge === id) return o && o.sustained == null ? `<div class="kicker">Objection!</div><h2>${esc(who(s, o.by).name)} objects to ${esc(who(s, o.against).name)}</h2>
-        <div class="duo"><button class="opt" onclick="send('rule',{sustain:true})">✅ <b>Sustained</b></button><button class="opt" onclick="send('rule',{sustain:false})">❌ <b>Overruled</b></button></div>` :
-        wait(me, 'Keep order in court ⚖️', `${esc(who(s, sp).name)} has the floor.`);
-      if (o && o.sustained == null) return wait(me, 'Objection!', 'The judge is ruling…');
-      return t.objected.includes(id) ? wait(me, 'Listen closely 👂', 'You used your objection this game.') :
-        `<div class="kicker">${esc(who(s, sp).name)} has the floor</div><h2>Hear something outrageous?</h2>
-         <button class="btn" style="background:var(--coral);font-size:28px;padding:28px" onclick="send('object')">OBJECTION!</button><p>Once per game. The judge decides if it stands.</p>`; },
-    verdict: (s, me) => !s.trial.jurors.includes(id) ? wait(me, 'The jury is out', 'Eyes on the TV!') : me.done ? wait(me, 'Vote cast!') :
-      `<div class="kicker">You're on the jury</div><h2>${esc(s.trial.crime)}</h2><div class="duo"><button class="opt" onclick="send('vote',{guilty:true})">🔨 <b>Guilty</b></button>
+    crime: (s, me) => { const t = s.trial, cards = t.cards[id];
+      const job = t.pros === id ? `<div class="kicker">You're the Prosecutor 👉</div><h2>${esc(who(s, t.accused).name)} is accused of: ${esc(t.crime)}</h2>
+          <p>You go first. Talk out loud for 45 seconds and convince everyone they DID it. Work in your evidence. If the jury says guilty, you get +200.</p>` :
+        t.accused === id ? `<div class="kicker">You're the Accused 🙋</div><h2>You're accused of: ${esc(t.crime)}</h2>
+          <p>You go second. Talk out loud for 45 seconds and convince everyone you're innocent. Work in your evidence. If the jury says not guilty, you get +200.</p>` :
+        `<div class="kicker">You're on the jury 🗳️</div><h2>${esc(who(s, t.accused).name)} is accused of: ${esc(t.crime)}</h2>
+          <p>Listen to both sides, then vote guilty or not guilty. Vote with the majority for +50. Hear something ridiculous? Hit Objection!</p>`;
+      return job + (cards ? `<label>Your evidence</label>${evidence(cards)}` : ''); },
+    speak: (s, me) => { const t = s.trial;
+      if (t.speaker === id) return `<div class="kicker">${t.turnNo === 1 ? 'Prosecutor' : 'Accused'}</div><h2>You're up! Talk out loud.</h2>
+        <p>${t.turnNo === 1 ? 'Prove they did it.' : 'Prove you\'re innocent.'} Work in your evidence:</p>${evidence(t.cards[id])}<button class="btn" onclick="send('rest')">I'm done</button>`;
+      if (!t.jurors.includes(id)) return wait(me, 'Listen closely 👂', `${esc(who(s, t.speaker).name)} has the floor.`);
+      return t.objected.includes(id) ? wait(me, 'Objection noted 😤', 'You get another one next speech.') :
+        `<div class="kicker">${esc(who(s, t.speaker).name)} has the floor</div><h2>Hear something ridiculous?</h2>
+         <button class="btn" style="background:var(--coral);font-size:28px;padding:28px" onclick="send('object')">OBJECTION!</button><p>Just for fun. Once per speech.</p>`; },
+    vote: (s, me) => !s.trial.jurors.includes(id) ? wait(me, 'The jury is deciding…', 'Eyes on the TV!') : me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">You're on the jury</div><h2>Is ${esc(who(s, s.trial.accused).name)} guilty of ${esc(s.trial.crime)}?</h2><div class="duo"><button class="opt" onclick="send('vote',{guilty:true})">🔨 <b>Guilty</b></button>
        <button class="opt" onclick="send('vote',{guilty:false})">🕊️ <b>Not guilty</b></button></div>`,
-    ruling: (s, me) => s.trial.judge !== id || me.done ? wait(me, 'The judge is deliberating…') :
-      `<div class="kicker">Your ruling, Judge</div><h2>The jury says ${s.tally.majority == null ? "it's a tie (not guilty)" : s.tally.majority ? 'guilty' : 'not guilty'} · ${s.tally.guilty}–${s.tally.not}</h2>
-       ${s.trial.canOverrule ? `<label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="ov" style="width:24px;height:24px;margin:0"> Overrule the jury (once per game)</label>` : ''}
-       <label>Your favourite argument (+100)</label>${s.trial.turns.map((t, i) => `<button class="opt" onclick="choose(${i})">${avatar(who(s, t.id))} ${esc(who(s, t.id).name)} <small>${t.role}</small></button>`).join('')}
-       <button class="btn" onclick="chosen < 0 ? errEl.textContent = 'Pick a favourite' : send('ruling',{overrule:!!window.ov?.checked,fav:S.trial.turns[chosen].id})">🔨 Rule</button>`,
-    rank: (s, me) => s.trial.judge !== id || me.done ? wait(me, 'The judge is sentencing…') :
-      `<div class="kicker">Sentencing</div><h2>Tap everyone from most innocent to most guilty</h2><div id="rk">${rankList(s)}</div>
-       <div class="row"><button class="btn ghost" onclick="ranked = []; rk.innerHTML = rankList(S)">Start over</button><button class="btn" onclick="send('rank',{order:ranked})">🔨 Sentence them</button></div>`,
-    sentence: (s, me) => wait(me, s.last.supreme ? 'Sentences are in!' : s.last.guilty ? 'GUILTY!' : 'NOT GUILTY!'),
+    sentence: (s, me) => wait(me, s.last.guilty ? 'GUILTY!' : 'NOT GUILTY!'),
   },
 };
 MODES.caption = MODES.quickwit;
 MODES.gif = MODES.quickwit;
 const who = (s, pid) => s.players.find(p => p.id === pid) || { av: 0, name: '(left)' };
-const evidence = (cards, marked = [], tap) => cards.map((c, i) => `<button class="opt ${marked[i] ? 'on' : ''}" ${tap ? `onclick="send('mark',{index:${i}})"` : 'disabled'}>🗂️ ${esc(c)}${marked[i] ? ' ✓' : ''}</button>`).join('');
-let ranked = [], S; // S: the latest state, for buttons that need it after the screen is drawn
-const rankList = s => s.trial.turns.map(t => { const n = ranked.indexOf(t.id);
-  return `<button class="opt ${n >= 0 ? 'on' : ''}" data-id="${esc(t.id)}" onclick="if (!ranked.includes(this.dataset.id)) { ranked.push(this.dataset.id); rk.innerHTML = rankList(S) }">${n >= 0 ? `<b>${n + 1}.</b> ` : ''}${avatar(who(s, t.id))} ${esc(who(s, t.id).name)}</button>`; }).join('');
+const evidence = cards => cards.map(c => `<div class="opt">🗂️ ${esc(c)}</div>`).join('');
+let S; // S: the latest state, for buttons that need it after the screen is drawn
 const padHtml = `<canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
   <div class="row">${['#231a08', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" class="pv ${c === '#231a08' ? 'on' : ''}" onclick="padPick(this,'c','${c}')"></button>`).join('')}</div>
   <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost ${w === 10 ? 'on' : ''}" onclick="padPick(this,'w',${w})">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
@@ -454,7 +441,7 @@ function watch() {
     const taken = s.players.filter(p => p.id !== id).map(p => p.av);
     const key = `${s.game}|${s.phase}|${s.round}|${s.duelNo}|${me.done}|${s.opts?.[id]?.[0]}|${s.turnNo}|${s.view}|${s.balls?.find(b => b.id === id)?.n}|${between ? me.av + ':' + taken + ':' + me.name + ':' + me.ph : ''}`;
     if (key === last) { const h = document.getElementById('hint'); if (h && s.hint) h.textContent = s.hint; return paintPad(s); } // hint letters appear as time runs out
-    last = key; chosen = -1; ranked = [];
+    last = key; chosen = -1;
     // a game this page doesn't know means it's an old copy from before an update: reload once to get the new one
     if (s.game && !MODES[s.game]) { if (sessionStorage.reloadedFor !== s.game) { sessionStorage.reloadedFor = s.game; return location.reload(); } }
     const G = s.games.find(x => x.id === s.game), screen = MODES[s.game]?.[s.phase];
