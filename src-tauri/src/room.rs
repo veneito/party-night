@@ -118,7 +118,7 @@ static ALL_SETTINGS: LazyLock<Vec<Vec<Value>>> = LazyLock::new(|| GAMES.iter().m
 }).collect());
 static GAMES_JSON: LazyLock<Value> = LazyLock::new(|| Value::Array(GAMES.iter().enumerate().map(|(i, g)| {
     let m = games::meta(g.id());
-    json!({ "id": m["id"], "name": m["name"], "desc": m["desc"], "min": m["min"], "tag": m["tag"], "art": m["art"], "settings": ALL_SETTINGS[i] })
+    json!({ "id": m["id"], "name": m["name"], "desc": m["desc"], "min": m["min"], "tag": m["tag"], "cat": m["cat"], "art": m["art"], "settings": ALL_SETTINGS[i] })
 }).collect()));
 const MAX_PLAYERS: f64 = 20.0;
 // TIMER_SCALE=0.2 makes every countdown 5x shorter, handy when testing alone

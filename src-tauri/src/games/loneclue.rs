@@ -11,7 +11,7 @@ pub struct D { word: String, guesser: Option<String>, clues: IndexMap<String, St
 pub struct LoneClue;
 
 // "Cats" and "cat!" count as the same clue
-fn norm(t: &str) -> String {
+pub fn norm(t: &str) -> String {
     let s: String = t.to_lowercase().chars().filter(|c| c.is_ascii_lowercase()).collect();
     s.strip_suffix("es").or_else(|| s.strip_suffix('s')).unwrap_or(&s).to_string()
 }

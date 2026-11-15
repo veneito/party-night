@@ -180,3 +180,13 @@ const GOLF_CSS = 'width:100%;aspect-ratio:5/3;border:.5rem solid #7a4a21;border-
 
 // casino-chip accents for game cards (TV menu and phone pickers)
 const CHIPS = ['#c8202f', '#1f5fbf', '#178a4a', '#24282d', '#d9a21b'];
+// Home menu: games by category tab; games the group is too small for go to the end (nobody joined yet = nothing greyed)
+const CATS = ['All', 'Quick', 'Words', 'Drawing', 'Bluffing', 'Action'];
+const fits = (g, n) => !n || n >= g.min;
+const shelf = (games, cat, n) => { const v = games.filter(g => cat === 'All' || g.cat === cat); return [...v.filter(g => fits(g, n)), ...v.filter(g => !fits(g, n))]; };
+// random game from the open tab that the group can play right now
+function surprise(cat = menuCat) {
+  const v = shelf(S.games, cat, S.players.length), ok = v.filter(g => fits(g, S.players.length));
+  const g = (ok.length ? ok : v)[Math.floor(Math.random() * (ok.length ? ok : v).length)];
+  if (g) send('pick', { game: g.id });
+}

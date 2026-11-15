@@ -16,7 +16,10 @@ pub mod objection;
 pub mod oddone;
 pub mod punchline;
 pub mod quickwit;
+pub mod rankit;
 pub mod receipts;
+pub mod samebrain;
+pub mod split;
 pub mod telephone;
 
 pub trait Game: Send + Sync {
@@ -46,7 +49,10 @@ pub static GAMES: LazyLock<Vec<Box<dyn Game>>> = LazyLock::new(|| vec![
     Box::new(oddone::OddOne),
     Box::new(punchline::Punchline),
     Box::new(quickwit::QuickWit("quickwit")),
+    Box::new(rankit::RankIt),
     Box::new(receipts::Receipts),
+    Box::new(samebrain::SameBrain),
+    Box::new(split::Split),
     Box::new(telephone::Telephone),
 ]);
 
@@ -67,6 +73,9 @@ pub enum Data {
     Odd(oddone::D),
     Punch(punchline::D),
     Receipts(receipts::D),
+    Rank(rankit::D),
+    Same(samebrain::D),
+    Split(split::D),
     Tel(telephone::D),
 }
 // this game's round state; only used once the game's start() has run

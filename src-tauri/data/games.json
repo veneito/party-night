@@ -26,7 +26,8 @@
       ]
      ]
     }
-   ]
+   ],
+   "cat": "Quick"
   },
   "data": {
    "SCENES": [
@@ -121,7 +122,8 @@
       ]
      ]
     }
-   ]
+   ],
+   "cat": "Quick"
   },
   "data": {
    "GIFS": [
@@ -209,7 +211,8 @@
    "min": 2,
    "tag": "Drawing · 5 min",
    "art": "🎨",
-   "settings": []
+   "settings": [],
+   "cat": "Drawing"
   },
   "data": {
    "WORDS": [
@@ -464,7 +467,8 @@
    "min": 2,
    "tag": "Cards · 10 min",
    "art": "🃏",
-   "settings": []
+   "settings": [],
+   "cat": "Action"
   },
   "data": {}
  },
@@ -476,7 +480,8 @@
    "min": 3,
    "tag": "Bluffing · 6 min",
    "art": "🕵️",
-   "settings": []
+   "settings": [],
+   "cat": "Bluffing"
   },
   "data": {
    "FACTS": [
@@ -691,7 +696,8 @@
    "min": 2,
    "tag": "Quick · 3 min",
    "art": "🌶️",
-   "settings": []
+   "settings": [],
+   "cat": "Quick"
   },
   "data": {
    "TAKES": [
@@ -765,7 +771,8 @@
    "min": 3,
    "tag": "Co-op words · 5 min",
    "art": "🔍",
-   "settings": []
+   "settings": [],
+   "cat": "Words"
   },
   "data": {
    "WORDS": [
@@ -900,7 +907,8 @@
    "min": 3,
    "tag": "Deduction · 5 min",
    "art": "🎭",
-   "settings": []
+   "settings": [],
+   "cat": "Bluffing"
   },
   "data": {
    "PAIRS": [
@@ -1204,7 +1212,8 @@
       ]
      ]
     }
-   ]
+   ],
+   "cat": "Words"
   },
   "data": {
    "PACKS": {
@@ -1517,7 +1526,8 @@
       ]
      ]
     }
-   ]
+   ],
+   "cat": "Quick"
   },
   "data": {
    "PROMPTS": {
@@ -1655,7 +1665,8 @@
    "min": 3,
    "tag": "Drawing · 10 min",
    "art": "📞",
-   "settings": []
+   "settings": [],
+   "cat": "Drawing"
   },
   "data": {
    "STARTERS": [
@@ -1700,7 +1711,8 @@
    "art": "🧾",
    "tag": "Confessions · 10 min",
    "desc": "Everyone confesses something small and true. Work out who wrote what, and stay hard to read yourself.",
-   "settings": []
+   "settings": [],
+   "cat": "Bluffing"
   },
   "data": {
    "PROMPTS": [
@@ -1792,7 +1804,8 @@
       ]
      ]
     }
-   ]
+   ],
+   "cat": "Words"
   },
   "data": {
    "CRIMES": {
@@ -1919,7 +1932,8 @@
    "min": 2,
    "tag": "Action · 3 min",
    "art": "🥊",
-   "settings": []
+   "settings": [],
+   "cat": "Action"
   },
   "data": {}
  },
@@ -1954,7 +1968,8 @@
       ]
      ]
     }
-   ]
+   ],
+   "cat": "Action"
   },
   "data": {
    "HOLES": [
@@ -2714,6 +2729,307 @@
       ]
      ]
     }
+   ]
+  }
+ },
+ "samebrain": {
+  "meta": {
+   "id": "samebrain",
+   "name": "Same Brain",
+   "desc": "The TV asks something like \"name a pizza topping\". Write one word. You score for everyone who wrote the same thing.",
+   "min": 3,
+   "tag": "Quick · 3 min",
+   "art": "🧠",
+   "settings": [],
+   "cat": "Quick"
+  },
+  "data": {
+   "PROMPTS": [
+    "Name a pizza topping",
+    "Name a farm animal",
+    "Name a colour",
+    "Name a fruit",
+    "Name a country",
+    "Name a breakfast food",
+    "Name something in a bathroom",
+    "Name a superhero",
+    "Name a sport",
+    "Name a dog breed",
+    "Name a board game",
+    "Name a vegetable",
+    "Name something cold",
+    "Name a city",
+    "Name a planet",
+    "Name a musical instrument",
+    "Name something you find at the beach",
+    "Name a famous painter",
+    "Name a candy",
+    "Name an ice cream flavour",
+    "Name a body of water",
+    "Name something with wheels",
+    "Name a holiday",
+    "Name a type of shoe",
+    "Name something that flies",
+    "Name a kitchen tool",
+    "Name a cheese",
+    "Name a job",
+    "Name a sea creature",
+    "Name something in a wallet",
+    "Name a bird",
+    "Name a fast food chain",
+    "Name a month",
+    "Name a dance",
+    "Name something you plug in",
+    "Name a type of tree",
+    "Name something round",
+    "Name a dessert",
+    "Name a car brand",
+    "Name an insect"
+   ]
+  }
+ },
+ "split": {
+  "meta": {
+   "id": "split",
+   "name": "Split the Room",
+   "desc": "Write a yes-or-no question that splits the room right down the middle. The closer to 50/50, the more you score.",
+   "min": 3,
+   "tag": "Words · 6 min",
+   "art": "⚖️",
+   "settings": [],
+   "cat": "Words"
+  },
+  "data": {}
+ },
+ "rankit": {
+  "meta": {
+   "id": "rankit",
+   "name": "Rank It",
+   "desc": "One player secretly ranks four things from best to worst. Everyone else guesses their order. No typing.",
+   "min": 3,
+   "tag": "Quick · 5 min",
+   "art": "🥇",
+   "settings": [],
+   "cat": "Quick"
+  },
+  "data": {
+   "TOPICS": [
+    [
+     "Breakfast foods",
+     [
+      "Pancakes",
+      "Cereal",
+      "Eggs",
+      "Toast"
+     ]
+    ],
+    [
+     "Superpowers",
+     [
+      "Flying",
+      "Invisibility",
+      "Teleporting",
+      "Mind reading"
+     ]
+    ],
+    [
+     "Pets",
+     [
+      "Dog",
+      "Cat",
+      "Fish",
+      "Hamster"
+     ]
+    ],
+    [
+     "Seasons",
+     [
+      "Spring",
+      "Summer",
+      "Autumn",
+      "Winter"
+     ]
+    ],
+    [
+     "Pizza toppings",
+     [
+      "Pineapple",
+      "Mushrooms",
+      "Pepperoni",
+      "Olives"
+     ]
+    ],
+    [
+     "Ways to travel",
+     [
+      "Train",
+      "Plane",
+      "Car",
+      "Boat"
+     ]
+    ],
+    [
+     "Chores",
+     [
+      "Dishes",
+      "Laundry",
+      "Vacuuming",
+      "Taking out the trash"
+     ]
+    ],
+    [
+     "Desserts",
+     [
+      "Cake",
+      "Ice cream",
+      "Cookies",
+      "Pie"
+     ]
+    ],
+    [
+     "Holidays",
+     [
+      "Beach",
+      "City trip",
+      "Camping",
+      "Ski trip"
+     ]
+    ],
+    [
+     "Times of day",
+     [
+      "Early morning",
+      "Lunchtime",
+      "Evening",
+      "Midnight"
+     ]
+    ],
+    [
+     "Movie genres",
+     [
+      "Horror",
+      "Comedy",
+      "Action",
+      "Romance"
+     ]
+    ],
+    [
+     "Drinks",
+     [
+      "Coffee",
+      "Tea",
+      "Juice",
+      "Soda"
+     ]
+    ],
+    [
+     "Weather",
+     [
+      "Sunny",
+      "Rainy",
+      "Snowy",
+      "Thunderstorm"
+     ]
+    ],
+    [
+     "Snacks",
+     [
+      "Chips",
+      "Popcorn",
+      "Chocolate",
+      "Fruit"
+     ]
+    ],
+    [
+     "Board game moods",
+     [
+      "Winning",
+      "Cheating",
+      "Rule arguing",
+      "Flipping the table"
+     ]
+    ],
+    [
+     "Places to live",
+     [
+      "Big city",
+      "Small town",
+      "Countryside",
+      "Island"
+     ]
+    ],
+    [
+     "Sounds",
+     [
+      "Rain on a window",
+      "Birdsong",
+      "Crackling fire",
+      "Ocean waves"
+     ]
+    ],
+    [
+     "Pasta shapes",
+     [
+      "Spaghetti",
+      "Penne",
+      "Farfalle",
+      "Ravioli"
+     ]
+    ],
+    [
+     "Party roles",
+     [
+      "DJ",
+      "Cook",
+      "Dancer",
+      "The one who leaves early"
+     ]
+    ],
+    [
+     "Sandwich fillings",
+     [
+      "Ham and cheese",
+      "Peanut butter",
+      "Tuna",
+      "BLT"
+     ]
+    ],
+    [
+     "Phone apps to lose forever",
+     [
+      "Maps",
+      "Camera",
+      "Music",
+      "Messages"
+     ]
+    ],
+    [
+     "Zoo animals",
+     [
+      "Penguin",
+      "Lion",
+      "Giraffe",
+      "Monkey"
+     ]
+    ],
+    [
+     "Ways to spend a Sunday",
+     [
+      "Sleeping in",
+      "Hiking",
+      "Gaming",
+      "Cooking"
+     ]
+    ],
+    [
+     "Fears",
+     [
+      "Spiders",
+      "Heights",
+      "Public speaking",
+      "The dark"
+     ]
+    ]
    ]
   }
  }

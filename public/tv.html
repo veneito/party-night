@@ -29,6 +29,8 @@
   /* menu */
   .hero{font-size:5rem;font-weight:800;letter-spacing:-.05em;line-height:.9;margin:0}
   .hero span{color:var(--gold)}
+  .cats{display:flex;gap:1rem;align-items:center;justify-content:center;margin-top:1.2rem;flex-wrap:wrap} .cats .seg button{padding:.5rem 1.2rem;font-size:1.1rem}
+  .mode.small{opacity:.45;filter:grayscale(.7)}
   .modes{display:flex;gap:1.5rem;margin:1.6rem 0 1.2rem;max-width:66rem;flex-wrap:wrap;justify-content:center}
   .mode{width:20rem;display:flex;flex-direction:column;justify-content:flex-start;text-align:left;border-radius:2rem;padding:0;overflow:hidden;background:var(--card);box-shadow:0 .5rem 0 #0006;transition:transform .2s}
   .mode:hover,.mode:focus-visible{transform:translateY(-.5rem) rotate(-.6deg)}
@@ -278,6 +280,10 @@ function narrate(s) {
     take: () => [s.take, 'Agree or disagree?'],
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
+    think: () => [s.prompt, 'One word. Think like the room!'],
+    ask: () => ['Write a question that splits the room in half!'],
+    split: () => ['Yes or no? Answer every question on your phone.'],
+    rank: () => [`${who(s, s.judge).name} is ranking ${s.topic}. Guess their order!`],
     putt: () => [`Hole ${s.round}. Drag back on your phone and let go to putt!`],
     ...(s.game === 'loneclue' && { clue: () => ['Write a one-word clue. Matching clues cancel out!'], guess: () => ['Here are the clues. What is the word?'] }),
     turn: () => ['Elemix! Match the element or the number. Your hand is on your phone.'],
@@ -523,6 +529,37 @@ const MODES = {
 };
 MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg,#5ab0ff,#5fb6e8)' };
 MODES.gif = { ...MODES.quickwit, art: '🎞️', bg: 'linear-gradient(135deg,#ff7ab6,#8f6aff)' };
+const avs = (s, ids) => ids.map(id => avatar(who(s, id))).join('');
+Object.assign(MODES, {
+  samebrain: {
+    art: '🧠', bg: 'linear-gradient(135deg,#f472b6,#a78bfa)',
+    think: s => `<div class="kicker rise">Round ${s.round} · Think like the room</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>
+      <h2 class="rise">One word on your phone. Score for everyone who matches you!</h2>${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(s.last.prompt)}</h1><div class="answers">${s.last.groups.map((g, i) =>
+      `<div class="answer rise ${i === 0 && g.ids.length > 1 ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(g.word)}
+      <small>${avs(s, g.ids)} ${g.ids.length > 1 ? `+${100 * (g.ids.length - 1)} each` : 'nobody matched'}</small></div></div>`).join('')}</div>`,
+  },
+  split: {
+    art: '⚖️', bg: 'linear-gradient(135deg,#2dd4bf,#4d96ff)',
+    ask: s => `<div class="kicker rise">Round ${s.round} · Step 1 of 2</div><h1 class="pop">Split the room!</h1>
+      <h2 class="rise">Write a yes-or-no question on your phone. Aim for a perfect 50/50.</h2>${strip(s)}${skip()}`,
+    split: s => `<div class="kicker rise">Step 2 of 2 · Answer on your phone</div><div class="answers">${s.qs.map((q, i) =>
+      `<div class="answer rise" style="animation-delay:${i * 50}ms"><span class="n">${i + 1}</span>${esc(q.text)}</div>`).join('')}</div>${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<div class="answers">${s.last.list.map((q, i) => { const pct = q.n ? Math.round(q.yes / q.n * 100) : 0;
+      return `<div class="answer rise ${i === 0 && q.pts ? 'win' : ''}" style="animation-delay:${i * 60}ms"><div class="stack">${esc(q.text)}
+      <div class="bar"><i style="width:${pct}%"></i></div><small>${avatar(who(s, q.id))}${esc(who(s, q.id).name)} · ${q.yes} yes / ${q.n - q.yes} no · +${q.pts}</small></div></div>`; }).join('')}</div>`,
+  },
+  rankit: {
+    art: '🥇', bg: 'linear-gradient(135deg,#ffd93d,#ff9f43)',
+    rank: s => `<div class="kicker rise">Round ${s.round} · ${avatar(who(s, s.judge))} ${esc(who(s, s.judge).name)} is ranking</div><div class="prompt pop"><h1>${esc(s.topic)}</h1></div>
+      <div class="answers">${s.items.map((t, i) => `<div class="answer rise" style="animation-delay:${i * 60}ms">${esc(t)}</div>`).join('')}</div>
+      <h2 class="rise">Guess their order, best to worst, on your phone</h2>${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(who(s, s.judge).name)}'s ${esc(s.topic.toLowerCase())}</h1>
+      ${s.last.truth ? `<div class="answers">${s.last.truth.map((k, i) => `<div class="answer rise ${i === 0 ? 'win' : ''}" style="animation-delay:${i * 200}ms"><span class="n">${i + 1}</span>${esc(s.items[k])}</div>`).join('')}</div>
+      <div class="rest" style="margin-top:1rem">${[...s.last.list].sort((a, b) => b.hits - a.hits).map(p => `<div class="who rise">${avatar(who(s, p.id))}${esc(who(s, p.id).name)} ${p.hits}/4</div>`).join('')}</div>`
+      : '<h2>The judge never ranked! No points this time.</h2>'}`,
+  },
+});
 const who = (s, id) => s.players.find(p => p.id === id) || { av: 0, name: '(left)' };
 const role = (s, id, label) => `<div class="who"><small>${label}</small>${avatar(who(s, id))}${esc(who(s, id).name)}</div>`;
 // the round's running order, current step lit up
@@ -551,11 +588,16 @@ function duel(s) {
     ${rev ? '' : strip(s)}${skip(rev ? 'Next' : 'Time\'s up')}`;
 }
 
+// menu tab, kept on this screen only; a tab click redraws locally
+let menuCat = 'All';
 function menu(s) {
+  const n = s.players.length, games = shelf(s.games, menuCat, n);
   return `<p class="kicker rise">Pick a game</p><h1 class="hero pop">Party <span>Night</span></h1>
-    <div class="modes deal">${s.games.map((g, i) => `<button class="mode rise" style="animation-delay:${150 + i * 70}ms;--acc:${CHIPS[(i + Math.floor(i / 5) * 2) % 5]};--tilt:${[-1.2, .8, -.4, 1.2, -.8][i % 5]}deg" onclick='send("pick",{game:"${g.id}"})'>
+    <div class="cats rise"><div class="seg">${CATS.map(c => `<button class="${c === menuCat ? 'on' : ''}" onclick="menuCat='${c}';render(S,true)">${c}</button>`).join('')}</div>
+      <button class="btn" onclick="surprise()">🎲 Surprise me</button></div>
+    <div class="modes deal">${games.map((g, i) => `<button class="mode rise ${fits(g, n) ? "" : "small"}" style="animation-delay:${150 + i * 70}ms;--acc:${CHIPS[(i + Math.floor(i / 5) * 2) % 5]};--tilt:${[-1.2, .8, -.4, 1.2, -.8][i % 5]}deg" onclick='send("pick",{game:"${g.id}"})'>
       <div class="art"><span>${MODES[g.id]?.art || '🎲'}</span></div>
-      <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><div class="chips"><span class="chip">${esc(g.tag || '')}</span><span class="chip">${g.min}–20 players</span></div></div><span class="pip" aria-hidden="true">${MODES[g.id]?.art || '🎲'}</span></button>`).join('')}</div>
+      <div class="body"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p><div class="chips"><span class="chip">${esc(g.tag || '')}</span><span class="chip">${!fits(g, n) ? `Needs ${g.min - n} more` : `${g.min}–20 players`}</span></div></div><span class="pip" aria-hidden="true">${MODES[g.id]?.art || '🎲'}</span></button>`).join('')}</div>
     <div class="joinrow rise">${`<img class="qr" src="/qr.svg?room=${s.code}" alt="QR code to join room ${s.code}">`}<div class="hint" data-live="menuhint">Join at <b>${esc(url)}</b> with code <b>${s.code}</b>${hostTag(s)} <button class="btn ghost recode" onclick="recode(this)">↻ New code</button>${s.players.length ? `<div class="rest" style="justify-content:flex-start;margin-top:.5rem">${btn('gamevote', '🗳 Let players vote', '')}${s.players.map(p => `<div class="who">${avatar(p)}${esc(p.name)}${hostBtn(p)}${kickBtn(p)}</div>`).join('')}</div>` : ''}</div>
 </div>`;
 }
