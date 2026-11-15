@@ -25,6 +25,14 @@
   #app>.kicker+h2+p{margin-top:-6px}
   #app .row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
   #app .row .btn{flex:1;width:auto;margin:0;padding:12px 10px;font-size:16px}
+  /* drawing pad: no text selection or long-press menus around it, and none anywhere while a stroke is going */
+  .padwrap,.padwrap *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  body.drawing{user-select:none;-webkit-user-select:none}
+  .swatches{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin:10px 0}
+  .swatches>*{aspect-ratio:1;border-radius:50%;padding:0;min-width:0;box-shadow:inset 0 0 0 2px #0003;display:grid;place-items:center;font-size:18px;position:relative;cursor:pointer;background:var(--card2)}
+  .swatches>.on{outline:3px solid var(--gold);outline-offset:2px}
+  .swatches input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+  .sizes i{display:inline-block;border-radius:50%;background:currentColor}
   #app .row .pv{flex:none;box-shadow:inset 0 0 0 2px #0002,0 3px 0 #0005}
   #app .row .on{outline:3px solid var(--gold);outline-offset:2px}
   #app .row .btn.ghost.on{background:var(--card2)}
@@ -362,10 +370,13 @@ Object.assign(MODES, {
 const who = (s, pid) => s.players.find(p => p.id === pid) || { av: 0, name: '(left)' };
 const evidence = cards => cards.map(c => `<div class="opt">🗂️ ${esc(c)}</div>`).join('');
 let S; // S: the latest state, for buttons that need it after the screen is drawn
-const padHtml = `<canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
-  <div class="row">${['#231a08', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" class="pv ${c === '#231a08' ? 'on' : ''}" onclick="padPick(this,'c','${c}')"></button>`).join('')}</div>
-  <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost ${w === 10 ? 'on' : ''}" onclick="padPick(this,'w',${w})">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
-  <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div>`;
+const PAD_COLORS = ['#231a08', '#7a7a7a', '#ffffff', '#ff5e7e', '#c8202f', '#ff9f43', '#ffd93d', '#6bcb77', '#178a4a', '#2dd4bf', '#4d96ff', '#1f3a8a', '#a78bfa', '#f472b6', '#8b5a2b', '#f5c9a0'];
+const padHtml = `<div class="padwrap"><canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
+  <div class="row tools">${[['brush', '🖌 Brush'], ['fill', '🪣 Fill'], ['erase', '🧽 Eraser']].map(([t, l]) => `<button class="btn ghost ${t === 'brush' ? 'on' : ''}" onclick="padPick(this,'t','${t}')">${l}</button>`).join('')}</div>
+  <div class="swatches">${PAD_COLORS.map(c => `<button aria-label="Colour ${c}" style="background:${c}" class="${c === '#231a08' ? 'on' : ''}" onclick="padPick(this,'c','${c}')"></button>`).join('')}
+    <label class="custom" aria-label="Any colour">🎨<input type="color" value="#ff00aa" oninput="padPick(this.parentNode,'c',this.value)"></label></div>
+  <div class="row sizes">${[4, 10, 24, 48].map(w => `<button class="btn ghost ${w === 10 ? 'on' : ''}" aria-label="Brush size ${w}" onclick="padPick(this,'w',${w})"><i style="width:${Math.max(6, w / 1.6)}px;height:${Math.max(6, w / 1.6)}px"></i></button>`).join('')}</div>
+  <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div></div>`;
 let pingTurn = -1;
 function turnPing(s, mine) {
   document.body.classList.toggle('myturn', mine);
@@ -383,15 +394,24 @@ function playCard(i, wild) {
 }
 function guess() { const el = document.getElementById('a'); send('guess', { text: el.value }); el.value = ''; el.focus(); }
 // drawing pad: each finished stroke is sent as points scaled to 0-1000, and the TV redraws them all
-const pad = { c: '#231a08', w: 10 };
-function padPick(b, k, v) { pad[k] = v; b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); }
+const pad = { c: '#231a08', w: 10, t: 'brush' };
+function padPick(b, k, v) {
+  pad[k] = v; b.parentNode.querySelectorAll(':scope > button, :scope > label').forEach(x => x.classList.toggle('on', x === b));
+  if (k === 'c' && pad.t === 'erase') padPick(app.querySelector('.tools button'), 't', 'brush'); // picking a colour means you want to paint again
+}
 function initPad(cv) {
-  Object.assign(pad, { c: '#231a08', w: 10 }); // match the pre-selected swatch and size
-  const x = cv.getContext('2d'); let pts = null;
+  Object.assign(pad, { c: '#231a08', w: 10, t: 'brush' }); // match the pre-selected buttons
+  const x = cv.getContext('2d', { willReadFrequently: true }); let pts = null;
   const at = e => { const r = cv.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / r.width * 1000), Math.round((e.clientY - r.top) / r.height * 1000)]; };
-  cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); pts = at(e); x.strokeStyle = pad.c; x.lineWidth = pad.w; x.lineCap = x.lineJoin = 'round'; x.beginPath(); x.moveTo(...pts); };
-  cv.onpointermove = e => { if (!pts || pts.length >= 1200) return; const p = at(e); pts.push(...p); x.lineTo(...p); x.stroke(); };
-  cv.onpointerup = cv.onpointercancel = () => { if (pts) { if (pts.length === 2) pts.push(pts[0] + 1, pts[1]); send('stroke', { p: pts, c: pad.c, w: pad.w }); } pts = null; };
+  const col = () => pad.t === 'erase' ? '#ffffff' : pad.c;
+  cv.onpointerdown = e => {
+    e.preventDefault(); document.body.classList.add('drawing');
+    if (pad.t === 'fill') { const p = at(e); flood(cv, p[0], p[1], col()); send('stroke', { p, c: col(), f: true }); return; }
+    cv.setPointerCapture(e.pointerId); pts = at(e); x.strokeStyle = col(); x.lineWidth = pad.w; x.lineCap = x.lineJoin = 'round'; x.beginPath(); x.moveTo(...pts);
+  };
+  cv.onpointermove = e => { if (!pts || pts.length >= 1200) return; const p = at(e), l = pts.length; if (Math.abs(p[0] - pts[l - 2]) + Math.abs(p[1] - pts[l - 1]) < 3) return; pts.push(...p); x.lineTo(...p); x.stroke(); };
+  cv.onpointerup = cv.onpointercancel = () => { document.body.classList.remove('drawing');
+    if (pts) { if (pts.length === 2) pts.push(pts[0] + 1, pts[1]); send('stroke', { p: pts, c: col(), w: pad.w }); } pts = null; };
 }
 // Mini Golf aim: drag back like a slingshot; the dashed line shows where and how hard it goes
 function initGolf(cv, s) {
@@ -432,8 +452,7 @@ let koLocked = {};
 function paintPad(s) {
   const cv = app.querySelector('canvas.pad'), strokes = s.pads ? s.pads[id] || [] : s.strokes; if (!cv || !strokes) return;
   if (cv.dataset.n === String(strokes.length) || cv.matches(':active')) return; cv.dataset.n = strokes.length;
-  const x = cv.getContext('2d'); x.clearRect(0, 0, 1000, 1000); x.lineCap = x.lineJoin = 'round';
-  for (const k of strokes) { x.strokeStyle = k.c; x.lineWidth = k.w; x.beginPath(); x.moveTo(k.p[0], k.p[1]); for (let i = 2; i < k.p.length; i += 2) x.lineTo(k.p[i], k.p[i + 1]); x.stroke(); }
+  paint(cv, strokes);
 }
 
 // The host's phone gets the TV's controls, so nobody needs a mouse on the TV.

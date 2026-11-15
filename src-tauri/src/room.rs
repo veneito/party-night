@@ -90,7 +90,9 @@ pub fn stroke(a: &Value) -> Option<Value> {
     if p.len() < 2 { return None }
     let c = a.get("c").and_then(|v| v.as_str())
         .filter(|s| s.len() == 7 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit())).unwrap_or("#231a08");
-    let w = a.get("w").and_then(|v| v.as_f64()).filter(|w| [4.0, 10.0, 24.0].contains(w)).unwrap_or(10.0) as i64;
+    // a bucket fill is one point; the screens flood it with the colour
+    if truthy(a.get("f")) { return Some(json!({ "c": c, "f": 1, "p": [p[0], p[1]] })) }
+    let w = a.get("w").and_then(|v| v.as_f64()).filter(|w| [4.0, 10.0, 24.0, 48.0].contains(w)).unwrap_or(10.0) as i64;
     Some(json!({ "c": c, "w": w, "p": p }))
 }
 fn base36(mut n: u64, min: usize) -> String {

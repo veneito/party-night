@@ -115,8 +115,42 @@ async function roomAlive(room) {
 // `after` runs once the new HTML is in place (focus, confetti, sizing...).
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
 // drawing strokes as SVG; data-live so new strokes swap in on the TV without replaying animations
-const sketch = (strokes, k, size) => `<svg data-live="sk-${k}" viewBox="0 0 1000 1000" style="width:${size};aspect-ratio:1;max-width:100%;background:#fff;border-radius:1rem;flex:none">${strokes.map(t =>
-  `<polyline points="${t.p.join(' ')}" fill="none" stroke="${esc(t.c)}" stroke-width="${t.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</svg>`;
+// Drawings are a list of ops in 0-1000 space: a stroke {c, w, p:[x,y,x,y...]} or a bucket fill {c, f:1, p:[x,y]}.
+// paint() draws them onto a canvas of any size; fills need pixels, so the TV shows drawings as images, not SVG.
+function paint(cv, ops) {
+  const x = cv.getContext('2d', { willReadFrequently: true }), k = cv.width / 1000;
+  x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height);
+  x.setTransform(k, 0, 0, k, 0, 0); x.lineCap = x.lineJoin = 'round';
+  for (const o of ops) o.f ? flood(cv, Math.floor(o.p[0] * k), Math.floor(o.p[1] * k), o.c) : line(x, o);
+}
+function line(x, o) { x.strokeStyle = o.c; x.lineWidth = o.w; x.beginPath(); x.moveTo(o.p[0], o.p[1]); for (let i = 2; i < o.p.length; i += 2) x.lineTo(o.p[i], o.p[i + 1]); x.stroke(); }
+// scanline flood fill; a little tolerance so it reaches into the soft edges of lines instead of leaving a halo
+function flood(cv, sx, sy, hex) {
+  const W = cv.width, H = cv.height; if (sx < 0 || sy < 0 || sx >= W || sy >= H) return;
+  const x = cv.getContext('2d', { willReadFrequently: true }), img = x.getImageData(0, 0, W, H), d = img.data;
+  const fc = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)), at = (sy * W + sx) * 4, t = [d[at], d[at + 1], d[at + 2]];
+  if (Math.abs(t[0] - fc[0]) + Math.abs(t[1] - fc[1]) + Math.abs(t[2] - fc[2]) < 8) return;
+  const same = i => Math.abs(d[i] - t[0]) + Math.abs(d[i + 1] - t[1]) + Math.abs(d[i + 2] - t[2]) < 150;
+  const seen = new Uint8Array(W * H), st = [sx, sy];
+  while (st.length) {
+    const y = st.pop(); let xx = st.pop();
+    while (xx > 0 && !seen[y * W + xx - 1] && same((y * W + xx - 1) * 4)) xx--;
+    let up = false, dn = false;
+    for (; xx < W && !seen[y * W + xx] && same((y * W + xx) * 4); xx++) {
+      const i = (y * W + xx) * 4; seen[y * W + xx] = 1; d[i] = fc[0]; d[i + 1] = fc[1]; d[i + 2] = fc[2]; d[i + 3] = 255;
+      if (y > 0) { const ok = !seen[(y - 1) * W + xx] && same(i - W * 4); if (ok && !up) st.push(xx, y - 1); up = ok; }
+      if (y < H - 1) { const ok = !seen[(y + 1) * W + xx] && same(i + W * 4); if (ok && !dn) st.push(xx, y + 1); dn = ok; }
+    }
+  }
+  x.putImageData(img, 0, 0);
+}
+// drawing as an image, wrapped so data-live can swap it on the TV; cached so a live drawing only repaints when it changes
+const skCache = {};
+const sketch = (ops, k, size) => {
+  const sig = ops.length + ':' + ops.at(-1)?.p.slice(0, 4) + ':' + (ops.at(-1)?.p.length ?? 0), c = skCache[k];
+  if (!c || c.sig !== sig) { const cv = document.createElement('canvas'); cv.width = cv.height = 600; paint(cv, ops); skCache[k] = { sig, url: cv.toDataURL() }; }
+  return `<span data-live="sk-${k}" style="width:${size};max-width:100%;flex:none;display:block"><img src="${skCache[k].url}" alt="Drawing" style="width:100%;aspect-ratio:1;border-radius:1rem;display:block"></span>`;
+};
 // Elemix cards: element colour, a big tilted element mark, value in the middle and both corners
 const ELEM = [['🔥', 'Fire'], ['💧', 'Water'], ['🌿', 'Leaf'], ['🌙', 'Moon'], ['✦', 'Wild']];
 const CARD_FACE = { freeze: ['❄', 'Freeze'], twist: ['⇄', 'Twist'], gift: ['+2', 'Gift'], prism: ['✦', 'Prism'], storm: ['+4', 'Storm'] };
