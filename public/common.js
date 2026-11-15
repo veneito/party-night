@@ -31,14 +31,17 @@ setInterval(() => { if (timer.left > 0) { timer.left--; if (timer.left && timer.
 function confetti(n = 140) {
   const c = document.createElement('canvas'), x = c.getContext('2d');
   c.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99';
-  c.width = innerWidth; c.height = innerHeight; document.body.appendChild(c);
-  const bits = Array.from({ length: n }, () => ({ x: c.width / 2, y: c.height / 3, vx: (Math.random() - .5) * 18, vy: Math.random() * -16 - 4,
-    r: Math.random() * 6 + 4, c: AV_COLOR[Math.floor(Math.random() * AV_COLOR.length)], a: Math.random() * 6 }));
+  // drawn at half size and stretched: a full-size canvas on a big TV is what stalled the Linux web view at the winning screen
+  c.width = innerWidth / 2; c.height = innerHeight / 2; c.style.width = '100%'; c.style.height = '100%'; document.body.appendChild(c);
+  if (/Linux/.test(navigator.userAgent)) n = Math.min(n, 80);
+  const bits = Array.from({ length: n }, () => ({ x: c.width / 2, y: c.height / 3, vx: (Math.random() - .5) * 9, vy: Math.random() * -8 - 2,
+    r: Math.random() * 3 + 2, c: AV_COLOR[Math.floor(Math.random() * AV_COLOR.length)], a: Math.random() * 6 }));
   let t = 0;
   (function f() {
     x.clearRect(0, 0, c.width, c.height);
-    for (const b of bits) { b.vy += .45; b.x += b.vx; b.y += b.vy; b.a += .1; x.fillStyle = b.c;
-      x.save(); x.translate(b.x, b.y); x.rotate(b.a); x.fillRect(-b.r, -b.r / 2, b.r * 2, b.r); x.restore(); }
+    for (const b of bits) { b.vy += .225; b.x += b.vx; b.y += b.vy; b.a += .1; x.fillStyle = b.c;
+      const cs = Math.cos(b.a), sn = Math.sin(b.a); x.setTransform(cs, sn, -sn, cs, b.x, b.y); x.fillRect(-b.r, -b.r / 2, b.r * 2, b.r); }
+    x.setTransform(1, 0, 0, 1, 0, 0);
     if (++t < 160) requestAnimationFrame(f); else c.remove();
   })();
 }
@@ -122,7 +125,7 @@ const ecard = (c, attrs = '', cls = '') => { const [face, label] = CARD_FACE[c.v
     <span class="cn tl">${face}</span><b>${face}</b><small>${label}</small><span class="cn br">${face}</span></button>`; };
 function swap(el, html, after) {
   const go = () => { el.innerHTML = html; countUp(el); after?.(); };
-  if (document.startViewTransition && !calm.matches && !document.hidden) document.startViewTransition(go); else go();
+  if (document.startViewTransition && !calm.matches && !document.hidden && !/Linux/.test(navigator.userAgent)) document.startViewTransition(go); else go();
 }
 // numbers marked data-count="1234" tick up from 0
 function countUp(root) {
