@@ -281,6 +281,15 @@ function narrate(s) {
     clue: () => ['Everyone has a secret word, except one of you. Give a clue!'],
     accuse: () => ['Who is the odd one out?'],
     think: () => [s.prompt, 'One word. Think like the room!'],
+    ready: () => [`${who(s, s.actor).name}, you're up! Grab your phone.`],
+    act: () => ['Go go go!'],
+    swrite: () => [s.turnNo ? 'Add the next line!' : 'Every story has an opening line. Write what happens next!'],
+    sshow: () => [`Story ${s.show + 1}.`, ...s.story.map(l => l.text)],
+    svote: () => ['Vote for the best line!'],
+    claim: () => s.turnNo ? [] : ['Claim a tile on your phone. If two of you pick the same tile, it turns to rock!'],
+    trade: () => [`Day ${s.turnNo + 1}.`, ...(s.market.news ? [s.market.news] : []), `Rumour has it ${s.market.goods[s.market.rumour.good].name} is about to go ${s.market.rumour.up ? 'up' : 'down'}.`],
+    room: () => [`A ${s.dungeon.monster} blocks the way! You need ${s.dungeon.need} fighters.`],
+    outcome: () => [s.dungeon.log],
     ask: () => ['Write a question that splits the room in half!'],
     split: () => ['Yes or no? Answer every question on your phone.'],
     rank: () => [`${who(s, s.judge).name} is ranking ${s.topic}. Guess their order!`],
@@ -558,6 +567,66 @@ Object.assign(MODES, {
       ${s.last.truth ? `<div class="answers">${s.last.truth.map((k, i) => `<div class="answer rise ${i === 0 ? 'win' : ''}" style="animation-delay:${i * 200}ms"><span class="n">${i + 1}</span>${esc(s.items[k])}</div>`).join('')}</div>
       <div class="rest" style="margin-top:1rem">${[...s.last.list].sort((a, b) => b.hits - a.hits).map(p => `<div class="who rise">${avatar(who(s, p.id))}${esc(who(s, p.id).name)} ${p.hits}/4</div>`).join('')}</div>`
       : '<h2>The judge never ranked! No points this time.</h2>'}`,
+  },
+});
+// ---- party and board games
+const TEAM = ['🔴 Red team', '🔵 Blue team'];
+const teamCols = s => `<div style="display:flex;gap:2rem;justify-content:center;margin-top:1rem" data-live="teams">${s.teams.map((t, k) => `<div class="panel" style="padding:1rem 1.6rem;min-width:16rem;${k === s.team ? 'outline:.3rem solid var(--gold)' : 'opacity:.7'}">
+  <h2 style="margin:0;color:var(--ink)">${TEAM[k]} · ${s.totals[k]}</h2><div class="rest" style="justify-content:center">${t.map(id => `<div class="who">${avatar(who(s, id))}${esc(who(s, id).name)}</div>`).join('')}</div></div>`).join('')}</div>`;
+const relay = {
+  ready: s => `<div class="kicker rise">Round ${s.round} · ${TEAM[s.team]}</div><h1 class="pop">${avatar(who(s, s.actor), 'lg')} ${esc(who(s, s.actor).name)} is up!</h1>
+    <h2 class="rise">${s.game === 'taboo' ? 'Describe the words, but never say the banned ones.' : 'Act out the words. No talking, no pointing at things!'} Tap start on your phone.</h2>${teamCols(s)}${skip('Start now')}`,
+  act: s => `<div class="kicker rise">${TEAM[s.team]} is guessing</div><h1 class="pop">${avatar(who(s, s.actor), 'lg')} ${esc(who(s, s.actor).name)}</h1>
+    <div data-live="relay"><h2>✓ ${s.got.length} got${s.passed.length ? ` · ⏭ ${s.passed.length} passed` : ''}${s.buzzed.length ? ` · 🚨 ${s.buzzed.length} buzzed` : ''}</h2>
+    <div class="rest" style="justify-content:center">${s.got.map(w => `<div class="who">✓ ${esc(w)}</div>`).join('')}</div></div>
+    ${s.game === 'taboo' ? `<h2 class="rise">${TEAM[1 - s.team]}: you can see the banned words. Hit buzz if they slip!</h2>` : ''}${teamCols(s)}${skip("Time's up")}`,
+  results: s => `<h1 class="pop" style="font-size:2.2rem;margin:0">${esc(who(s, s.actor).name)} got ${plural(s.got.length, 'word')}</h1>
+    <div class="rest" style="justify-content:center;margin:.6rem 0">${s.got.map(w => `<div class="who">✓ ${esc(w)}</div>`).join('')}${s.passed.concat(s.buzzed).map(w => `<div class="who" style="opacity:.5">✕ ${esc(w)}</div>`).join('')}</div>${teamCols(s)}`,
+};
+const hearts = h => h.out ? '💀' : h.gone ? '🚪' : '❤️'.repeat(Math.max(0, h.hp));
+const heroes = s => `<div class="strip" data-live="heroes">${s.players.filter(p => s.dungeon.heroes[p.id]).map(p => { const h = s.dungeon.heroes[p.id];
+  return `<div class="who ${p.done ? 'done' : ''}" style="${h.out || h.gone ? 'opacity:.5' : ''}">${avatar(p)}${esc(p.name)} ${hearts(h)} 💰${h.bag}</div>`; }).join('')}</div>`;
+const PICK_ICON = { fight: '⚔️', loot: '💰', sneak: '🤫', escape: '🚪' };
+const arrow = g => g.price > g.prev ? `<b style="color:var(--mint)">▲ ${g.price - g.prev}</b>` : g.price < g.prev ? `<b style="color:var(--coral)">▼ ${g.prev - g.price}</b>` : '<span style="color:var(--mute)">·</span>';
+const marketView = s => { const m = s.market, r = m.goods[m.rumour.good];
+  return `<div data-live="market"><div class="kicker">Day ${Math.min(s.turnNo + 1, m.turns)} of ${m.turns}${m.news ? ` · ${esc(m.news)}` : ''}</div>
+  ${s.phase === 'trade' ? `<div class="prompt" style="margin:.6rem auto"><h1 style="font-size:2.2rem">🗞️ Rumour: ${r.icon} ${esc(r.name)} is about to go ${m.rumour.up ? 'way up' : 'way down'}…</h1></div>` : ''}
+  <div class="answers">${m.goods.map(g => `<div class="answer"><div class="stack"><span style="font-size:2.4rem">${g.icon}</span>${esc(g.name)}<b style="font-size:1.8rem;color:var(--gold)">${g.price}</b>${arrow(g)}</div></div>`).join('')}</div>
+  <div class="rest" style="justify-content:center">${[...s.players].filter(p => m.wallets[p.id]).sort((a, b) => m.wallets[b.id].worth - m.wallets[a.id].worth).map(p =>
+    `<div class="who ${p.done ? 'done' : ''}">${avatar(p)}${esc(p.name)} 🪙${m.wallets[p.id].worth}</div>`).join('')}</div></div>`; };
+Object.assign(MODES, {
+  charades: { art: '🎭', bg: 'linear-gradient(135deg,#ff9f43,#a78bfa)', ...relay },
+  taboo: { art: '🤐', bg: 'linear-gradient(135deg,#ff5e7e,#ffd93d)', ...relay },
+  story: {
+    art: '📜', bg: 'linear-gradient(135deg,#c084fc,#5fb6e8)',
+    swrite: s => `<div class="kicker rise" data-live="sline">Line ${s.turnNo + 1} of ${s.steps}</div><h1 class="pop">Add the next line</h1>
+      <h2 class="rise">You only see the line before yours. Keep the story going!</h2>${strip(s)}${skip()}`,
+    sshow: s => `<div class="kicker rise">Story ${s.show + 1} of ${s.count}</div><div style="display:flex;flex-direction:column;gap:.8rem;align-items:center;margin-top:1rem">${s.story.map((l, i) =>
+      `<div class="answer rise" style="animation-delay:${i * 1800}ms;max-width:56rem"><div class="stack">${esc(l.text)}${l.name ? `<small>${esc(l.name)}</small>` : ''}</div></div>`).join('')}</div>${skip('Next ▶')}`,
+    svote: s => `<div class="kicker rise">Vote on your phone</div><h1 class="pop">What was the best line?</h1>${strip(s)}${skip()}`,
+    results: s => !s.last ? '' : `<div class="answers">${s.last.list.map((l, i) => `<div class="answer rise ${i === 0 && l.votes ? 'win' : ''}" style="animation-delay:${i * 80}ms"><div class="stack">${esc(l.text)}
+      <small>${esc(l.name)} · ${plural(l.votes, 'vote')}</small></div></div>`).join('')}</div>`,
+  },
+  landgrab: {
+    art: '🗺️', bg: 'linear-gradient(135deg,#8fd16a,#e3a46b)',
+    claim: s => `<div data-live="land"><div class="kicker">Turn ${s.turnNo + 1} of ${s.land.turns} · Claim a tile on your phone · same tile = 💥 rock</div>
+      <div style="display:flex;gap:2rem;align-items:center;justify-content:center;margin-top:.8rem">${hexBoard(s, '44rem')}
+      <div style="text-align:left">${[...s.players].sort((a, b) => (s.land.big[b.id] || 0) - (s.land.big[a.id] || 0)).map(p => `<div class="who ${p.done ? 'done' : ''}">${avatar(p)}${esc(p.name)} · ${s.land.big[p.id] || 0}</div>`).join('')}</div></div></div>${skip()}`,
+    results: s => `<div style="display:flex;gap:2rem;align-items:center;justify-content:center">${hexBoard(s, '24rem')}<h2 style="text-align:left">Biggest land:<br>${[...s.players].sort((a, b) => (s.land.big[b.id] || 0) - (s.land.big[a.id] || 0)).slice(0, 3).map(p => `${esc(p.name)} ${s.land.big[p.id] || 0}`).join('<br>')}</h2></div>`,
+  },
+  market: {
+    art: '💰', bg: 'linear-gradient(135deg,#ffd93d,#6bcb77)',
+    trade: s => `${marketView(s)}${skip('Close the market')}`,
+    results: s => marketView(s),
+  },
+  dungeon: {
+    art: '🗝️', bg: 'linear-gradient(135deg,#5c5f66,#a78bfa)',
+    room: s => { const d = s.dungeon; return `<div class="kicker rise">Room ${s.turnNo + 1} of ${d.rooms}</div><div style="font-size:7rem" class="pop">${d.icon}</div>
+      <h1 class="pop" style="margin:0">A ${esc(d.monster)} blocks the way!</h1>
+      <h2 class="rise">Beat it with <b style="color:var(--gold)">${plural(d.need, 'fighter')}</b> · Treasure: <b style="color:var(--gold)">${d.gold} gold</b> · fight, loot, sneak or escape?</h2>${heroes(s)}${skip()}`; },
+    outcome: s => { const d = s.dungeon; return `<div class="kicker rise">Room ${s.turnNo} of ${d.rooms}</div><div style="font-size:5rem">${d.icon}</div><h1 class="pop" style="font-size:2.4rem">${esc(d.log)}</h1>
+      <div class="rest" style="justify-content:center">${d.last.map(x => `<div class="who rise">${avatar(who(s, x.id))}${esc(who(s, x.id).name)} ${PICK_ICON[x.pick]} ${x.pick}</div>`).join('')}</div>${heroes(s)}${skip('Next room ▶')}`; },
+    results: s => `<h1 class="pop" style="font-size:2.2rem;margin:0">Out of the dungeon!</h1>${heroes(s)}`,
   },
 });
 const who = (s, id) => s.players.find(p => p.id === id) || { av: 0, name: '(left)' };

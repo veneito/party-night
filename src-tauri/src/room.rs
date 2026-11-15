@@ -306,6 +306,8 @@ pub fn game_act(g: &mut Room, a: &Value) -> Option<String> {
             // fresh defaults per game, but the voice-over and home choices carry over
             let mut s: Map<String, Value> = ALL_SETTINGS[i].iter().map(|d| (d["key"].as_str().unwrap().to_string(), d["options"][0][0].clone())).collect();
             for k in ["voice", "home", "night"] { if let Some(v) = g.settings.get(k).filter(|v| truthy(Some(v))) { s.insert(k.into(), v.clone()); } }
+            // long board games play one round unless the host asks for more
+            if let Some(r) = games::meta(GAMES[i].id()).get("rounds") { s.insert("rounds".into(), r.clone()); }
             g.settings = s;
             for p in g.players.values_mut() { p.score = 0 }
         }

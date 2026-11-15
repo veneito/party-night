@@ -3032,5 +3032,662 @@
     ]
    ]
   }
+ },
+ "charades": {
+  "meta": {
+   "id": "charades",
+   "name": "Charades Relay",
+   "desc": "Act out the word on your phone, no talking! Your team shouts guesses. Teams take turns.",
+   "min": 4,
+   "tag": "Teams · 8 min",
+   "cat": "Party",
+   "art": "🎭",
+   "settings": []
+  },
+  "data": {
+   "CARDS": [
+    "Brushing teeth",
+    "Surfing",
+    "Elephant",
+    "Juggling",
+    "Flat tyre",
+    "Haunted house",
+    "Penguin",
+    "Karate",
+    "Making pizza",
+    "Selfie",
+    "Bowling",
+    "Robot",
+    "Rollercoaster",
+    "Fishing",
+    "Superhero",
+    "Washing a dog",
+    "Ballet",
+    "Zombie",
+    "Skydiving",
+    "Gorilla",
+    "Chopping onions",
+    "Lost keys",
+    "Walking a tightrope",
+    "Opening a jar",
+    "Kangaroo",
+    "Snowball fight",
+    "Painting a wall",
+    "Magician",
+    "Hiccups",
+    "Burnt toast",
+    "Stuck in a lift",
+    "Lifting weights",
+    "Cowboy",
+    "Flamingo",
+    "Sneezing",
+    "Playing drums",
+    "Mosquito",
+    "Climbing a ladder",
+    "Ice skating",
+    "Changing a nappy",
+    "Taking a photo",
+    "Ghost",
+    "Rowing a boat",
+    "Bee sting",
+    "Archery",
+    "Sumo wrestling",
+    "Doing laundry",
+    "Mime in a box",
+    "Spaghetti",
+    "Waiter",
+    "Pirate",
+    "Tightening a screw",
+    "Yoga",
+    "Opera singer",
+    "Crab",
+    "Golf",
+    "Shark",
+    "Firefighter",
+    "Sleepwalking",
+    "Volcano"
+   ]
+  }
+ },
+ "taboo": {
+  "meta": {
+   "id": "taboo",
+   "name": "Forbidden Words",
+   "desc": "Describe the word to your team without saying the four banned words. The other team is listening, with a buzzer.",
+   "min": 4,
+   "tag": "Teams · 8 min",
+   "cat": "Party",
+   "art": "🤐",
+   "settings": []
+  },
+  "data": {
+   "CARDS": [
+    [
+     "Pizza",
+     [
+      "cheese",
+      "Italy",
+      "slice",
+      "delivery"
+     ]
+    ],
+    [
+     "Beach",
+     [
+      "sand",
+      "sea",
+      "sun",
+      "swim"
+     ]
+    ],
+    [
+     "Dentist",
+     [
+      "teeth",
+      "drill",
+      "doctor",
+      "mouth"
+     ]
+    ],
+    [
+     "Birthday",
+     [
+      "cake",
+      "party",
+      "candles",
+      "presents"
+     ]
+    ],
+    [
+     "Snowman",
+     [
+      "carrot",
+      "winter",
+      "cold",
+      "build"
+     ]
+    ],
+    [
+     "Guitar",
+     [
+      "strings",
+      "music",
+      "play",
+      "rock"
+     ]
+    ],
+    [
+     "Airport",
+     [
+      "plane",
+      "fly",
+      "passport",
+      "gate"
+     ]
+    ],
+    [
+     "Vampire",
+     [
+      "blood",
+      "bite",
+      "Dracula",
+      "night"
+     ]
+    ],
+    [
+     "Library",
+     [
+      "books",
+      "quiet",
+      "read",
+      "borrow"
+     ]
+    ],
+    [
+     "Coffee",
+     [
+      "drink",
+      "morning",
+      "cup",
+      "caffeine"
+     ]
+    ],
+    [
+     "Rainbow",
+     [
+      "colours",
+      "rain",
+      "sky",
+      "arc"
+     ]
+    ],
+    [
+     "Wedding",
+     [
+      "marry",
+      "bride",
+      "ring",
+      "church"
+     ]
+    ],
+    [
+     "Football",
+     [
+      "ball",
+      "goal",
+      "kick",
+      "team"
+     ]
+    ],
+    [
+     "Moon",
+     [
+      "night",
+      "sky",
+      "space",
+      "full"
+     ]
+    ],
+    [
+     "Dragon",
+     [
+      "fire",
+      "fly",
+      "wings",
+      "monster"
+     ]
+    ],
+    [
+     "Homework",
+     [
+      "school",
+      "teacher",
+      "study",
+      "class"
+     ]
+    ],
+    [
+     "Popcorn",
+     [
+      "cinema",
+      "movie",
+      "corn",
+      "butter"
+     ]
+    ],
+    [
+     "Hospital",
+     [
+      "doctor",
+      "nurse",
+      "sick",
+      "bed"
+     ]
+    ],
+    [
+     "Umbrella",
+     [
+      "rain",
+      "wet",
+      "open",
+      "weather"
+     ]
+    ],
+    [
+     "Chess",
+     [
+      "king",
+      "queen",
+      "board",
+      "checkmate"
+     ]
+    ],
+    [
+     "Toothbrush",
+     [
+      "teeth",
+      "clean",
+      "paste",
+      "bathroom"
+     ]
+    ],
+    [
+     "Volcano",
+     [
+      "lava",
+      "erupt",
+      "mountain",
+      "hot"
+     ]
+    ],
+    [
+     "Pirate",
+     [
+      "ship",
+      "treasure",
+      "parrot",
+      "sea"
+     ]
+    ],
+    [
+     "Alarm clock",
+     [
+      "wake",
+      "morning",
+      "ring",
+      "time"
+     ]
+    ],
+    [
+     "Kangaroo",
+     [
+      "Australia",
+      "jump",
+      "pouch",
+      "hop"
+     ]
+    ],
+    [
+     "Sandwich",
+     [
+      "bread",
+      "lunch",
+      "ham",
+      "cheese"
+     ]
+    ],
+    [
+     "Superhero",
+     [
+      "cape",
+      "powers",
+      "save",
+      "villain"
+     ]
+    ],
+    [
+     "Camping",
+     [
+      "tent",
+      "fire",
+      "outdoors",
+      "sleeping bag"
+     ]
+    ],
+    [
+     "Christmas",
+     [
+      "Santa",
+      "December",
+      "tree",
+      "presents"
+     ]
+    ],
+    [
+     "Ghost",
+     [
+      "scary",
+      "haunted",
+      "boo",
+      "dead"
+     ]
+    ],
+    [
+     "Elevator",
+     [
+      "lift",
+      "floor",
+      "button",
+      "up"
+     ]
+    ],
+    [
+     "Penguin",
+     [
+      "bird",
+      "ice",
+      "cold",
+      "black"
+     ]
+    ],
+    [
+     "Magician",
+     [
+      "trick",
+      "rabbit",
+      "hat",
+      "magic"
+     ]
+    ],
+    [
+     "Netflix",
+     [
+      "watch",
+      "TV",
+      "series",
+      "stream"
+     ]
+    ],
+    [
+     "Selfie",
+     [
+      "photo",
+      "phone",
+      "camera",
+      "picture"
+     ]
+    ],
+    [
+     "Hamburger",
+     [
+      "bun",
+      "beef",
+      "fast food",
+      "fries"
+     ]
+    ],
+    [
+     "Zoo",
+     [
+      "animals",
+      "cage",
+      "lion",
+      "visit"
+     ]
+    ],
+    [
+     "Robot",
+     [
+      "machine",
+      "metal",
+      "computer",
+      "beep"
+     ]
+    ],
+    [
+     "Diet",
+     [
+      "food",
+      "weight",
+      "eat",
+      "lose"
+     ]
+    ],
+    [
+     "Haircut",
+     [
+      "hair",
+      "scissors",
+      "barber",
+      "short"
+     ]
+    ],
+    [
+     "Bicycle",
+     [
+      "wheels",
+      "ride",
+      "pedal",
+      "bike"
+     ]
+    ],
+    [
+     "Ice cream",
+     [
+      "cold",
+      "cone",
+      "sweet",
+      "flavour"
+     ]
+    ],
+    [
+     "Spider",
+     [
+      "web",
+      "legs",
+      "eight",
+      "scary"
+     ]
+    ],
+    [
+     "Treasure",
+     [
+      "gold",
+      "chest",
+      "pirate",
+      "map"
+     ]
+    ],
+    [
+     "Traffic jam",
+     [
+      "cars",
+      "road",
+      "stuck",
+      "slow"
+     ]
+    ],
+    [
+     "Pyjamas",
+     [
+      "sleep",
+      "bed",
+      "night",
+      "wear"
+     ]
+    ],
+    [
+     "Sunscreen",
+     [
+      "sun",
+      "burn",
+      "beach",
+      "cream"
+     ]
+    ],
+    [
+     "Detective",
+     [
+      "clue",
+      "crime",
+      "solve",
+      "police"
+     ]
+    ]
+   ]
+  }
+ },
+ "story": {
+  "meta": {
+   "id": "story",
+   "name": "Story Chain",
+   "desc": "Add the next sentence to a story, seeing only the line before yours. Hear the whole mess on the TV, then vote the best line.",
+   "min": 3,
+   "tag": "Writing · 8 min",
+   "cat": "Words",
+   "art": "📜",
+   "settings": []
+  },
+  "data": {
+   "STARTERS": [
+    "It was a dark and stormy Tuesday.",
+    "Nobody knew why the goat was wearing a crown.",
+    "The pizza delivery was three years late.",
+    "Grandma had one rule: never open the fridge after midnight.",
+    "The spaceship landed right in the middle of the wedding.",
+    "Day one of being a ghost was going badly.",
+    "The cat finally said its first word.",
+    "Our road trip started with a wrong turn.",
+    "The museum guard heard a sneeze from the mummy.",
+    "It was the worst first date in history.",
+    "The magic lamp only granted very small wishes.",
+    "Everyone woke up two feet tall.",
+    "The school talent show got out of hand.",
+    "The dragon just wanted a friend."
+   ]
+  }
+ },
+ "landgrab": {
+  "meta": {
+   "id": "landgrab",
+   "name": "Land Grab",
+   "desc": "Everyone claims a tile on the map at the same time. Pick the same tile as someone and it turns to rock. Biggest connected land wins.",
+   "min": 2,
+   "tag": "Board · 6 min",
+   "cat": "Board",
+   "art": "🗺️",
+   "settings": [],
+   "rounds": 1
+  }
+ },
+ "market": {
+  "meta": {
+   "id": "market",
+   "name": "Market Day",
+   "desc": "Buy and sell fish, cheese, honey, wool and gems. Rumours fly, prices move with the room. Richest after six days wins.",
+   "min": 2,
+   "tag": "Board · 8 min",
+   "cat": "Board",
+   "art": "💰",
+   "settings": [],
+   "rounds": 1
+  }
+ },
+ "dungeon": {
+  "meta": {
+   "id": "dungeon",
+   "name": "Dungeon Vote",
+   "desc": "Room by room, choose to fight, loot, sneak or escape. Loot is only safe if enough of you fight. Get out alive with your bag.",
+   "min": 3,
+   "tag": "Board · 8 min",
+   "cat": "Board",
+   "art": "🗝️",
+   "settings": [],
+   "rounds": 1
+  },
+  "data": {
+   "MONSTERS": [
+    [
+     "🧌",
+     "Troll",
+     0.5
+    ],
+    [
+     "🐉",
+     "Dragon",
+     0.7
+    ],
+    [
+     "🕷️",
+     "Giant Spider",
+     0.4
+    ],
+    [
+     "💀",
+     "Skeleton Knight",
+     0.45
+    ],
+    [
+     "👻",
+     "Wailing Ghost",
+     0.35
+    ],
+    [
+     "🦇",
+     "Bat Swarm",
+     0.3
+    ],
+    [
+     "🐍",
+     "Snake Queen",
+     0.5
+    ],
+    [
+     "🧟",
+     "Zombie Horde",
+     0.6
+    ],
+    [
+     "🦂",
+     "Scorpion King",
+     0.45
+    ],
+    [
+     "🐙",
+     "Pit Kraken",
+     0.65
+    ],
+    [
+     "👹",
+     "Ogre Chef",
+     0.55
+    ],
+    [
+     "🐀",
+     "Rat Mob",
+     0.25
+    ]
+   ]
+  }
  }
 }

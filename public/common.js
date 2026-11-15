@@ -215,7 +215,7 @@ const GOLF_CSS = 'width:100%;aspect-ratio:5/3;border:.5rem solid #7a4a21;border-
 // casino-chip accents for game cards (TV menu and phone pickers)
 const CHIPS = ['#c8202f', '#1f5fbf', '#178a4a', '#24282d', '#d9a21b'];
 // Home menu: games by category tab; games the group is too small for go to the end (nobody joined yet = nothing greyed)
-const CATS = ['All', 'Quick', 'Words', 'Drawing', 'Bluffing', 'Action'];
+const CATS = ['All', 'Quick', 'Words', 'Drawing', 'Bluffing', 'Party', 'Board', 'Action'];
 const fits = (g, n) => !n || n >= g.min;
 const shelf = (games, cat, n) => { const v = games.filter(g => cat === 'All' || g.cat === cat); return [...v.filter(g => fits(g, n)), ...v.filter(g => !fits(g, n))]; };
 // random game from the open tab that the group can play right now
@@ -223,4 +223,17 @@ function surprise(cat = menuCat) {
   const v = shelf(S.games, cat, S.players.length), ok = v.filter(g => fits(g, S.players.length));
   const g = (ok.length ? ok : v)[Math.floor(Math.random() * (ok.length ? ok : v).length)];
   if (g) send('pick', { game: g.id });
+}
+// Land Grab map: hexes laid out like bricks (odd rows shifted half a tile), sized in % so it fits TV and phone alike.
+// tap: on the phone, free tiles are buttons that call landTap(i); mine marks the tile you just picked.
+function hexBoard(s, size, tap, mine = -1) {
+  const L = s.land, tw = 100 / (L.w + .5), th = 100 / (L.h * .75 + .25), ratio = (L.w + .5) / ((L.h * .75 + .25) * 1.1547);
+  const tiles = L.board.map((o, i) => {
+    const c = i % L.w, r = Math.floor(i / L.w), p = o && o !== '#' ? s.players.find(x => x.id === o) : null, clash = L.clash.includes(i);
+    const bg = i === mine ? 'var(--gold)' : o === '#' ? '#5c5f66' : p ? avColor(p) : o ? '#9aa0a6' : '#efe3c4';
+    const tag = tap && !o ? 'button' : 'div';
+    return `<${tag} ${tag === 'button' ? `onclick="landTap(${i})" aria-label="Tile ${i + 1}"` : ''} style="position:absolute;left:${(c + (r % 2) / 2) * tw}%;top:${r * .75 * th}%;width:${tw}%;height:${th}%;padding:0;border:0;border-radius:0;
+      clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:${bg};transform:scale(.93);display:grid;place-items:center;font-size:${size === '100%' ? 1 : 1.6}em;box-shadow:none">${clash ? '💥' : p ? AV_EMOJI[p.av % AV_EMOJI.length] : ''}</${tag}>`;
+  }).join('');
+  return `<div style="position:relative;width:${size};max-width:100%;aspect-ratio:${ratio};margin:0 auto">${tiles}</div>`;
 }
