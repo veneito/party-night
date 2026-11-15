@@ -25,6 +25,14 @@
   #app>.kicker+h2+p{margin-top:-6px}
   #app .row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
   #app .row .btn{flex:1;width:auto;margin:0;padding:12px 10px;font-size:16px}
+  /* drawing pad: no text selection or long-press menus around it, and none anywhere while a stroke is going */
+  .padwrap,.padwrap *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  body.drawing{user-select:none;-webkit-user-select:none}
+  .swatches{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin:10px 0}
+  .swatches>*{aspect-ratio:1;border-radius:50%;padding:0;min-width:0;box-shadow:inset 0 0 0 2px #0003;display:grid;place-items:center;font-size:18px;position:relative;cursor:pointer;background:var(--card2)}
+  .swatches>.on{outline:3px solid var(--gold);outline-offset:2px}
+  .swatches input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+  .sizes i{display:inline-block;border-radius:50%;background:currentColor}
   #app .row .pv{flex:none;box-shadow:inset 0 0 0 2px #0002,0 3px 0 #0005}
   #app .row .on{outline:3px solid var(--gold);outline-offset:2px}
   #app .row .btn.ghost.on{background:var(--card2)}
@@ -327,13 +335,102 @@ const MODES = {
 };
 MODES.caption = MODES.quickwit;
 MODES.gif = MODES.quickwit;
+// Split the Room answers and Rank It order, kept on the page until sent
+let spAns = {}, rkOrder = [];
+function spPick(i, yes, el) { spAns[i] = yes; el.parentNode.querySelectorAll('.opt').forEach(b => b.classList.toggle('on', b === el)); }
+function spSend() { send('split', { answers: S.qs.map((_, i) => spAns[i] ?? null) }); }
+function rkTap(i) {
+  if (i >= 0 && !rkOrder.includes(i)) rkOrder.push(i);
+  app.querySelectorAll('[data-rk]').forEach(b => { const k = rkOrder.indexOf(+b.dataset.rk); b.classList.toggle('on', k >= 0); b.querySelector('i').textContent = k >= 0 ? k + 1 : ''; });
+  if (rkOrder.length === S.items.length) send('rank', { order: rkOrder });
+}
+function rkReset() { rkOrder = []; rkTap(-1); }
+// ---- party and board games
+const myTeam = s => s.teams.findIndex(t => t.includes(id));
+const relayPhone = {
+  ready: (s, me) => s.actor === id ? `<div class="kicker">You're up!</div><h2>${s.game === 'taboo' ? 'Describe each word to your team. Never say the banned words!' : 'Act out each word. No talking!'}</h2>
+     <p>Words show up here. Tap ✓ when your team gets it, ⏭ to pass.</p><button class="btn" onclick="send('go')">▶ Start</button>` :
+    wait(me, myTeam(s) === s.team ? 'Your team is up!' : 'Other team is up', `${esc(who(s, s.actor).name)} is about to ${s.game === 'taboo' ? 'describe' : 'act'}.`),
+  act: (s, me) => { const c = s.card, ban = c?.banned ? `<p style="color:var(--coral);font-size:22px;font-weight:800">🚫 ${c.banned.map(esc).join(' · ')}</p>` : '';
+    if (!c) return wait(me, 'Out of words!');
+    if (s.actor === id) return `<div class="kicker">${s.game === 'taboo' ? 'Describe' : 'Act it out'}</div><h2 style="font-size:44px;color:var(--gold);margin:8px 0">${esc(c.word)}</h2>${ban}
+      <div class="duo"><button class="opt" style="font-size:24px" onclick="send('got',{n:${s.turnNo}})">✓ <b>Got it</b></button><button class="opt" style="font-size:24px" onclick="send('pass',{n:${s.turnNo}})">⏭ <b>Pass</b></button></div>`;
+    if (s.game === 'taboo' && myTeam(s) === 1 - s.team) return `<div class="kicker">Listen for slips!</div><h2 style="color:var(--gold);margin:6px 0">${esc(c.word)}</h2>${ban}
+      <button class="btn" style="background:var(--coral);font-size:30px;padding:30px" onclick="send('buzz',{n:${s.turnNo}})">🚨 BUZZ</button>`;
+    return wait(me, myTeam(s) === s.team ? 'Shout your guesses!' : 'Watch them sweat', `${s.got.length} got so far`); },
+};
+const landTap = i => send('claim', { tile: i });
+let mkGood = 0;
+function marketPhone(s, me) {
+  const m = s.market, w = m.wallets[id]; if (!w) return wait(me, 'Next game is yours!');
+  if (me.done) return wait(me, 'Order placed!', `🪙 ${w.coins} coins · worth ${w.worth}`);
+  const r = m.goods[m.rumour.good];
+  return `<div class="kicker">Day ${s.turnNo + 1} of ${m.turns} · 🪙 ${w.coins} coins</div><p>🗞️ Rumour: ${r.icon} ${esc(r.name)} going ${m.rumour.up ? 'up' : 'down'}. ${m.news ? esc(m.news) : ''}</p>
+    ${m.goods.map((g, i) => { const max = Math.floor(w.coins / g.price);
+      return `<div style="background:var(--card);border-radius:14px;padding:12px 14px;margin:8px 0"><b>${g.icon} ${esc(g.name)}</b> · ${g.price} each · you have ${w.hold[i]}
+        <div class="row" style="margin-top:6px">${[1, 5].filter(q => q <= max).map(q => `<button class="btn ghost" onclick="send('trade',{good:${i},qty:${q}})">Buy ${q}</button>`).join('')}
+        ${max > 5 ? `<button class="btn ghost" onclick="send('trade',{good:${i},qty:${max}})">Buy ${max}</button>` : ''}${w.hold[i] ? `<button class="btn ghost" onclick="send('trade',{good:${i},qty:-1})">Sell all</button>` : ''}</div></div>`; }).join('')}
+    <button class="btn" onclick="send('trade',{good:0,qty:0})">Hold this turn</button>`;
+}
+const DCHOICE = [['fight', '⚔️', 'Fight', 'Win with enough fighters: +40 gold. Lose: −1 heart.'], ['loot', '💰', 'Loot', 'Split the treasure if the monster falls, unless looters outnumber fighters.'],
+  ['sneak', '🤫', 'Sneak', 'Safe. Nothing gained.'], ['escape', '🚪', 'Escape', 'Leave now and keep your bag.']];
+function dungeonPhone(s, me) {
+  const d = s.dungeon, h = d.heroes[id]; if (!h) return wait(me, 'Next game is yours!');
+  const stat = `${h.out ? '💀 Knocked out' : h.gone ? '🚪 Escaped' : '❤️'.repeat(h.hp)} · 💰 ${h.bag}`;
+  if (s.phase === 'outcome') { const mine = d.last.find(x => x.id === id); return wait(me, mine ? `${PICK_ICON[mine.pick]} You chose ${mine.pick}` : 'Watch the TV', `${stat}<br>${esc(d.log)}`); }
+  if (h.out || h.gone || me.done) return wait(me, h.out ? 'Knocked out!' : h.gone ? 'You got out!' : 'Choice locked', stat);
+  return `<div class="kicker">${d.icon} ${esc(d.monster)} · needs ${d.need} fighters · ${d.gold} gold</div><p>${stat}</p>${DCHOICE.map(([k, i, t, x]) =>
+    `<button class="opt" onclick="send('choose',{pick:'${k}'})">${i} <b>${t}</b><small style="display:block;color:var(--mute)">${x}</small></button>`).join('')}`;
+}
+const PICK_ICON = { fight: '⚔️', loot: '💰', sneak: '🤫', escape: '🚪' };
+Object.assign(MODES, {
+  charades: relayPhone,
+  taboo: relayPhone,
+  story: {
+    swrite: (s, me) => me.done ? wait(me, 'Line added!', 'Waiting for the others…') :
+      `<div class="kicker">Line ${s.turnNo + 1} of ${s.steps}</div><p>The story so far ends with:</p><h2>“${esc(s.prev[id])}”</h2>
+       <input id="a" maxlength="120" placeholder="What happens next?" autocomplete="off"><button class="btn" onclick="send('line',{text:a.value})">Add line</button>`,
+    svote: (s, me) => me.done ? wait(me, 'Vote cast!') :
+      `<div class="kicker">Vote</div><h2>Best line?</h2>${s.lines.map((l, i) => l.by === id ? '' : `<button class="opt" onclick="send('vote',{index:${i}})">${esc(l.text)}</button>`).join('')}`,
+  },
+  landgrab: {
+    claim: (s, me) => me.done ? `<div class="kicker">Turn ${s.turnNo + 1} of ${s.land.turns}</div><h2>Tile picked!</h2><div class="board">${hexBoard(s, '100%', false)}</div><p>Biggest land: ${s.land.big[id] || 0}</p>` :
+      `<div class="kicker">Turn ${s.turnNo + 1} of ${s.land.turns} · your land: ${s.land.big[id] || 0}</div><h2>Tap a tile to claim</h2><div class="board">${hexBoard(s, '100%', true)}</div>
+       <p>Same tile as someone else = 💥 rock. Grow one big patch!</p>`,
+  },
+  market: { trade: marketPhone },
+  dungeon: { room: dungeonPhone, outcome: dungeonPhone },
+  samebrain: {
+    think: (s, me) => me.done ? wait(me, 'Locked in!', 'Did anyone else think the same?') :
+      `<div class="kicker">Think like the room</div><h2>${esc(s.prompt)}</h2><input id="a" maxlength="24" placeholder="One word" autocomplete="off">
+       <button class="btn" onclick="send('word',{text:a.value})">Send</button>`,
+  },
+  split: {
+    ask: (s, me) => me.done ? wait(me, 'Question in!', 'Waiting for the others…') :
+      `<div class="kicker">Split the room</div><h2>Write a yes-or-no question</h2><p>The closer the room splits 50/50, the more you score.</p>
+       <input id="a" maxlength="90" placeholder="Is a hot dog a sandwich?" autocomplete="off"><button class="btn" onclick="send('ask',{text:a.value})">Send question</button>`,
+    split: (s, me) => { if (me.done) return wait(me, 'Answers in!'); spAns = {};
+      return `<div class="kicker">Yes or no?</div>${s.qs.map((q, i) => q.by === id ? '' : `<label>${esc(q.text)}</label>
+       <div class="duo"><button class="opt" onclick="spPick(${i},true,this)">👍 <b>Yes</b></button><button class="opt" onclick="spPick(${i},false,this)">👎 <b>No</b></button></div>`).join('')}
+       <button class="btn" onclick="spSend()">Send answers</button>`; },
+  },
+  rankit: {
+    rank: (s, me) => { if (me.done) return wait(me, 'Order locked!', s.judge === id ? 'Let\'s see who knows you.' : 'Fingers crossed!'); rkOrder = [];
+      return `<div class="kicker">${s.judge === id ? 'You\'re the judge' : `Guess ${esc(who(s, s.judge).name)}'s order`}</div><h2>${esc(s.topic)}</h2>
+       <p>Tap from best to worst${s.judge === id ? ', your honest order' : ''}.</p>${s.items.map((t, i) => `<button class="opt" data-rk="${i}" onclick="rkTap(${i})"><i style="font-style:normal;color:var(--gold);min-width:1.2em;display:inline-block"></i> <b>${esc(t)}</b></button>`).join('')}
+       <button class="btn ghost" onclick="rkReset()">Start over</button>`; },
+  },
+});
 const who = (s, pid) => s.players.find(p => p.id === pid) || { av: 0, name: '(left)' };
 const evidence = cards => cards.map(c => `<div class="opt">🗂️ ${esc(c)}</div>`).join('');
 let S; // S: the latest state, for buttons that need it after the screen is drawn
-const padHtml = `<canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
-  <div class="row">${['#231a08', '#ff5e7e', '#4d96ff', '#6bcb77', '#ffd93d', '#ffffff'].map(c => `<button aria-label="Colour ${c}" style="background:${c};width:40px;height:40px;border-radius:50%" class="pv ${c === '#231a08' ? 'on' : ''}" onclick="padPick(this,'c','${c}')"></button>`).join('')}</div>
-  <div class="row">${[4, 10, 24].map(w => `<button class="btn ghost ${w === 10 ? 'on' : ''}" onclick="padPick(this,'w',${w})">${w === 4 ? 'Thin' : w === 10 ? 'Medium' : 'Thick'}</button>`).join('')}</div>
-  <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div>`;
+const PAD_COLORS = ['#231a08', '#7a7a7a', '#ffffff', '#ff5e7e', '#c8202f', '#ff9f43', '#ffd93d', '#6bcb77', '#178a4a', '#2dd4bf', '#4d96ff', '#1f3a8a', '#a78bfa', '#f472b6', '#8b5a2b', '#f5c9a0'];
+const padHtml = `<div class="padwrap"><canvas class="pad" width="1000" height="1000" style="width:100%;aspect-ratio:1;background:#fff;border-radius:16px;touch-action:none"></canvas>
+  <div class="row tools">${[['brush', '🖌 Brush'], ['fill', '🪣 Fill'], ['erase', '🧽 Eraser']].map(([t, l]) => `<button class="btn ghost ${t === 'brush' ? 'on' : ''}" onclick="padPick(this,'t','${t}')">${l}</button>`).join('')}</div>
+  <div class="swatches">${PAD_COLORS.map(c => `<button aria-label="Colour ${c}" style="background:${c}" class="${c === '#231a08' ? 'on' : ''}" onclick="padPick(this,'c','${c}')"></button>`).join('')}
+    <label class="custom" aria-label="Any colour">🎨<input type="color" value="#ff00aa" oninput="padPick(this.parentNode,'c',this.value)"></label></div>
+  <div class="row sizes">${[4, 10, 24, 48].map(w => `<button class="btn ghost ${w === 10 ? 'on' : ''}" aria-label="Brush size ${w}" onclick="padPick(this,'w',${w})"><i style="width:${Math.max(6, w / 1.6)}px;height:${Math.max(6, w / 1.6)}px"></i></button>`).join('')}</div>
+  <div class="row"><button class="btn ghost" onclick="send('undo')">↶ Undo</button><button class="btn ghost" onclick="if (confirm('Clear the drawing?')) send('wipe')">🗑 Clear</button></div></div>`;
 let pingTurn = -1;
 function turnPing(s, mine) {
   document.body.classList.toggle('myturn', mine);
@@ -351,15 +448,24 @@ function playCard(i, wild) {
 }
 function guess() { const el = document.getElementById('a'); send('guess', { text: el.value }); el.value = ''; el.focus(); }
 // drawing pad: each finished stroke is sent as points scaled to 0-1000, and the TV redraws them all
-const pad = { c: '#231a08', w: 10 };
-function padPick(b, k, v) { pad[k] = v; b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); }
+const pad = { c: '#231a08', w: 10, t: 'brush' };
+function padPick(b, k, v) {
+  pad[k] = v; b.parentNode.querySelectorAll(':scope > button, :scope > label').forEach(x => x.classList.toggle('on', x === b));
+  if (k === 'c' && pad.t === 'erase') padPick(app.querySelector('.tools button'), 't', 'brush'); // picking a colour means you want to paint again
+}
 function initPad(cv) {
-  Object.assign(pad, { c: '#231a08', w: 10 }); // match the pre-selected swatch and size
-  const x = cv.getContext('2d'); let pts = null;
+  Object.assign(pad, { c: '#231a08', w: 10, t: 'brush' }); // match the pre-selected buttons
+  const x = cv.getContext('2d', { willReadFrequently: true }); let pts = null;
   const at = e => { const r = cv.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / r.width * 1000), Math.round((e.clientY - r.top) / r.height * 1000)]; };
-  cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); pts = at(e); x.strokeStyle = pad.c; x.lineWidth = pad.w; x.lineCap = x.lineJoin = 'round'; x.beginPath(); x.moveTo(...pts); };
-  cv.onpointermove = e => { if (!pts || pts.length >= 1200) return; const p = at(e); pts.push(...p); x.lineTo(...p); x.stroke(); };
-  cv.onpointerup = cv.onpointercancel = () => { if (pts) { if (pts.length === 2) pts.push(pts[0] + 1, pts[1]); send('stroke', { p: pts, c: pad.c, w: pad.w }); } pts = null; };
+  const col = () => pad.t === 'erase' ? '#ffffff' : pad.c;
+  cv.onpointerdown = e => {
+    e.preventDefault(); document.body.classList.add('drawing');
+    if (pad.t === 'fill') { const p = at(e); flood(cv, p[0], p[1], col()); send('stroke', { p, c: col(), f: true }); return; }
+    cv.setPointerCapture(e.pointerId); pts = at(e); x.strokeStyle = col(); x.lineWidth = pad.w; x.lineCap = x.lineJoin = 'round'; x.beginPath(); x.moveTo(...pts);
+  };
+  cv.onpointermove = e => { if (!pts || pts.length >= 1200) return; const p = at(e), l = pts.length; if (Math.abs(p[0] - pts[l - 2]) + Math.abs(p[1] - pts[l - 1]) < 3) return; pts.push(...p); x.lineTo(...p); x.stroke(); };
+  cv.onpointerup = cv.onpointercancel = () => { document.body.classList.remove('drawing');
+    if (pts) { if (pts.length === 2) pts.push(pts[0] + 1, pts[1]); send('stroke', { p: pts, c: col(), w: pad.w }); } pts = null; };
 }
 // Mini Golf aim: drag back like a slingshot; the dashed line shows where and how hard it goes
 function initGolf(cv, s) {
@@ -400,13 +506,13 @@ let koLocked = {};
 function paintPad(s) {
   const cv = app.querySelector('canvas.pad'), strokes = s.pads ? s.pads[id] || [] : s.strokes; if (!cv || !strokes) return;
   if (cv.dataset.n === String(strokes.length) || cv.matches(':active')) return; cv.dataset.n = strokes.length;
-  const x = cv.getContext('2d'); x.clearRect(0, 0, 1000, 1000); x.lineCap = x.lineJoin = 'round';
-  for (const k of strokes) { x.strokeStyle = k.c; x.lineWidth = k.w; x.beginPath(); x.moveTo(k.p[0], k.p[1]); for (let i = 2; i < k.p.length; i += 2) x.lineTo(k.p[i], k.p[i + 1]); x.stroke(); }
+  paint(cv, strokes);
 }
 
 // The host's phone gets the TV's controls, so nobody needs a mouse on the TV.
 // It lives outside #app and redraws on every update; it has no text boxes, so nothing typed gets wiped.
-const gameOpt = (g, i, js) => `<button class="opt game" style="--acc:${CHIPS[i % 5]}" onclick="${js}"><span class="chipb">${g.art || '🎲'}</span><b>${esc(g.name)}</b><small>${esc(g.desc)}</small></button>`;
+let menuCat = 'All';
+const gameOpt = (g, i, js, small) => `<button class="opt game" style="--acc:${CHIPS[i % 5]}${small ? ';opacity:.45' : ''}" onclick="${js}"><span class="chipb">${g.art || '🎲'}</span><b>${esc(g.name)}</b><small>${small ? `Needs ${g.min}+ players · ` : ''}${esc(g.desc)}</small></button>`;
 function hostPanel(s, me) {
   const el = document.getElementById('hostp');
   if (s.host !== id) return el.innerHTML = '';
@@ -415,7 +521,9 @@ function hostPanel(s, me) {
   const open = el.querySelector('details')?.open, G = s.games.find(x => x.id === s.game), n = s.players.length, nb = s.players.filter(p => p.bot).length;
   const b = (label, js, cls = '') => `<button class="btn ${cls}" onclick="${js}">${label}</button>`;
   let h = `<div class="kicker">👑 You're the host</div>`;
-  if (s.phase === 'menu') h += `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}</div><label>Pick a game</label>${s.games.map((g, i) => gameOpt(g, i, `send('pick',{game:'${g.id}'})`)).join('')}`;
+  if (s.phase === 'menu') h += `<div class="row">${b('🗳 Let players vote', "send('gamevote')")}${b('🎲 Surprise me', 'surprise()')}</div><label>Pick a game</label>
+    <div class="seg" style="flex-wrap:wrap">${CATS.map(c => `<button class="${c === menuCat ? 'on' : ''}" onclick="menuCat='${c}';hostPanel(S,S.players.find(p=>p.id===id))">${c}</button>`).join('')}</div>
+    ${shelf(s.games, menuCat, n).map((g, i) => gameOpt(g, i, `send('pick',{game:'${g.id}'})`, !fits(g, n))).join('')}`;
   else if (s.phase === 'lobby') h += G.settings.map(def => `<label>${esc(def.label)}</label><div class="seg">${def.options.map(([v, l]) =>
       `<button class="${s.settings[def.key] === v ? 'on' : ''}" onclick='send("set",{key:"${def.key}",value:${JSON.stringify(v)}})'>${esc(l)}</button>`).join('')}</div>`).join('')
     + `<div class="row">${n + s.pendingBots >= G.min ? b('▶ Start game', "send('start')") : `<p>Need ${G.min - n} more player${G.min - n === 1 ? '' : 's'}</p>`}</div>`;

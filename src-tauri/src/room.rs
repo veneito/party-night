@@ -90,7 +90,9 @@ pub fn stroke(a: &Value) -> Option<Value> {
     if p.len() < 2 { return None }
     let c = a.get("c").and_then(|v| v.as_str())
         .filter(|s| s.len() == 7 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit())).unwrap_or("#231a08");
-    let w = a.get("w").and_then(|v| v.as_f64()).filter(|w| [4.0, 10.0, 24.0].contains(w)).unwrap_or(10.0) as i64;
+    // a bucket fill is one point; the screens flood it with the colour
+    if truthy(a.get("f")) { return Some(json!({ "c": c, "f": 1, "p": [p[0], p[1]] })) }
+    let w = a.get("w").and_then(|v| v.as_f64()).filter(|w| [4.0, 10.0, 24.0, 48.0].contains(w)).unwrap_or(10.0) as i64;
     Some(json!({ "c": c, "w": w, "p": p }))
 }
 fn base36(mut n: u64, min: usize) -> String {
@@ -118,7 +120,7 @@ static ALL_SETTINGS: LazyLock<Vec<Vec<Value>>> = LazyLock::new(|| GAMES.iter().m
 }).collect());
 static GAMES_JSON: LazyLock<Value> = LazyLock::new(|| Value::Array(GAMES.iter().enumerate().map(|(i, g)| {
     let m = games::meta(g.id());
-    json!({ "id": m["id"], "name": m["name"], "desc": m["desc"], "min": m["min"], "tag": m["tag"], "art": m["art"], "settings": ALL_SETTINGS[i] })
+    json!({ "id": m["id"], "name": m["name"], "desc": m["desc"], "min": m["min"], "tag": m["tag"], "cat": m["cat"], "art": m["art"], "settings": ALL_SETTINGS[i] })
 }).collect()));
 const MAX_PLAYERS: f64 = 20.0;
 // TIMER_SCALE=0.2 makes every countdown 5x shorter, handy when testing alone
@@ -304,6 +306,8 @@ pub fn game_act(g: &mut Room, a: &Value) -> Option<String> {
             // fresh defaults per game, but the voice-over and home choices carry over
             let mut s: Map<String, Value> = ALL_SETTINGS[i].iter().map(|d| (d["key"].as_str().unwrap().to_string(), d["options"][0][0].clone())).collect();
             for k in ["voice", "home", "night"] { if let Some(v) = g.settings.get(k).filter(|v| truthy(Some(v))) { s.insert(k.into(), v.clone()); } }
+            // long board games play one round unless the host asks for more
+            if let Some(r) = games::meta(GAMES[i].id()).get("rounds") { s.insert("rounds".into(), r.clone()); }
             g.settings = s;
             for p in g.players.values_mut() { p.score = 0 }
         }

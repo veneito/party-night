@@ -31,14 +31,17 @@ setInterval(() => { if (timer.left > 0) { timer.left--; if (timer.left && timer.
 function confetti(n = 140) {
   const c = document.createElement('canvas'), x = c.getContext('2d');
   c.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99';
-  c.width = innerWidth; c.height = innerHeight; document.body.appendChild(c);
-  const bits = Array.from({ length: n }, () => ({ x: c.width / 2, y: c.height / 3, vx: (Math.random() - .5) * 18, vy: Math.random() * -16 - 4,
-    r: Math.random() * 6 + 4, c: AV_COLOR[Math.floor(Math.random() * AV_COLOR.length)], a: Math.random() * 6 }));
+  // drawn at half size and stretched: a full-size canvas on a big TV is what stalled the Linux web view at the winning screen
+  c.width = innerWidth / 2; c.height = innerHeight / 2; c.style.width = '100%'; c.style.height = '100%'; document.body.appendChild(c);
+  if (/Linux/.test(navigator.userAgent)) n = Math.min(n, 80);
+  const bits = Array.from({ length: n }, () => ({ x: c.width / 2, y: c.height / 3, vx: (Math.random() - .5) * 9, vy: Math.random() * -8 - 2,
+    r: Math.random() * 3 + 2, c: AV_COLOR[Math.floor(Math.random() * AV_COLOR.length)], a: Math.random() * 6 }));
   let t = 0;
   (function f() {
     x.clearRect(0, 0, c.width, c.height);
-    for (const b of bits) { b.vy += .45; b.x += b.vx; b.y += b.vy; b.a += .1; x.fillStyle = b.c;
-      x.save(); x.translate(b.x, b.y); x.rotate(b.a); x.fillRect(-b.r, -b.r / 2, b.r * 2, b.r); x.restore(); }
+    for (const b of bits) { b.vy += .225; b.x += b.vx; b.y += b.vy; b.a += .1; x.fillStyle = b.c;
+      const cs = Math.cos(b.a), sn = Math.sin(b.a); x.setTransform(cs, sn, -sn, cs, b.x, b.y); x.fillRect(-b.r, -b.r / 2, b.r * 2, b.r); }
+    x.setTransform(1, 0, 0, 1, 0, 0);
     if (++t < 160) requestAnimationFrame(f); else c.remove();
   })();
 }
@@ -112,8 +115,42 @@ async function roomAlive(room) {
 // `after` runs once the new HTML is in place (focus, confetti, sizing...).
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
 // drawing strokes as SVG; data-live so new strokes swap in on the TV without replaying animations
-const sketch = (strokes, k, size) => `<svg data-live="sk-${k}" viewBox="0 0 1000 1000" style="width:${size};aspect-ratio:1;max-width:100%;background:#fff;border-radius:1rem;flex:none">${strokes.map(t =>
-  `<polyline points="${t.p.join(' ')}" fill="none" stroke="${esc(t.c)}" stroke-width="${t.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</svg>`;
+// Drawings are a list of ops in 0-1000 space: a stroke {c, w, p:[x,y,x,y...]} or a bucket fill {c, f:1, p:[x,y]}.
+// paint() draws them onto a canvas of any size; fills need pixels, so the TV shows drawings as images, not SVG.
+function paint(cv, ops) {
+  const x = cv.getContext('2d', { willReadFrequently: true }), k = cv.width / 1000;
+  x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height);
+  x.setTransform(k, 0, 0, k, 0, 0); x.lineCap = x.lineJoin = 'round';
+  for (const o of ops) o.f ? flood(cv, Math.floor(o.p[0] * k), Math.floor(o.p[1] * k), o.c) : line(x, o);
+}
+function line(x, o) { x.strokeStyle = o.c; x.lineWidth = o.w; x.beginPath(); x.moveTo(o.p[0], o.p[1]); for (let i = 2; i < o.p.length; i += 2) x.lineTo(o.p[i], o.p[i + 1]); x.stroke(); }
+// scanline flood fill; a little tolerance so it reaches into the soft edges of lines instead of leaving a halo
+function flood(cv, sx, sy, hex) {
+  const W = cv.width, H = cv.height; if (sx < 0 || sy < 0 || sx >= W || sy >= H) return;
+  const x = cv.getContext('2d', { willReadFrequently: true }), img = x.getImageData(0, 0, W, H), d = img.data;
+  const fc = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)), at = (sy * W + sx) * 4, t = [d[at], d[at + 1], d[at + 2]];
+  if (Math.abs(t[0] - fc[0]) + Math.abs(t[1] - fc[1]) + Math.abs(t[2] - fc[2]) < 8) return;
+  const same = i => Math.abs(d[i] - t[0]) + Math.abs(d[i + 1] - t[1]) + Math.abs(d[i + 2] - t[2]) < 150;
+  const seen = new Uint8Array(W * H), st = [sx, sy];
+  while (st.length) {
+    const y = st.pop(); let xx = st.pop();
+    while (xx > 0 && !seen[y * W + xx - 1] && same((y * W + xx - 1) * 4)) xx--;
+    let up = false, dn = false;
+    for (; xx < W && !seen[y * W + xx] && same((y * W + xx) * 4); xx++) {
+      const i = (y * W + xx) * 4; seen[y * W + xx] = 1; d[i] = fc[0]; d[i + 1] = fc[1]; d[i + 2] = fc[2]; d[i + 3] = 255;
+      if (y > 0) { const ok = !seen[(y - 1) * W + xx] && same(i - W * 4); if (ok && !up) st.push(xx, y - 1); up = ok; }
+      if (y < H - 1) { const ok = !seen[(y + 1) * W + xx] && same(i + W * 4); if (ok && !dn) st.push(xx, y + 1); dn = ok; }
+    }
+  }
+  x.putImageData(img, 0, 0);
+}
+// drawing as an image, wrapped so data-live can swap it on the TV; cached so a live drawing only repaints when it changes
+const skCache = {};
+const sketch = (ops, k, size) => {
+  const sig = ops.length + ':' + ops.at(-1)?.p.slice(0, 4) + ':' + (ops.at(-1)?.p.length ?? 0), c = skCache[k];
+  if (!c || c.sig !== sig) { const cv = document.createElement('canvas'); cv.width = cv.height = 600; paint(cv, ops); skCache[k] = { sig, url: cv.toDataURL() }; }
+  return `<span data-live="sk-${k}" style="width:${size};max-width:100%;flex:none;display:block"><img src="${skCache[k].url}" alt="Drawing" style="width:100%;aspect-ratio:1;border-radius:1rem;display:block"></span>`;
+};
 // Elemix cards: element colour, a big tilted element mark, value in the middle and both corners
 const ELEM = [['🔥', 'Fire'], ['💧', 'Water'], ['🌿', 'Leaf'], ['🌙', 'Moon'], ['✦', 'Wild']];
 const CARD_FACE = { freeze: ['❄', 'Freeze'], twist: ['⇄', 'Twist'], gift: ['+2', 'Gift'], prism: ['✦', 'Prism'], storm: ['+4', 'Storm'] };
@@ -122,7 +159,7 @@ const ecard = (c, attrs = '', cls = '') => { const [face, label] = CARD_FACE[c.v
     <span class="cn tl">${face}</span><b>${face}</b><small>${label}</small><span class="cn br">${face}</span></button>`; };
 function swap(el, html, after) {
   const go = () => { el.innerHTML = html; countUp(el); after?.(); };
-  if (document.startViewTransition && !calm.matches && !document.hidden) document.startViewTransition(go); else go();
+  if (document.startViewTransition && !calm.matches && !document.hidden && !/Linux/.test(navigator.userAgent)) document.startViewTransition(go); else go();
 }
 // numbers marked data-count="1234" tick up from 0
 function countUp(root) {
@@ -177,3 +214,26 @@ const GOLF_CSS = 'width:100%;aspect-ratio:5/3;border:.5rem solid #7a4a21;border-
 
 // casino-chip accents for game cards (TV menu and phone pickers)
 const CHIPS = ['#c8202f', '#1f5fbf', '#178a4a', '#24282d', '#d9a21b'];
+// Home menu: games by category tab; games the group is too small for go to the end (nobody joined yet = nothing greyed)
+const CATS = ['All', 'Quick', 'Words', 'Drawing', 'Bluffing', 'Party', 'Board', 'Action'];
+const fits = (g, n) => !n || n >= g.min;
+const shelf = (games, cat, n) => { const v = games.filter(g => cat === 'All' || g.cat === cat); return [...v.filter(g => fits(g, n)), ...v.filter(g => !fits(g, n))]; };
+// random game from the open tab that the group can play right now
+function surprise(cat = menuCat) {
+  const v = shelf(S.games, cat, S.players.length), ok = v.filter(g => fits(g, S.players.length));
+  const g = (ok.length ? ok : v)[Math.floor(Math.random() * (ok.length ? ok : v).length)];
+  if (g) send('pick', { game: g.id });
+}
+// Land Grab map: hexes laid out like bricks (odd rows shifted half a tile), sized in % so it fits TV and phone alike.
+// tap: on the phone, free tiles are buttons that call landTap(i); mine marks the tile you just picked.
+function hexBoard(s, size, tap, mine = -1) {
+  const L = s.land, tw = 100 / (L.w + .5), th = 100 / (L.h * .75 + .25), ratio = (L.w + .5) / ((L.h * .75 + .25) * 1.1547);
+  const tiles = L.board.map((o, i) => {
+    const c = i % L.w, r = Math.floor(i / L.w), p = o && o !== '#' ? s.players.find(x => x.id === o) : null, clash = L.clash.includes(i);
+    const bg = i === mine ? 'var(--gold)' : o === '#' ? '#5c5f66' : p ? avColor(p) : o ? '#9aa0a6' : '#efe3c4';
+    const tag = tap && !o ? 'button' : 'div';
+    return `<${tag} ${tag === 'button' ? `onclick="landTap(${i})" aria-label="Tile ${i + 1}"` : ''} style="position:absolute;left:${(c + (r % 2) / 2) * tw}%;top:${r * .75 * th}%;width:${tw}%;height:${th}%;padding:0;border:0;border-radius:0;
+      clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:${bg};transform:scale(.93);display:grid;place-items:center;font-size:${size === '100%' ? 1 : 1.6}em;box-shadow:none">${clash ? '💥' : p ? AV_EMOJI[p.av % AV_EMOJI.length] : ''}</${tag}>`;
+  }).join('');
+  return `<div style="position:relative;width:${size};max-width:100%;aspect-ratio:${ratio};margin:0 auto">${tiles}</div>`;
+}

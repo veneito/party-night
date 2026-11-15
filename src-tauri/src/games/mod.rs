@@ -6,17 +6,25 @@ use serde_json::{Map, Value};
 use std::sync::LazyLock;
 
 pub mod draw;
+pub mod dungeon;
 pub mod elemix;
 pub mod fakeout;
 pub mod golf;
 pub mod hottake;
 pub mod knockout;
+pub mod landgrab;
 pub mod loneclue;
+pub mod market;
 pub mod objection;
 pub mod oddone;
 pub mod punchline;
 pub mod quickwit;
+pub mod rankit;
+pub mod relay;
 pub mod receipts;
+pub mod samebrain;
+pub mod split;
+pub mod story;
 pub mod telephone;
 
 pub trait Game: Send + Sync {
@@ -46,8 +54,17 @@ pub static GAMES: LazyLock<Vec<Box<dyn Game>>> = LazyLock::new(|| vec![
     Box::new(oddone::OddOne),
     Box::new(punchline::Punchline),
     Box::new(quickwit::QuickWit("quickwit")),
+    Box::new(rankit::RankIt),
     Box::new(receipts::Receipts),
+    Box::new(samebrain::SameBrain),
+    Box::new(split::Split),
     Box::new(telephone::Telephone),
+    Box::new(relay::Relay("charades")),
+    Box::new(relay::Relay("taboo")),
+    Box::new(story::Story),
+    Box::new(landgrab::LandGrab),
+    Box::new(market::Market),
+    Box::new(dungeon::Dungeon),
 ]);
 
 // each round's own state; it stays after the round so the scoreboard can show what happened
@@ -67,7 +84,15 @@ pub enum Data {
     Odd(oddone::D),
     Punch(punchline::D),
     Receipts(receipts::D),
+    Rank(rankit::D),
+    Same(samebrain::D),
+    Split(split::D),
     Tel(telephone::D),
+    Relay(relay::D),
+    Story(story::D),
+    Land(landgrab::D),
+    Market(market::D),
+    Dungeon(dungeon::D),
 }
 // this game's round state; only used once the game's start() has run
 #[macro_export]
