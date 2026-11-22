@@ -5,6 +5,7 @@ use crate::room::{Next, Res, Room};
 use serde_json::{Map, Value};
 use std::sync::LazyLock;
 
+pub mod cookoff;
 pub mod draw;
 pub mod dungeon;
 pub mod elemix;
@@ -65,6 +66,7 @@ pub static GAMES: LazyLock<Vec<Box<dyn Game>>> = LazyLock::new(|| vec![
     Box::new(landgrab::LandGrab),
     Box::new(market::Market),
     Box::new(dungeon::Dungeon),
+    Box::new(cookoff::CookOff),
 ]);
 
 // each round's own state; it stays after the round so the scoreboard can show what happened
@@ -93,6 +95,7 @@ pub enum Data {
     Land(landgrab::D),
     Market(market::D),
     Dungeon(dungeon::D),
+    Cook(cookoff::D),
 }
 // this game's round state; only used once the game's start() has run
 #[macro_export]

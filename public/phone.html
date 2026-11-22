@@ -400,6 +400,13 @@ Object.assign(MODES, {
   },
   market: { trade: marketPhone },
   dungeon: { room: dungeonPhone, outcome: dungeonPhone },
+  cookoff: {
+    role: (s, me) => me.done ? wait(me, 'Got it!', 'Waiting for everyone…') :
+      `<div class="kicker">Cook-off</div><h2>Are you cooking?</h2>
+       <div class="duo"><button class="opt" onclick="send('role',{cook:true})">🍳 <b>I'm cooking</b></button><button class="opt" onclick="send('role',{cook:false})">😋 <b>I'm tasting</b></button></div>`,
+    vote: (s, me) => s.cooks.includes(id) ? wait(me, "You're cooking!", 'The tasters are voting…') : me.done ? wait(me, 'Vote in!') :
+      `<div class="kicker">Taste both, then vote</div><h2>Whose dish was best?</h2>${s.cooks.map(c => `<button class="opt" onclick="send('vote',{cook:'${c}'})">${avatar(who(s, c))} <b>${esc(who(s, c).name)}</b></button>`).join('')}`,
+  },
   samebrain: {
     think: (s, me) => me.done ? wait(me, 'Locked in!', 'Did anyone else think the same?') :
       `<div class="kicker">Think like the room</div><h2>${esc(s.prompt)}</h2><input id="a" maxlength="24" placeholder="One word" autocomplete="off">
