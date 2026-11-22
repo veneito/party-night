@@ -540,6 +540,15 @@ MODES.caption = { ...MODES.quickwit, art: '🖼️', bg: 'linear-gradient(135deg
 MODES.gif = { ...MODES.quickwit, art: '🎞️', bg: 'linear-gradient(135deg,#ff7ab6,#8f6aff)' };
 const avs = (s, ids) => ids.map(id => avatar(who(s, id))).join('');
 Object.assign(MODES, {
+  cookoff: {
+    art: '🍳', bg: 'linear-gradient(135deg,#ff9f43,#ff5e7e)',
+    role: s => `<div class="kicker rise">Cook-off</div><h1 class="pop">Who's cooking?</h1>
+      <h2 class="rise">Cooks tap "I'm cooking" on their phone, everyone else taps "I'm tasting".</h2>${strip(s)}${skip()}`,
+    vote: s => `<div class="kicker rise">Taste and vote on your phone</div><h1 class="pop">Whose dish was best?</h1>
+      <div class="rest" style="justify-content:center">${s.cooks.map(c => `<div class="who">${avatar(who(s, c), 'lg')}${esc(who(s, c).name)}</div>`).join('')}</div>${strip(s)}${skip('Close voting')}`,
+    results: s => !s.last ? '' : !s.last.list.length ? '<h2>Nobody said they were cooking!</h2>' : `<div class="answers">${s.last.list.map((c, i) =>
+      `<div class="answer rise ${i === 0 && c.votes ? 'win' : ''}" style="animation-delay:${i * 200}ms">${avatar(who(s, c.id))} ${esc(who(s, c.id).name)} · ${c.votes} vote${c.votes === 1 ? '' : 's'}</div>`).join('')}</div>`,
+  },
   samebrain: {
     art: '🧠', bg: 'linear-gradient(135deg,#f472b6,#a78bfa)',
     think: s => `<div class="kicker rise">Round ${s.round} · Think like the room</div><div class="prompt pop"><h1>${esc(s.prompt)}</h1></div>

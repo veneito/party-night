@@ -3689,5 +3689,19 @@
     ]
    ]
   }
+ },
+ "cookoff": {
+  "meta": {
+   "id": "cookoff",
+   "name": "Cook-off",
+   "desc": "For a real cooking contest. Cooks say so on their phone, everyone else tastes and votes for the best dish.",
+   "min": 3,
+   "tag": "Party · any length",
+   "art": "🍳",
+   "rounds": 1,
+   "settings": [],
+   "cat": "Quick"
+  },
+  "data": {}
  }
 }
