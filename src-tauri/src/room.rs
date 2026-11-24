@@ -400,12 +400,15 @@ pub fn tick(n: u64) {
     let mut rooms = rooms();
     let now = Instant::now();
     for g in rooms.values_mut() {
-        if let Some((t, next)) = g.timer {
-            if t <= now { g.timer = None; next(g); broadcast(g); }
-        }
-        if n % 10 == 0 && in_game(g) { if let Some(G) = game(g) { if G.tick(g) { broadcast(g) } } }
-        // a bug in one game's bot must not take the whole server down mid-party
-        if n % 7 == 0 && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| bots(g))).is_err() { eprintln!("bot error in room {}", g.code) }
+        // a bug in one game's timer, tick or bot must not stop this loop: every room's timers would freeze
+        let ok = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            if let Some((t, next)) = g.timer {
+                if t <= now { g.timer = None; next(g); broadcast(g); }
+            }
+            if n % 10 == 0 && in_game(g) { if let Some(G) = game(g) { if G.tick(g) { broadcast(g) } } }
+            if n % 7 == 0 { bots(g) }
+        }));
+        if ok.is_err() { eprintln!("game error in room {}", g.code) }
     }
     if n % 6000 == 0 {
         rooms.retain(|_, g| {
